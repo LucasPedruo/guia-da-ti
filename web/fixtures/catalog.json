@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "taxonomy": {
+    "areas": [
+      "frontend",
+      "backend",
+      "dados",
+      "devops",
+      "cybersecurity",
+      "design",
+      "produto",
+      "cloud",
+      "qa",
+      "mobile",
+      "ia",
+      "redes",
+      "hardware",
+      "carreira",
+      "educacao"
+    ],
+    "technologies": [
+      "react",
+      "typescript",
+      "csharp",
+      "dotnet",
+      "python",
+      "linux",
+      "figma"
+    ],
+    "languages": [
+      "pt-BR",
+      "en",
+      "es"
+    ],
+    "types": [
+      "communities",
+      "courses",
+      "roadmaps",
+      "creators",
+      "youtube"
+    ]
+  },
+  "resources": [
+    {
+      "slug": "canal-exemplo",
+      "type": "youtube",
+      "name": "Tecnologia em Conversa",
+      "summary": "Um canal fictício para explorar segurança, infraestrutura e redes.",
+      "description": "Um canal fictício para explorar segurança, infraestrutura e redes. Este cadastro é apenas uma demonstração da plataforma, sem vínculo com uma organização ou pessoa real.",
+      "url": "https://example.org/canal-exemplo",
+      "areas": [
+        "cybersecurity",
+        "redes"
+      ],
+      "technologies": [
+        "linux"
+      ],
+      "languages": [
+        "pt-BR"
+      ],
+      "updatedAt": "2026-10-01",
+      "demo": true
+    },
+    {
+      "slug": "comunidade-exemplo",
+      "type": "communities",
+      "name": "Comunidade Horizonte",
+      "summary": "Um espaço fictício para trocar experiências sobre tecnologia e carreira.",
+      "description": "Um espaço fictício para trocar experiências sobre tecnologia e carreira. Este cadastro é apenas uma demonstração da plataforma, sem vínculo com uma organização ou pessoa real.",
+      "url": "https://example.org/comunidade-exemplo",
+      "areas": [
+        "carreira",
+        "frontend"
+      ],
+      "technologies": [
+        "react"
+      ],
+      "languages": [
+        "pt-BR"
+      ],
+      "updatedAt": "2026-10-01",
+      "demo": true
+    },
+    {
+      "slug": "criador-exemplo",
+      "type": "creators",
+      "name": "Pessoa Criadora — exemplo",
+      "summary": "Um perfil fictício para demonstrar como descobrir criadores de conteúdo.",
+      "description": "Um perfil fictício para demonstrar como descobrir criadores de conteúdo. Este cadastro é apenas uma demonstração da plataforma, sem vínculo com uma organização ou pessoa real.",
+      "url": "https://example.org/criador-exemplo",
+      "areas": [
+        "design",
+        "produto"
+      ],
+      "technologies": [
+        "figma"
+      ],
+      "languages": [
+        "pt-BR"
+      ],
+      "updatedAt": "2026-10-01",
+      "demo": true
+    },
+    {
+      "slug": "curso-exemplo",
+      "type": "courses",
+      "name": "Primeiros passos com C#",
+      "summary": "Um curso fictício para demonstrar a descoberta de recursos de aprendizado.",
+      "description": "Um curso fictício para demonstrar a descoberta de recursos de aprendizado. Este cadastro é apenas uma demonstração da plataforma, sem vínculo com uma organização ou pessoa real.",
+      "url": "https://example.org/curso-exemplo",
+      "areas": [
+        "backend",
+        "educacao"
+      ],
+      "technologies": [
+        "csharp",
+        "dotnet"
+      ],
+      "languages": [
+        "pt-BR"
+      ],
+      "updatedAt": "2026-10-01",
+      "demo": true
+    },
+    {
+      "slug": "roadmap-exemplo",
+      "type": "roadmaps",
+      "name": "Seu caminho em dados",
+      "summary": "Um roteiro fictício para organizar os primeiros estudos na área de dados.",
+      "description": "Um roteiro fictício para organizar os primeiros estudos na área de dados. Este cadastro é apenas uma demonstração da plataforma, sem vínculo com uma organização ou pessoa real.",
+      "url": "https://example.org/roadmap-exemplo",
+      "areas": [
+        "dados"
+      ],
+      "technologies": [
+        "python"
+      ],
+      "languages": [
+        "pt-BR"
+      ],
+      "updatedAt": "2026-10-01",
+      "demo": true
+    }
+  ]
+}

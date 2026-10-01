@@ -1,0 +1,1108 @@
+# Projeto: Guia da TI
+
+Quero desenvolver o **Guia da TI**, disponível em `guiadati.com`.
+
+O Guia da TI será uma plataforma open source e colaborativa para descobrir recursos relacionados ao ecossistema de tecnologia.
+
+A ideia é funcionar como um grande diretório/guia da área de tecnologia, mantido parcialmente pela própria comunidade através de Pull Requests no GitHub.
+
+Não quero limitar o projeto apenas a desenvolvimento de software.
+
+O Guia da TI deve contemplar tecnologia de forma ampla: desenvolvimento, dados, infraestrutura, segurança, design, produto, hardware, redes, IA, carreira, educação, comunidades e outras áreas relacionadas.
+
+---
+
+# 1. Arquitetura geral
+
+Quero separar o projeto em **dois repositórios**.
+
+## Repositório 1 — aplicação
+
+Exemplo:
+
+`guia-da-ti/web`
+
+Este será o projeto executado na VPS e responsável pelo site `guiadati.com`.
+
+Ele contém:
+
+* frontend;
+* backend, se necessário;
+* mecanismo de busca;
+* filtros;
+* mapa;
+* páginas;
+* SEO;
+* geração das páginas;
+* integração com os dados públicos.
+
+Esse repositório não precisa ser o local onde a comunidade cadastra conteúdo.
+
+---
+
+## Repositório 2 — dados públicos
+
+Exemplo:
+
+`guia-da-ti/database`
+
+Esse será completamente open source.
+
+A comunidade poderá:
+
+1. fazer fork;
+2. adicionar ou alterar um recurso;
+3. abrir Pull Request;
+4. aguardar revisão;
+5. após aprovação e merge, o conteúdo passa a aparecer no Guia da TI.
+
+Quero evitar inicialmente banco de dados, painel administrativo e autenticação para cadastro.
+
+O próprio GitHub será o CMS.
+
+O repositório público será a **fonte da verdade dos conteúdos**.
+
+A aplicação da VPS deverá consumir esses dados.
+
+Pode ser através de JSON/YAML versionado no GitHub ou outra arquitetura simples que mantenha essa filosofia.
+
+Priorize simplicidade, manutenção fácil e baixo custo operacional.
+
+---
+
+# 2. Estrutura dos dados
+
+Não quero um único JSON gigantesco.
+
+Organize por categorias e registros individuais.
+
+Algo próximo de:
+
+```text
+data/
+  communities/
+  courses/
+  universities/
+  roadmaps/
+  creators/
+  youtube/
+  platforms/
+  tools/
+  events/
+  podcasts/
+  newsletters/
+  blogs/
+  books/
+  bootcamps/
+  certifications/
+  open-source/
+  jobs/
+  scholarships/
+```
+
+Exemplo:
+
+```text
+data/
+  communities/
+    full-dev.json
+    php-rio.json
+    frontend-brasil.json
+```
+
+Crie schemas para validação dos arquivos.
+
+Um PR contendo dados inválidos deve falhar automaticamente no CI.
+
+Também quero:
+
+* documentação para contribuição;
+* template de Pull Request;
+* exemplos;
+* regras para evitar duplicados;
+* validação de URLs;
+* validação de campos obrigatórios;
+* formatação automática;
+* GitHub Actions para validar PRs.
+
+---
+
+# 3. Página inicial
+
+A home deve deixar claro imediatamente o propósito.
+
+Algo conceitualmente parecido com:
+
+**Guia da TI**
+
+> Encontre comunidades, cursos, roadmaps, criadores, ferramentas e recursos para crescer em tecnologia.
+
+Ter uma busca global bastante destacada:
+
+`O que você está procurando?`
+
+Exemplos:
+
+* comunidade Java no Rio;
+* curso gratuito de Python;
+* roadmap de DevOps;
+* canal sobre cybersecurity;
+* faculdade de tecnologia;
+* certificação AWS.
+
+Logo abaixo, mostrar as principais categorias.
+
+---
+
+# 4. Central de Comunidades
+
+Essa deve ser uma das principais funcionalidades.
+
+Criar:
+
+`/comunidades`
+
+A página deverá possuir um **mapa interativo**.
+
+Mostrar pins/clusters representando comunidades cadastradas.
+
+Exemplo:
+
+```text
+Brasil
+
+● Rio de Janeiro
+● São Paulo
+● Belo Horizonte
+● Recife
+● Curitiba
+```
+
+Ao aproximar o mapa, clusters podem se separar.
+
+Comunidades exclusivamente online também precisam existir, mas sem inventar localização física. Elas podem aparecer nos filtros/listagem como `Online`.
+
+Ao clicar em um pin, mostrar um preview da comunidade.
+
+Exemplo:
+
+**FullDev**
+
+Rio de Janeiro + Online
+
+Comunidade para desenvolvedores compartilharem conhecimento, oportunidades e networking.
+
+4 anos de existência
+
+Principais temas:
+
+Front-end
+Back-end
+Carreira
+Eventos
+
+[Conhecer comunidade]
+
+---
+
+# 5. Página individual da comunidade
+
+Exemplo:
+
+`/comunidades/full-dev`
+
+Mostrar:
+
+* nome;
+* logo;
+* banner/imagem;
+* descrição;
+* resumo;
+* ano de criação;
+* tempo de existência calculado automaticamente;
+* cidade;
+* estado;
+* país;
+* online/presencial/híbrida;
+* tecnologias/assuntos;
+* público;
+* idioma;
+* tamanho aproximado, quando informado;
+* organizadores;
+* redes sociais;
+* site;
+* GitHub;
+* Discord;
+* WhatsApp;
+* Telegram;
+* LinkedIn;
+* Instagram;
+* YouTube;
+* instruções para participar;
+* custo, caso exista;
+* eventos relacionados;
+* última atualização daquele cadastro.
+
+Nunca inventar informações ausentes.
+
+---
+
+# 6. Filtros de comunidades
+
+Permitir filtrar por:
+
+* estado;
+* cidade;
+* país;
+* online;
+* presencial;
+* híbrida;
+* gratuita;
+* tecnologia;
+* área;
+* idioma;
+* tema.
+
+Exemplo:
+
+`React + Rio de Janeiro + Presencial`
+
+ou
+
+`Cybersecurity + Online`
+
+---
+
+# 7. Cursos
+
+Rota:
+
+`/cursos`
+
+Informações:
+
+* nome;
+* instituição;
+* descrição;
+* URL;
+* gratuito/pago;
+* faixa de preço opcional;
+* nível;
+* duração;
+* idioma;
+* certificado;
+* online/presencial/híbrido;
+* tecnologias;
+* áreas;
+* pré-requisitos;
+* última verificação.
+
+Filtros:
+
+* gratuito;
+* pago;
+* iniciante;
+* intermediário;
+* avançado;
+* certificado;
+* área;
+* tecnologia;
+* idioma;
+* modalidade.
+
+---
+
+# 8. Faculdades
+
+`/faculdades`
+
+Cadastrar:
+
+* instituição;
+* curso;
+* graduação/pós/MBA/tecnólogo/etc.;
+* presencial/EAD/híbrido;
+* cidade;
+* estado;
+* duração;
+* área;
+* site oficial.
+
+Não precisamos armazenar rankings próprios.
+
+---
+
+# 9. Roadmaps
+
+`/roadmaps`
+
+Exemplos:
+
+Front-end
+Back-end
+DevOps
+Cybersecurity
+Dados
+UX
+Cloud
+Mobile
+QA
+IA
+Redes
+Hardware
+
+Um roadmap pode ser interno ou apontar para um recurso externo.
+
+Campos:
+
+* título;
+* descrição;
+* área;
+* nível;
+* tecnologias;
+* autor;
+* idioma;
+* URL.
+
+---
+
+# 10. Criadores de conteúdo
+
+`/criadores`
+
+Cadastrar influenciadores/criadores relacionados a tecnologia.
+
+Campos:
+
+* nome;
+* foto;
+* bio;
+* áreas;
+* tecnologias;
+* idioma;
+* país;
+* YouTube;
+* Instagram;
+* TikTok;
+* LinkedIn;
+* GitHub;
+* Twitch;
+* site.
+
+Permitir filtros como:
+
+`Front-end`
+
+`Cybersecurity`
+
+`Dados`
+
+`Carreira`
+
+`IA`
+
+etc.
+
+Não criar ranking de "melhores criadores".
+
+---
+
+# 11. Canais do YouTube
+
+`/youtube`
+
+Informações:
+
+* canal;
+* criador/organização;
+* descrição;
+* assuntos;
+* tecnologias;
+* idioma;
+* nível;
+* URL.
+
+---
+
+# 12. Plataformas de aprendizado
+
+`/plataformas`
+
+Exemplos conceituais:
+
+plataformas de cursos;
+plataformas de desafios;
+plataformas de laboratórios;
+plataformas para aprender programação;
+plataformas de exercícios.
+
+Campos:
+
+* nome;
+* descrição;
+* áreas;
+* gratuito/pago/freemium;
+* idioma;
+* certificado;
+* URL.
+
+---
+
+# 13. Ferramentas
+
+`/ferramentas`
+
+Diretório de ferramentas úteis.
+
+Categorias possíveis:
+
+* IDE;
+* editor;
+* design;
+* banco de dados;
+* cloud;
+* deploy;
+* monitoramento;
+* produtividade;
+* IA;
+* APIs;
+* testing;
+* DevOps;
+* documentação;
+* colaboração;
+* segurança.
+
+---
+
+# 14. Eventos
+
+`/eventos`
+
+Permitir cadastrar:
+
+* conferências;
+* meetups;
+* hackathons;
+* workshops;
+* bootcamps;
+* eventos universitários.
+
+Campos:
+
+* nome;
+* descrição;
+* organizador;
+* data;
+* cidade;
+* estado;
+* online/presencial/híbrido;
+* gratuito/pago;
+* URL.
+
+Eventos expirados não devem desaparecer necessariamente.
+
+Podem formar um histórico de eventos.
+
+---
+
+# 15. Podcasts
+
+`/podcasts`
+
+Podcasts relacionados a:
+
+* programação;
+* tecnologia;
+* carreira;
+* startups;
+* segurança;
+* dados;
+* IA;
+* produto;
+* design.
+
+---
+
+# 16. Newsletters e blogs
+
+`/conteudos`
+
+ou rotas separadas:
+
+`/blogs`
+
+`/newsletters`
+
+Permitir descobrir fontes recorrentes de conteúdo.
+
+---
+
+# 17. Livros
+
+`/livros`
+
+Cadastrar livros relevantes para tecnologia.
+
+Campos:
+
+* título;
+* autor;
+* área;
+* nível;
+* idioma;
+* descrição;
+* site oficial/editora quando disponível.
+
+---
+
+# 18. Certificações
+
+`/certificacoes`
+
+Categorias:
+
+* Cloud;
+* Segurança;
+* Redes;
+* Dados;
+* DevOps;
+* IA;
+* Gestão;
+* outras.
+
+Campos:
+
+* nome;
+* organização;
+* descrição;
+* nível;
+* área;
+* tecnologias;
+* validade, quando aplicável;
+* URL oficial.
+
+---
+
+# 19. Projetos Open Source
+
+`/open-source`
+
+Permitir descobrir projetos que aceitam contribuições.
+
+Campos:
+
+* projeto;
+* descrição;
+* tecnologias;
+* dificuldade;
+* idioma;
+* GitHub;
+* áreas onde aceita contribuição.
+
+Por exemplo:
+
+frontend;
+backend;
+documentação;
+design;
+QA;
+tradução.
+
+---
+
+# 20. Oportunidades
+
+Criar estrutura preparada para:
+
+`/vagas`
+
+`/estagios`
+
+`/bolsas`
+
+`/voluntariado`
+
+Não precisa necessariamente implementar todas na primeira versão, mas a arquitetura deve permitir.
+
+---
+
+# 21. Busca global
+
+Essa é uma funcionalidade importante.
+
+Uma pessoa deve conseguir pesquisar:
+
+`React`
+
+e receber resultados de diferentes categorias:
+
+```text
+Comunidades
+Cursos
+Roadmaps
+Criadores
+YouTube
+Ferramentas
+Eventos
+Certificações
+Open Source
+```
+
+Adicionar filtros por tipo.
+
+A busca inicialmente pode ser local/client-side ou através de um índice gerado durante o build.
+
+Não adicionar Elasticsearch/Algolia ou infraestrutura complexa sem necessidade.
+
+---
+
+# 22. Taxonomia
+
+Evitar cada colaborador escrever categorias diferentes como:
+
+`frontend`
+`front-end`
+`Front End`
+`front end`
+
+Criar uma taxonomia central.
+
+Por exemplo:
+
+```text
+areas.json
+technologies.json
+languages.json
+locations.json
+resource-types.json
+```
+
+Os registros devem referenciar IDs normalizados.
+
+Exemplo:
+
+```json
+{
+  "areas": ["frontend", "ui-ux"],
+  "technologies": ["react", "typescript"]
+}
+```
+
+---
+
+# 23. Página de tecnologia/assunto
+
+Quero aproveitar os dados para criar páginas automaticamente.
+
+Exemplo:
+
+`/tecnologias/react`
+
+Mostrar:
+
+**React**
+
+Comunidades relacionadas
+
+Cursos
+
+Roadmaps
+
+Criadores
+
+Canais
+
+Ferramentas
+
+Projetos Open Source
+
+Eventos
+
+Isso também deve ajudar bastante em SEO.
+
+---
+
+# 24. Página por área
+
+Exemplo:
+
+`/areas/cybersecurity`
+
+Mostrar todos os recursos relacionados àquela área.
+
+Outros exemplos:
+
+`/areas/frontend`
+
+`/areas/backend`
+
+`/areas/dados`
+
+`/areas/devops`
+
+`/areas/design`
+
+`/areas/produto`
+
+`/areas/cloud`
+
+`/areas/qa`
+
+`/areas/mobile`
+
+`/areas/ia`
+
+`/areas/redes`
+
+`/areas/hardware`
+
+---
+
+# 25. Contribuição
+
+Adicionar CTAs pelo site:
+
+**Adicionar recurso**
+
+**Editar informação**
+
+**Adicionar comunidade**
+
+**Adicionar curso**
+
+Esses botões podem levar diretamente para o fluxo de contribuição no GitHub.
+
+Seria interessante permitir que alguém sem conhecimento técnico consiga contribuir.
+
+Se for simples, podemos posteriormente criar formulários no próprio GitHub usando Issue Forms.
+
+Exemplo:
+
+`Quero adicionar uma comunidade`
+
+O formulário coleta os campos necessários e depois podemos transformar isso em PR manualmente ou através de automação futura.
+
+Não implementar automação complexa agora.
+
+---
+
+# 26. Transparência dos dados
+
+Cada recurso deve mostrar algo como:
+
+`Última atualização: setembro de 2026`
+
+e:
+
+`Editar no GitHub`
+
+Assim qualquer pessoa consegue identificar informação desatualizada e propor uma correção.
+
+---
+
+# 27. SEO
+
+SEO é extremamente importante para esse projeto.
+
+Quero páginas indexáveis como:
+
+`/comunidades/react-rio`
+
+`/cursos/python`
+
+`/tecnologias/react`
+
+`/areas/frontend`
+
+Cada página deve possuir:
+
+* title;
+* description;
+* canonical;
+* Open Graph;
+* dados estruturados quando aplicável;
+* sitemap;
+* robots.txt.
+
+A arquitetura não deve depender exclusivamente de renderização client-side para o conteúdo principal.
+
+---
+
+# 28. Interface
+
+Quero uma interface:
+
+* moderna;
+* simples;
+* rápida;
+* responsiva;
+* mobile-first;
+* acessível;
+* com dark mode;
+* com boa hierarquia visual.
+
+Evitar aparência de dashboard SaaS corporativo.
+
+O produto deve parecer um **guia/explorador do ecossistema de tecnologia**.
+
+A navegação principal pode ser algo próximo de:
+
+```text
+Guia da TI
+
+Explorar
+Comunidades
+Aprender
+Criadores
+Eventos
+Ferramentas
+
+[Buscar...]     [Contribuir]
+```
+
+Não colocar todas as dezenas de categorias no header.
+
+Utilizar `Explorar` para descobrir outras categorias.
+
+---
+
+# 29. Cards
+
+Criar um sistema consistente de cards.
+
+Por exemplo:
+
+```text
+┌──────────────────────────────┐
+│ LOGO                         │
+│                              │
+│ FullDev                      │
+│ Comunidade                   │
+│                              │
+│ Desenvolvimento • Carreira   │
+│ Rio de Janeiro + Online      │
+│                              │
+│ Comunidade para pessoas...   │
+│                              │
+│ React  JavaScript  Node      │
+└──────────────────────────────┘
+```
+
+Cada tipo de recurso pode possuir pequenas diferenças, mas deve existir consistência visual.
+
+---
+
+# 30. Favoritos
+
+Preparar a arquitetura para futuramente permitir favoritos/coleções:
+
+`Quero aprender Front-end`
+
+e a pessoa salvar:
+
+* roadmap;
+* cursos;
+* comunidades;
+* canais;
+* ferramentas.
+
+Não implementar autenticação inicialmente.
+
+Se necessário, favoritos podem começar utilizando LocalStorage.
+
+---
+
+# 31. Stack
+
+Antes de implementar, analise qual stack é mais adequada.
+
+Minha preferência é manter JavaScript/TypeScript e React.
+
+Considere algo como:
+
+* Next.js;
+* TypeScript;
+* Tailwind;
+* shadcn/ui;
+* Lucide;
+* biblioteca de mapas open source;
+* dados JSON/YAML;
+* geração estática/SSR quando adequado.
+
+Não adicione dependências desnecessárias.
+
+Para mapas, prefira uma solução que não gere custos desnecessários e que não exija Google Maps caso exista alternativa open source adequada.
+
+---
+
+# 32. Performance
+
+O projeto poderá eventualmente possuir milhares de registros.
+
+Portanto:
+
+* não baixar milhares de arquivos individualmente no browser;
+* consolidar/indexar os dados durante build/deploy;
+* gerar índice de busca;
+* otimizar imagens;
+* lazy-load do mapa;
+* cachear dados;
+* gerar páginas estáticas quando fizer sentido.
+
+---
+
+# 33. Sincronização com o repositório público
+
+Quando um PR for aprovado no repositório de dados:
+
+```text
+Contributor
+      ↓
+Pull Request
+      ↓
+CI valida schema
+      ↓
+Maintainer aprova
+      ↓
+Merge
+      ↓
+Aplicação recebe atualização
+      ↓
+Build/deploy
+      ↓
+guiadati.com atualizado
+```
+
+Projete uma maneira simples para fazer isso.
+
+Pode ser webhook, GitHub Action acionando deploy ou atualização periódica.
+
+Priorize a opção mais simples e segura.
+
+Nunca permitir que conteúdo enviado por colaboradores execute código na VPS.
+
+Os dados externos devem ser tratados estritamente como dados não confiáveis e validados.
+
+---
+
+# 34. Segurança
+
+Como o repositório recebe contribuições públicas:
+
+* sanitizar conteúdo;
+* validar URLs;
+* não executar HTML enviado nos registros;
+* não aceitar JavaScript;
+* limitar tamanhos dos campos;
+* validar schemas;
+* proteger contra URLs maliciosas;
+* evitar carregamento arbitrário de scripts;
+* revisar imagens externas;
+* tratar todo conteúdo contribuído como não confiável.
+
+---
+
+# 35. MVP
+
+Não tente desenvolver tudo imediatamente.
+
+Quero construir primeiro uma fundação boa.
+
+### MVP 1
+
+Implementar:
+
+* arquitetura dos dois repositórios;
+* schema dos dados;
+* taxonomia;
+* home;
+* busca;
+* `/explorar`;
+* comunidades;
+* mapa das comunidades;
+* página individual da comunidade;
+* cursos;
+* roadmaps;
+* criadores;
+* canais do YouTube;
+* filtros;
+* páginas de área/tecnologia;
+* SEO;
+* fluxo de contribuição pelo GitHub.
+
+As outras categorias podem entrar depois.
+
+---
+
+# 36. Evolução futura
+
+Deixe a arquitetura preparada para futuramente suportar:
+
+* avaliações;
+* favoritos;
+* coleções;
+* login;
+* sugestões personalizadas;
+* API pública;
+* badges para comunidades;
+* perfis verificados;
+* analytics;
+* tendências;
+* eventos;
+* vagas;
+* newsletters;
+* podcasts;
+* livros;
+* certificações;
+* projetos open source;
+* ranking por popularidade baseado em dados objetivos;
+* conteúdo editorial.
+
+Não implemente essas funcionalidades agora.
+
+---
+
+# 37. Princípio principal
+
+O Guia da TI deve ser:
+
+**aberto, comunitário, pesquisável e fácil de contribuir.**
+
+A comunidade mantém os dados.
+
+A aplicação organiza, relaciona e apresenta esses dados.
+
+Evite overengineering.
+
+Se algo puder ser resolvido com:
+
+`GitHub + JSON + build`
+
+não crie:
+
+`banco + API + autenticação + painel administrativo`.
+
+---
+
+# Sua tarefa
+
+Antes de escrever código:
+
+1. Analise esses requisitos.
+2. Proponha a arquitetura técnica.
+3. Defina a estrutura dos dois repositórios.
+4. Defina o schema base dos recursos.
+5. Defina a taxonomia.
+6. Explique como o repositório público será consumido pela aplicação.
+7. Explique o fluxo de contribuição.
+8. Defina as páginas e rotas.
+9. Separe MVP de funcionalidades futuras.
+10. Identifique decisões técnicas que precisam ser tomadas.
+
+Depois disso, crie um `ARCHITECTURE.md` e um plano de implementação dividido em fases.
+
+**Não comece implementando todas as funcionalidades de uma vez.**
+
+Primeiro construa a fundação do projeto e valide a arquitetura.
+
+Depois implemente o MVP incrementalmente.

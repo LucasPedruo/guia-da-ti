@@ -1,0 +1,30 @@
+{
+  "areas": [
+    "frontend",
+    "backend",
+    "dados",
+    "devops",
+    "cybersecurity",
+    "design",
+    "produto",
+    "cloud",
+    "qa",
+    "mobile",
+    "ia",
+    "redes",
+    "hardware",
+    "carreira",
+    "educacao"
+  ],
+  "technologies": [
+    "react",
+    "typescript",
+    "csharp",
+    "dotnet",
+    "python",
+    "linux",
+    "figma"
+  ],
+  "languages": ["pt-BR", "en", "es"],
+  "types": ["communities", "courses", "roadmaps", "creators", "youtube"]
+}
