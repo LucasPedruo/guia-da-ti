@@ -36,20 +36,28 @@ try {
   async function waitFor(expression) { for (let i = 0; i < 80; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error(`Timed out: ${expression}`); }
   async function navigate(path) { await send('Page.navigate', { url: base + path }); await waitFor(`document.readyState === 'complete' && !!document.querySelector('main h1') && location.pathname === ${JSON.stringify(path)}`); await sleep(500); }
   async function click(expression) { const point = await evaluate(`(()=>{const el=${expression}; if(!el)throw Error('Missing element');const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`); await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 }); await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 }); }
-  const namedButton = name => `[...document.querySelectorAll('nav button')].find(e=>e.textContent.trim()===${JSON.stringify(name)})`;
+  async function hover(expression) { const point = await evaluate(`(()=>{const el=${expression}; if(!el)throw Error('Missing element');const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`); await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point }); }
   async function key(key, code = key) { await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code }); }
   await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
   assert.equal(await evaluate(`document.querySelectorAll('[aria-label="Categorias"] a').length`), 32);
   assert.equal(await evaluate(`document.body.textContent.includes('Seu próximo passo')`), false);
-  await click(namedButton('Aprender'));
-  await waitFor(`!!document.querySelector('[role="menu"]')`);
-  assert.equal(await evaluate(`document.querySelector('[role="menu"]').textContent.includes('Plataformas de cursos')`), true);
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('As conversas da comunidade vão aparecer aqui')`), true);
+  await hover(`document.querySelector('[data-slot="navigation-menu-trigger"]')`);
+  await waitFor(`document.querySelector('[data-slot="navigation-menu-content"]')?.getAttribute('data-state') === 'open'`);
+  assert.equal(await evaluate(`document.querySelector('[data-slot="navigation-menu-content"]').textContent.includes('Plataformas de cursos')`), true);
+  assert.equal(await evaluate(`document.querySelector('[data-slot="navigation-menu-content"]').textContent.includes('Bolsas')`), true);
+  const menuBounds = await evaluate(`(()=>{const r=document.querySelector('[data-slot="navigation-menu-content"]').getBoundingClientRect();return {left:r.left,width:r.width,viewport:innerWidth}})()`);
+  assert.ok(menuBounds.width >= menuBounds.viewport - 20, JSON.stringify(menuBounds));
+  assert.ok(Math.abs(menuBounds.left) < 1, JSON.stringify(menuBounds));
+  for (const route of ['/comunidades', '/cursos', '/criadores', '/eventos', '/ferramentas']) assert.equal(await evaluate(`!!document.querySelector('a[href="${route}"]')`), true, route);
   await key('Escape');
-  await evaluate(`${namedButton('Aprender')}.focus()`); await key('ArrowDown');
-  await waitFor(`document.activeElement?.getAttribute('role') === 'menuitem'`);
+  await waitFor(`!document.querySelector('[data-slot="navigation-menu-content"]') || document.querySelector('[data-slot="navigation-menu-content"]').getAttribute('data-state') === 'closed'`);
+  await evaluate(`document.querySelector('[data-slot="navigation-menu-trigger"]').focus()`); await key('ArrowDown');
+  await waitFor(`document.activeElement?.getAttribute('data-slot') === 'navigation-menu-link'`);
   await key('Escape');
+  await waitFor(`!document.querySelector('[data-slot="navigation-menu-content"]') || document.querySelector('[data-slot="navigation-menu-content"]').getAttribute('data-state') === 'closed'`);
   await click(`document.querySelector('[role="combobox"]')`);
   await waitFor(`!!document.querySelector('[role="listbox"]')`);
   await click(`[...document.querySelectorAll('[role="option"]')].find(e=>e.textContent.trim()==='Cursos')`);
@@ -74,16 +82,23 @@ try {
   await navigate('/');
   await click(`document.querySelector('[aria-label="Ativar tema escuro"]')`);
   await waitFor(`document.documentElement.classList.contains('dark')`);
-  await click(namedButton('Se informar')); await waitFor(`!!document.querySelector('[role="menu"]')`);
+  await click(`document.querySelector('[data-slot="navigation-menu-trigger"]')`); await waitFor(`document.querySelector('[data-slot="navigation-menu-content"]')?.getAttribute('data-state') === 'open'`);
   await key('Escape');
   await click(`document.querySelector('[aria-label="Ativar tema claro"]')`);
   for (const width of [768, 320, 390]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: false });
     await sleep(200);
-    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true, `Overflow at ${width}px`);
+    const dimensions = await evaluate(`(()=>{const m=document.querySelector('[data-slot="navigation-menu"]'),l=document.querySelector('[data-slot="navigation-menu-list"]'),s=getComputedStyle(l);return {viewport:innerWidth,document:document.documentElement.scrollWidth,header:document.querySelector('header').getBoundingClientRect().width,menu:m.getBoundingClientRect().width,menuClass:m.className,list:l.getBoundingClientRect().width,listClass:l.className,listScroll:l.scrollWidth,listCSS:{width:s.width,minWidth:s.minWidth,maxWidth:s.maxWidth,flex:s.flex,overflow:s.overflow}}})()`);
+    assert.ok(dimensions.document <= dimensions.viewport, `Overflow at ${width}px: ${JSON.stringify(dimensions)}`);
   }
-  await click(namedButton('Oportunidades')); await waitFor(`!!document.querySelector('[role="menu"]')`);
-  assert.equal(await evaluate(`document.querySelector('[role="menu"]').textContent.includes('Bolsas')`), true);
+  await click(`document.querySelector('[data-slot="sheet-trigger"]')`);
+  await waitFor(`document.querySelector('[data-slot="sheet-content"]')?.getAttribute('data-state') === 'open'`);
+  assert.equal(await evaluate(`document.querySelector('[data-slot="sheet-content"]').textContent.includes('Comunidades')`), true);
+  await key('Escape');
+  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await sleep(200);
+  await click(`document.querySelector('[data-slot="navigation-menu-trigger"]')`); await waitFor(`document.querySelector('[data-slot="navigation-menu-content"]')?.getAttribute('data-state') === 'open'`);
+  assert.equal(await evaluate(`document.querySelector('[data-slot="navigation-menu-content"]').textContent.includes('Bolsas')`), true);
   const groups = JSON.parse(await readFile('src/navigation.json', 'utf8'));
   for (const category of groups.flatMap(group => group.categories)) {
     const response = await fetch(`${base}/${category.route}/`);
@@ -91,7 +106,7 @@ try {
     assert.ok((await response.text()).includes(category.name), category.route);
   }
   assert.deepEqual(errors, [], 'Browser errors');
-  console.log('UI OK: visible categories, keyboard/dropdown navigation, search, empty state, about, dark theme and responsive layout.');
+  console.log('UI OK: hover mega-menu, keyboard navigation, home discussion area, search, empty state, about, dark theme and responsive layout.');
 } finally {
   socket?.close();
   processHandle.kill();
