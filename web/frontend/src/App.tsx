@@ -1,39 +1,168 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BookOpen, Compass, Github, Map, Moon, Search, Sparkles, Sun, Users, Video, Route, Code2 } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ChevronDown, Compass, Github, Moon, Search, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { categories, labels, normalize, pageInfo, resourcePath, resources, taxonomy, type Resource } from './catalog';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { categories, groups, labels, normalize, pageInfo, resourcePath, resources, taxonomy, type Resource } from './catalog';
 
-const icons = [Users, BookOpen, Route, Sparkles, Video];
 const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/LucasPedruo/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
 
 function ResourceCard({ resource }: { resource: Resource }) {
-  const category = categories.find(c => c.id === resource.type)!;
-  return <article className="resource-card"><div className="card-top"><span className="resource-mark"><Code2 size={22} /></span><span className="eyebrow">{category.name}</span></div><h3><a href={resourcePath(resource)}>{resource.name}<ArrowUpRight size={18} /></a></h3><p>{resource.summary}</p><div className="tags">{resource.areas.map(area => <a key={area} href={`/areas/${area}`}>{labels[area] || area}</a>)}</div>{resource.demo && <small>Cadastro fictício · demonstração</small>}</article>;
+  return (
+    <Card className="h-full shadow-none">
+      <CardHeader>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{categories.find(c => c.id === resource.type)?.name}</Badge>
+          {resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}
+        </div>
+        <CardTitle className="pt-2 text-lg leading-snug">
+          <Button asChild variant="link" className="h-auto p-0 text-left text-lg whitespace-normal text-foreground">
+            <a href={resourcePath(resource)}>{resource.name}<ArrowUpRight className="shrink-0" /></a>
+          </Button>
+        </CardTitle>
+        <CardDescription className="leading-relaxed">{resource.summary}</CardDescription>
+      </CardHeader>
+      <CardFooter className="mt-auto flex flex-wrap gap-2">
+        {resource.areas.map(area => <Badge variant="outline" key={area}>{labels[area] || area}</Badge>)}
+      </CardFooter>
+    </Card>
+  );
 }
 
 export function App({ path }: { path: string }) {
   const page = pageInfo(path);
+  const home = path === '/';
   const [query, setQuery] = useState('');
-  const [type, setType] = useState(page.category?.id || '');
+  const [type, setType] = useState(page.category?.id || 'all');
+  const [language, setLanguage] = useState('all');
   const [dark, setDark] = useState(false);
+
   useEffect(() => {
-    try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Storage may be unavailable. */ }
+    try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Optional preference. */ }
     setQuery(new URLSearchParams(window.location.search).get('q') || '');
   }, []);
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
-  function toggleTheme() { const next = !dark; setDark(next); try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* Optional preference. */ } }
+
+  function toggleTheme() {
+    const next = !dark;
+    setDark(next);
+    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* Optional preference. */ }
+  }
+
   const tokens = normalize(query).trim().split(/\s+/).filter(Boolean);
-  const filtered = resources.filter(r => (!type || r.type === type) && (!page.area || r.areas.includes(page.area)) && (!page.technology || r.technologies.includes(page.technology)) && tokens.every(token => normalize([r.name, r.summary, r.description, ...r.areas, ...r.technologies, ...r.languages].join(' ')).includes(token)));
-  const home = path === '/';
-  return <><a className="skip-link" href="#conteudo">Pular para o conteúdo</a><header className="site-header"><a className="brand" href="/"><span><Compass size={24} /></span>guia<span className="brand-light">da</span>ti<span className="brand-dot">.</span></a><nav aria-label="Principal"><a href="/explorar">Explorar</a><a href="/comunidades">Comunidades</a><a href="/cursos">Aprender</a><a href="/criadores">Criadores</a></nav><div className="header-actions"><Button variant="ghost" size="icon" aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'} onClick={toggleTheme}>{dark ? <Sun /> : <Moon />}</Button><Button asChild variant="outline"><a href="/contribuir"><Github />Contribuir</a></Button></div></header>
-  <main id="conteudo">
-    {!page.valid ? <section className="page-heading"><p className="eyebrow">404</p><h1>Página não encontrada</h1><Button asChild><a href="/explorar">Explorar recursos</a></Button></section> : path === '/contribuir' ? <section className="detail"><p className="eyebrow">Aberto e colaborativo</p><h1>Um guia feito por todos.</h1><p>Conhece um recurso que merece estar aqui? Ajude outras pessoas a encontrar seu próximo passo.</p><ol><li>Procure pelo recurso para evitar duplicados.</li><li>Adicione ou corrija o cadastro no repositório de dados.</li><li>Envie sua contribuição para revisão da comunidade.</li></ol>{repository ? <Button asChild><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Contribuir no GitHub</a></Button> : <p className="notice">O repositório público ainda está em preparação. As instruções desta versão estão em database/CONTRIBUTING.md.</p>}</section> : page.resource ? <section className="detail"><a className="back" href={`/${page.category!.route}`}>← {page.category!.name}</a><p className="eyebrow">{page.resource.demo ? 'Cadastro fictício de demonstração' : page.category!.name}</p><h1>{page.resource.name}</h1><p className="lead">{page.resource.summary}</p><p className="description">{page.resource.description}</p><div className="tags">{page.resource.technologies.map(t => <a href={`/tecnologias/${t}`} key={t}>{labels[t] || t}</a>)}</div><p>Idiomas: {page.resource.languages.join(', ')}</p><p>Última atualização: {page.resource.updatedAt.split('-').reverse().join('/')}</p><div className="detail-actions"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Visitar recurso <ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar no GitHub</a></Button>}</div></section> : <>
-    <section className={home ? 'hero' : 'page-heading'}><div className="hero-copy"><p className="eyebrow"><span className="status-dot" /> Aberto, comunitário e feito para explorar</p><h1>{home ? <>Seu próximo passo<br />em tecnologia<br /><em>começa aqui.</em></> : page.title}</h1><p className="lead">{page.description}</p><form className="search-box" action="/explorar" role="search"><Search size={21} aria-hidden="true" /><Input name="q" aria-label="Buscar recursos" placeholder="O que você quer descobrir?" value={query} onChange={event => setQuery(event.target.value)} /><Button type="submit" aria-label="Pesquisar"><ArrowRight /></Button></form>{home && <div className="suggestions"><span>Explore:</span>{['react', 'cybersecurity', 'dados'].map(id => <a key={id} href={`/${id === 'react' ? 'tecnologias' : 'areas'}/${id}`}>{labels[id]} <ArrowUpRight size={12} /></a>)}</div>}</div>{home && <div className="hero-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="art-core"><Compass size={62} strokeWidth={1.3} /><span>ENCONTRE SEU CAMINHO</span></div><span className="floating-card float-one"><Users />Conecte-se</span><span className="floating-card float-two"><Code2 />Descubra</span><span className="floating-card float-three"><BookOpen />Aprenda</span><span className="art-star">✳</span></div>}</section>
-    {home && <section className="section-block"><div className="section-title"><div><p className="eyebrow">Muitos caminhos, um só lugar</p><h2>Por onde você quer começar?</h2></div><a href="/explorar">Ver tudo <ArrowRight size={16} /></a></div><div className="category-grid">{categories.map((category, index) => { const Icon = icons[index]; return <a href={`/${category.route}`} className="category-card" key={category.id}><Icon size={25} /><h3>{category.name}</h3><p>{category.description}</p><ArrowUpRight className="category-arrow" size={18} /></a>; })}</div></section>}
-    <section className="section-block catalog-section"><div className="section-title"><div><p className="eyebrow">Conhecimento que circula</p><h2>{home ? 'Descubra novas possibilidades' : 'Recursos para explorar'}</h2></div><span aria-live="polite">{filtered.length} recursos</span></div><div className="filters" aria-label="Filtrar por categoria">{[{ id: '', name: 'Todos' }, ...categories].filter(c => !page.category || c.id === page.category.id).map(c => <button key={c.id} aria-pressed={type === c.id} className={type === c.id ? 'active' : ''} onClick={() => setType(c.id)}>{c.name}</button>)}</div><p className="demo-notice">Versão em construção. Os cadastros abaixo são exemplos fictícios para demonstrar a navegação.</p>{filtered.length ? <div className="resource-grid">{filtered.map(r => <ResourceCard key={`${r.type}/${r.slug}`} resource={r} />)}</div> : <div className="empty"><Search /><h3>Nenhum recurso encontrado</h3><p>Tente outro termo ou escolha uma categoria diferente.</p><Button variant="outline" onClick={() => { setQuery(''); setType(page.category?.id || ''); }}>Limpar busca</Button></div>}</section>
-    {home && <section className="community-banner"><span className="banner-icon"><Map size={36} /></span><div><p className="eyebrow">Ninguém cresce sozinho</p><h2>Encontre pessoas no mesmo caminho.</h2><p>Explore comunidades para trocar experiências e aprender junto.</p></div><Button asChild><a href="/comunidades">Conhecer comunidades <ArrowRight /></a></Button></section>}
-    <section className="section-block"><p className="eyebrow">Tecnologia vai além do código</p><h2>Explore por área</h2><div className="area-links">{taxonomy.areas.map(area => <a key={area} href={`/areas/${area}`}>{labels[area] || area}<ArrowUpRight size={14} /></a>)}</div></section></>}
-  </main><footer><a className="brand" href="/">guiadati.</a><p>Conhecimento aberto. Caminhos compartilhados.</p><a href="/contribuir">Ajude a construir o guia <ArrowUpRight size={15} /></a></footer></>;
+  const filtered = resources.filter(r =>
+    (type === 'all' || r.type === type) &&
+    (language === 'all' || r.languages.includes(language)) &&
+    (!page.area || r.areas.includes(page.area)) &&
+    (!page.technology || r.technologies.includes(page.technology)) &&
+    tokens.every(token => normalize([r.name, r.summary, r.description, ...r.areas, ...r.technologies, ...r.languages].join(' ')).includes(token))
+  );
+
+  return (
+    <div className="min-h-svh">
+      <Button asChild className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
+        <a href="#conteudo">Pular para o conteúdo</a>
+      </Button>
+      <header className="border-b bg-background">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <Button asChild variant="ghost" className="h-auto px-0 text-xl font-bold tracking-tight hover:bg-transparent">
+            <a href="/" aria-label="Guia da TI — página inicial"><Compass className="size-5 text-primary" />guiadati<span className="text-primary">.</span></a>
+          </Button>
+          <div className="flex items-center gap-1 xl:order-3">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'}>
+              {dark ? <Sun /> : <Moon />}
+            </Button>
+            <Button asChild variant="outline" size="sm"><a href="/contribuir">Contribuir</a></Button>
+          </div>
+          <nav aria-label="Principal" className="flex w-full flex-wrap items-center gap-1 xl:w-auto">
+            <Button asChild variant={home ? 'secondary' : 'ghost'} size="sm"><a href="/" aria-current={home ? 'page' : undefined}>Home</a></Button>
+            {groups.map(group => (
+              <DropdownMenu key={group.id}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className={group.categories.some(c => c.id === page.category?.id) ? 'bg-accent' : ''}>
+                    {group.name}<ChevronDown className="size-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {group.categories.map(category => (
+                    <DropdownMenuItem asChild key={category.id}>
+                      <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined}>{category.name}</a>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))}
+            <Button asChild variant={path === '/sobre' ? 'secondary' : 'ghost'} size="sm"><a href="/sobre" aria-current={path === '/sobre' ? 'page' : undefined}>Sobre</a></Button>
+          </nav>
+        </div>
+      </header>
+
+      <main id="conteudo" className="mx-auto min-h-[70vh] max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+        {!page.valid ? (
+          <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar para a home</a></Button></EmptyContent></Empty>
+        ) : path === '/sobre' ? (
+          <article className="mx-auto max-w-2xl space-y-6">
+            <h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1>
+            <p className="text-lg leading-relaxed">Um catálogo aberto para encontrar recursos de tecnologia, mantido com a ajuda da comunidade.</p>
+            <p className="leading-relaxed text-muted-foreground">Aqui você encontra caminhos para aprender, se informar, aprofundar conhecimentos, conhecer pessoas, praticar e descobrir oportunidades. O guia vai além da programação: inclui dados, segurança, infraestrutura, redes, hardware, design, produto e inteligência artificial.</p>
+            <Separator />
+            <h2 className="text-xl font-semibold">Como funciona a curadoria</h2>
+            <p className="leading-relaxed text-muted-foreground">Qualquer pessoa pode sugerir um recurso ou corrigir uma informação. As contribuições passam por revisão antes de entrar no catálogo. Você pode consultar a data de atualização de cada cadastro e propor correções.</p>
+            <h2 className="text-xl font-semibold">Aberto e colaborativo</h2>
+            <p className="leading-relaxed text-muted-foreground">O catálogo é público e seu histórico pode ser consultado no GitHub. Não é necessário criar uma conta para explorar o guia.</p>
+            <p className="text-sm text-muted-foreground">Estamos começando. Os cadastros marcados como “Exemplo fictício” demonstram a navegação e não são recomendações de recursos reais.</p>
+            <Button asChild variant="outline"><a href="/contribuir">Contribuir com o guia<ArrowUpRight /></a></Button>
+          </article>
+        ) : path === '/contribuir' ? (
+          <article className="mx-auto max-w-2xl space-y-6">
+            <h1 className="text-3xl font-semibold tracking-tight">Contribuir</h1>
+            <p className="text-muted-foreground">Conhece um recurso ou encontrou uma informação desatualizada? Envie uma sugestão para revisão.</p>
+            {repository ? <div className="flex flex-wrap gap-3"><Button asChild><a href={`${repository}/issues/new?template=recurso.yml`}>Sugerir recurso<ArrowUpRight /></a></Button><Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button></div> : <p>O canal de contribuições está em preparação.</p>}
+          </article>
+        ) : page.resource ? (
+          <article className="mx-auto max-w-3xl space-y-6">
+            <Button asChild variant="ghost" className="-ml-3"><a href={`/${page.category!.route}`}><ArrowLeft />{page.category!.name}</a></Button>
+            <div className="space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<h1 className="text-3xl font-semibold tracking-tight">{page.resource.name}</h1><p className="text-lg text-muted-foreground">{page.resource.summary}</p></div>
+            <p className="whitespace-pre-wrap leading-relaxed">{page.resource.description}</p>
+            <div className="flex flex-wrap gap-2">{page.resource.technologies.map(t => <Badge asChild variant="secondary" key={t}><a href={`/tecnologias/${t}`}>{labels[t] || t}</a></Badge>)}</div>
+            <Separator />
+            <div className="space-y-2 text-sm text-muted-foreground"><p>Idiomas: {page.resource.languages.join(', ')}</p><p>Última atualização: {page.resource.updatedAt.split('-').reverse().join('/')}</p></div>
+            <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Visitar recurso<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
+          </article>
+        ) : (
+          <div className="space-y-8">
+            <section aria-label="Busca" className="space-y-5">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div role="search" className="relative flex-1">
+                  <Search className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground" aria-hidden="true" />
+                  <Input type="search" aria-label="Buscar recursos" placeholder="Buscar por nome, assunto ou tecnologia" value={query} onChange={event => setQuery(event.target.value)} className="h-10 pl-10" />
+                </div>
+                {!page.category && <Select value={type} onValueChange={setType}><SelectTrigger className="h-10 w-full sm:w-60" aria-label="Tipo de recurso"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os tipos</SelectItem>{groups.map(group => <SelectGroup key={group.id}><SelectLabel>{group.name}</SelectLabel>{group.categories.map(c => <SelectItem value={c.id} key={c.id}>{c.name}</SelectItem>)}</SelectGroup>)}</SelectContent></Select>}
+                <Select value={language} onValueChange={setLanguage}><SelectTrigger className="h-10 w-full sm:w-48" aria-label="Idioma dos recursos"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os idiomas</SelectItem>{taxonomy.languages.map(code => <SelectItem value={code} key={code}>{({ 'pt-BR': 'Português', en: 'English', es: 'Español' } as Record<string, string>)[code] || code}</SelectItem>)}</SelectContent></Select>
+              </div>
+            </section>
+
+            {home && !query && type === 'all' && (
+              <section aria-label="Categorias" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {groups.map(group => <Card key={group.id} className="gap-3 shadow-none"><CardHeader><CardTitle><h2>{group.name}</h2></CardTitle></CardHeader><CardContent className="flex flex-wrap gap-x-2 gap-y-1">{group.categories.map(category => <Button asChild key={category.id} variant="ghost" size="sm" className="h-9 justify-start px-2 font-normal"><a href={`/${category.route}`}>{category.name}</a></Button>)}</CardContent></Card>)}
+              </section>
+            )}
+
+            <section aria-label="Resultados" className="space-y-4">
+              <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-medium">{query || type !== 'all' ? 'Resultados' : 'Recursos'}</h2><span className="text-sm text-muted-foreground" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'recurso' : 'recursos'}</span></div>
+              {filtered.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(resource => <ResourceCard key={`${resource.type}/${resource.slug}`} resource={resource} />)}</div> : <Empty className="border"><EmptyHeader><EmptyTitle>{query ? 'Nenhum resultado' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{query ? 'Tente outro nome, assunto ou tecnologia.' : 'Você pode sugerir o primeiro recurso desta categoria.'}</EmptyDescription></EmptyHeader><EmptyContent>{query ? <Button variant="outline" onClick={() => setQuery('')}>Limpar busca</Button> : <Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button>}</EmptyContent></Empty>}
+            </section>
+          </div>
+        )}
+      </main>
+      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><Button asChild variant="link" size="sm" className="text-muted-foreground"><a href="/sobre">Sobre o projeto</a></Button></div></footer>
+    </div>
+  );
 }

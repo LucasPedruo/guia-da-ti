@@ -21,22 +21,78 @@
       "maxLength": 80
     },
     "type": {
-      "enum": ["communities", "courses", "roadmaps", "creators", "youtube"]
+      "enum": [
+        "courses",
+        "platforms",
+        "universities",
+        "bootcamps",
+        "roadmaps",
+        "books",
+        "certifications",
+        "news",
+        "blogs",
+        "newsletters",
+        "podcasts",
+        "youtube",
+        "creators",
+        "articles",
+        "tutorials",
+        "studies",
+        "case-studies",
+        "reports",
+        "communities",
+        "events",
+        "meetups",
+        "conferences",
+        "hackathons",
+        "tools",
+        "open-source",
+        "challenges",
+        "labs",
+        "jobs",
+        "internships",
+        "scholarships",
+        "mentoring",
+        "volunteering"
+      ]
     },
-    "name": { "type": "string", "minLength": 2, "maxLength": 100 },
-    "summary": { "type": "string", "minLength": 10, "maxLength": 240 },
-    "description": { "type": "string", "minLength": 10, "maxLength": 4000 },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 240
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 4000
+    },
     "url": {
       "type": "string",
       "format": "uri",
       "maxLength": 500,
       "pattern": "^https://"
     },
-    "areas": { "$ref": "#/definitions/ids" },
-    "technologies": { "$ref": "#/definitions/optionalIds" },
-    "languages": { "$ref": "#/definitions/ids" },
-    "updatedAt": { "type": "string", "format": "date" },
-    "demo": { "type": "boolean" }
+    "areas": {
+      "$ref": "#/definitions/ids"
+    },
+    "technologies": {
+      "$ref": "#/definitions/optionalIds"
+    },
+    "languages": {
+      "$ref": "#/definitions/ids"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date"
+    },
+    "demo": {
+      "type": "boolean"
+    }
   },
   "definitions": {
     "ids": {
@@ -44,13 +100,19 @@
       "minItems": 1,
       "maxItems": 15,
       "uniqueItems": true,
-      "items": { "type": "string", "maxLength": 40 }
+      "items": {
+        "type": "string",
+        "maxLength": 40
+      }
     },
     "optionalIds": {
       "type": "array",
       "maxItems": 20,
       "uniqueItems": true,
-      "items": { "type": "string", "maxLength": 40 }
+      "items": {
+        "type": "string",
+        "maxLength": 40
+      }
     }
   }
 }

@@ -7,6 +7,7 @@
 - [x] Validação, índice consolidado, testes de dados inválidos e CI.
 - [x] C# com API de consulta e publicação de HTML estático.
 - [x] React, TypeScript, Tailwind e componentes shadcn/ui.
+- [x] Seleção de idioma para filtrar recursos pelos idiomas cadastrados.
 - [x] Home, busca, filtro por tipo, páginas de recurso, área e tecnologia.
 - [x] HTML pré-renderizado, metadados, sitemap, dark mode e contribuição.
 
@@ -21,7 +22,7 @@
 
 - [ ] Schemas e apresentação específicos para cursos, roadmaps, criadores e YouTube.
 - [ ] Filtros avançados e dados estruturados por categoria.
-- [ ] Verificação visual mobile/desktop e navegação por teclado em navegador.
+- [x] Verificação visual mobile/desktop, dropdowns, busca, seleção de categoria, tema escuro e navegação por teclado no Chrome.
 - [ ] Testes de integração HTTP, SEO e mapa.
 
 ## Fase 4 — publicação

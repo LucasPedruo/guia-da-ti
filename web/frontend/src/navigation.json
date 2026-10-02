@@ -1,0 +1,198 @@
+[
+  {
+    "id": "learn",
+    "name": "Aprender",
+    "categories": [
+      {
+        "id": "courses",
+        "route": "cursos",
+        "name": "Cursos"
+      },
+      {
+        "id": "platforms",
+        "route": "plataformas",
+        "name": "Plataformas de cursos"
+      },
+      {
+        "id": "universities",
+        "route": "faculdades",
+        "name": "Faculdades"
+      },
+      {
+        "id": "bootcamps",
+        "route": "bootcamps",
+        "name": "Bootcamps"
+      },
+      {
+        "id": "roadmaps",
+        "route": "roadmaps",
+        "name": "Roadmaps"
+      },
+      {
+        "id": "books",
+        "route": "livros",
+        "name": "Livros"
+      },
+      {
+        "id": "certifications",
+        "route": "certificacoes",
+        "name": "Certificações"
+      }
+    ]
+  },
+  {
+    "id": "inform",
+    "name": "Se informar",
+    "categories": [
+      {
+        "id": "news",
+        "route": "noticias",
+        "name": "Portais de notícias"
+      },
+      {
+        "id": "blogs",
+        "route": "blogs",
+        "name": "Blogs"
+      },
+      {
+        "id": "newsletters",
+        "route": "newsletters",
+        "name": "Newsletters"
+      },
+      {
+        "id": "podcasts",
+        "route": "podcasts",
+        "name": "Podcasts"
+      },
+      {
+        "id": "youtube",
+        "route": "youtube",
+        "name": "YouTube"
+      },
+      {
+        "id": "creators",
+        "route": "criadores",
+        "name": "Criadores"
+      }
+    ]
+  },
+  {
+    "id": "deepen",
+    "name": "Aprofundar",
+    "categories": [
+      {
+        "id": "articles",
+        "route": "artigos",
+        "name": "Artigos"
+      },
+      {
+        "id": "tutorials",
+        "route": "tutoriais",
+        "name": "Tutoriais"
+      },
+      {
+        "id": "studies",
+        "route": "estudos",
+        "name": "Pesquisas e estudos"
+      },
+      {
+        "id": "case-studies",
+        "route": "estudos-de-caso",
+        "name": "Estudos de caso"
+      },
+      {
+        "id": "reports",
+        "route": "relatorios",
+        "name": "Relatórios"
+      }
+    ]
+  },
+  {
+    "id": "connect",
+    "name": "Se conectar",
+    "categories": [
+      {
+        "id": "communities",
+        "route": "comunidades",
+        "name": "Comunidades"
+      },
+      {
+        "id": "events",
+        "route": "eventos",
+        "name": "Eventos"
+      },
+      {
+        "id": "meetups",
+        "route": "meetups",
+        "name": "Meetups"
+      },
+      {
+        "id": "conferences",
+        "route": "conferencias",
+        "name": "Conferências"
+      },
+      {
+        "id": "hackathons",
+        "route": "hackathons",
+        "name": "Hackathons"
+      }
+    ]
+  },
+  {
+    "id": "create",
+    "name": "Criar e praticar",
+    "categories": [
+      {
+        "id": "tools",
+        "route": "ferramentas",
+        "name": "Ferramentas"
+      },
+      {
+        "id": "open-source",
+        "route": "open-source",
+        "name": "Open source"
+      },
+      {
+        "id": "challenges",
+        "route": "desafios",
+        "name": "Desafios"
+      },
+      {
+        "id": "labs",
+        "route": "laboratorios",
+        "name": "Laboratórios"
+      }
+    ]
+  },
+  {
+    "id": "opportunities",
+    "name": "Oportunidades",
+    "categories": [
+      {
+        "id": "jobs",
+        "route": "vagas",
+        "name": "Vagas"
+      },
+      {
+        "id": "internships",
+        "route": "estagios",
+        "name": "Estágios"
+      },
+      {
+        "id": "scholarships",
+        "route": "bolsas",
+        "name": "Bolsas"
+      },
+      {
+        "id": "mentoring",
+        "route": "mentorias",
+        "name": "Mentorias"
+      },
+      {
+        "id": "volunteering",
+        "route": "voluntariado",
+        "name": "Voluntariado"
+      }
+    ]
+  }
+]

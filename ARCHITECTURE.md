@@ -22,7 +22,11 @@ O workflow raiz valida pushes e PRs usando o commit fixado. Execuções agendada
 
 Primeira entrega: `/`, `/explorar`, `/contribuir`, categorias do MVP e páginas individuais; `/areas/:id` e `/tecnologias/:id`. API: `/api/resources` (busca e tipo), `/api/resources/{type}/{slug}` e `/health`. Páginas desconhecidas retornam 404. HTML gerado inclui title, description, canonical, Open Graph, sitemap e robots. Busca interativa filtra o snapshot consolidado, sem milhares de downloads.
 
-MVP completo: comunidades, cursos, roadmaps, criadores e YouTube. A central de comunidades receberá mapa Leaflet carregado sob demanda, clusters e filtros geográficos na fase seguinte. Demais categorias, favoritos, login, avaliações, eventos e oportunidades são posteriores ao MVP.
+A navegação agora oferece 32 categorias em seis grupos: Aprender, Se informar, Aprofundar, Se conectar, Criar e praticar e Oportunidades. Todas usam o schema base; campos específicos, mapa e filtros avançados continuam incrementais. `/sobre` concentra a apresentação do projeto. Favoritos, login e avaliações seguem fora do escopo atual.
+
+Os componentes visuais são instalados do registry oficial shadcn/ui. Apenas o tema e a composição de páginas são locais. Os menus Radix precisam de estilos inline para posicionamento e controle de rolagem; a CSP permite estilos inline, mantendo scripts restritos à origem do site. Conteúdo do catálogo continua renderizado como texto.
+
+Idioma é um filtro global baseado nos idiomas declarados por cada registro. Selecionar inglês restringe os resultados a conteúdo em inglês; isso não implica origem geográfica ou nacionalidade. Localização é outro atributo e não é inferida a partir do idioma.
 
 ## Contribuição
 
