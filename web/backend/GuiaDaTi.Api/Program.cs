@@ -4,7 +4,7 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var catalogPath = Path.GetFullPath(builder.Configuration["CATALOG_PATH"]
-    ?? Path.Combine(builder.Environment.ContentRootPath, "../../..", "database/dist/catalog.json"));
+    ?? Path.Combine(builder.Environment.ContentRootPath, "../../..", "tools/catalog/dist/catalog.json"));
 var json = await File.ReadAllTextAsync(catalogPath);
 var catalog = JsonSerializer.Deserialize<Catalog>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web))
     ?? throw new InvalidDataException("Catálogo ausente. Execute a validação dos dados.");

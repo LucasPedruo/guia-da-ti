@@ -1,57 +1,62 @@
 # Guia da TI
 
-Fundação do diretório colaborativo descrito em [guia.md.txt](guia.md.txt), usando **C#/.NET 10, React, TypeScript, Tailwind e shadcn/ui**.
+Diretório colaborativo com **C#/.NET 10, React, TypeScript, Tailwind e shadcn/ui**.
 
-- `web/`: aplicação, destinada a um repositório próprio.
-- `database/`: dados públicos e validação, destinados a outro repositório.
-- [Arquitetura](ARCHITECTURE.md) e [plano por fases](IMPLEMENTATION_PLAN.md).
+- [guia-da-ti](https://github.com/LucasPedruo/guia-da-ti): aplicação e integração.
+- [guia-da-ti-dados](https://github.com/LucasPedruo/guia-da-ti-dados): catálogo público e contribuições.
 
-Esta entrega implementa a fase inicial. O mapa, campos específicos de cada categoria e filtros avançados estão planejados; os cinco cadastros incluídos são **fictícios**. A publicação inicial reúne aplicação e dados em [LucasPedruo/guia-da-ti](https://github.com/LucasPedruo/guia-da-ti). A separação em dois repositórios fica preparada pela estrutura de pastas. Nenhum deploy foi realizado.
+`database/` é um **submódulo Git**, fixado em um commit do repositório de dados. Envie contribuições de conteúdo para aquele repositório.
 
-## Executar no PowerShell
+## Executar
 
-Pré-requisitos: Node.js 22.12+ e SDK .NET 10.
+Requer Node.js 22.12+ e SDK .NET 10.
 
 ```powershell
-# Na raiz, instala dependências e valida os dados.
-npm --prefix database ci
-npm --prefix database run validate
-npm --prefix database test
+git clone --recurse-submodules https://github.com/LucasPedruo/guia-da-ti.git
+cd guia-da-ti
+# Se o clone já existia:
+git submodule update --init database
+npm --prefix tools/catalog ci
 npm --prefix web/frontend ci
-
-# Compila frontend, gera HTML e prepara os arquivos do servidor.
 ./scripts/build.ps1
-
-# Abre o site completo em http://localhost:5080.
 dotnet run --project web/backend/GuiaDaTi.Api --no-build --urls http://localhost:5080
 ```
 
-Para trabalhar na interface com atualização automática:
+Para desenvolver a interface após gerar o catálogo: `npm --prefix web/frontend run dev`.
+
+## Atualizar os dados
 
 ```powershell
-npm --prefix web/frontend run dev
+./scripts/update-data.ps1
+# Ou escolha uma versão específica:
+./scripts/update-data.ps1 -Ref COMMIT_SHA
 ```
 
-O Vite informa o endereço local. A interface usa o snapshot gerado no build; execute novamente a validação dos dados e reinicie o Vite após alterar cadastros.
+O script interrompe se houver alterações locais no catálogo. Após conferir o build, registre o ponteiro com `git add database` e um commit na aplicação. Para editar o catálogo, crie uma branch dentro de `database/`; o submódulo normalmente fica em detached HEAD.
+
+## Integração automática
+
+O workflow raiz valida pushes e PRs com o commit fixado. A cada hora e por acionamento manual, consulta a main do catálogo, valida os JSONs e produz um artefato com site, servidor, catálogo e SHAs dos dois repositórios. Agendamentos podem atrasar.
+
+Nenhum script do submódulo é executado pelo build do site. `tools/catalog` contém o contrato aceito pela aplicação; mudanças de schema ou taxonomia devem ser coordenadas nos dois repositórios.
+
+O workflow não faz deploy na VPS. Para executar o artefato, configure `CATALOG_PATH` com o caminho absoluto do `catalog.json` incluído e rode o servidor no diretório publicado. A publicação no domínio depende da futura etapa de deploy.
 
 ## Configuração
 
-- `CATALOG_PATH`: caminho absoluto do `catalog.json` validado; deve ser o mesmo para frontend e backend.
-- `SITE_URL`: origem canônica para geração de SEO; padrão `https://guiadati.com` (configuração não significa domínio publicado).
-- `VITE_DATA_REPOSITORY`: URL do repositório real, por exemplo `https://github.com/ORGANIZACAO/REPOSITORIO`. Sem configuração, a página de contribuição explica que a publicação está em preparação.
+- `CATALOG_PATH`: snapshot validado, padrão local `tools/catalog/dist/catalog.json`.
+- `SITE_URL`: origem canônica no build, padrão `https://guiadati.com`.
+- `VITE_DATA_REPOSITORY`: padrão `https://github.com/LucasPedruo/guia-da-ti-dados`.
 
-As variáveis do frontend são lidas durante o build. Nunca coloque segredos em variáveis `VITE_*`.
+Frontend e backend devem usar o mesmo snapshot. Nunca coloque segredos em variáveis `VITE_*`.
 
-## Verificação
+## Verificação e estágio atual
 
 ```powershell
-npm --prefix database run format:check
-npm --prefix database test
+npm --prefix tools/catalog test
 ./scripts/build.ps1
 # Com o servidor em execução:
 ./scripts/smoke.ps1
 ```
 
-Os workflows dentro de `database/.github` e `web/.github` passam a valer quando cada pasta for a raiz de seu próprio repositório. Eles ainda não são executados pelo GitHub Actions nesta estrutura unificada.
-
-Validação local desta entrega: três testes de dados aprovados, formatação conferida, TypeScript e build de produção aprovados, 35 páginas pré-renderizadas e backend compilado sem avisos. O smoke HTTP passou para busca, acentos, páginas, metadados, sitemap, parâmetros inválidos e 404. A inspeção visual em navegador e os testes de interação permanecem na próxima fase; a responsividade e o tema foram implementados, mas ainda precisam dessa revisão visual.
+Home, busca e páginas de categorias, recursos, áreas e tecnologias estão implementadas. Os cadastros ainda são fictícios. Mapa, filtros avançados e revisão visual permanecem no [plano](IMPLEMENTATION_PLAN.md). Veja a [arquitetura](ARCHITECTURE.md) e o [guia original](guia.md.txt).

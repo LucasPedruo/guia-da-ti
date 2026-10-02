@@ -1,7 +1,0 @@
-{
-  "name": "guia-da-ti-database",
-  "private": true,
-  "type": "module",
-  "scripts": { "validate": "node scripts/validate.mjs", "test": "node --test", "format": "prettier --write data taxonomy schemas", "format:check": "prettier --check data taxonomy schemas" },
-  "devDependencies": { "ajv": "^8.17.1", "ajv-formats": "^3.0.1", "prettier": "^3.6.2" }
-}

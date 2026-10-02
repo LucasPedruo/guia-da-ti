@@ -4,7 +4,7 @@
 
 A stack definida é C#/.NET 10, React com TypeScript, Tailwind e shadcn/ui. O guia original está em `guia.md.txt` e foi preservado. Não haverá banco de dados, autenticação ou painel administrativo no MVP.
 
-Dois diretórios representam dois futuros repositórios independentes: `web/` contém a aplicação e `database/` contém dados, schemas, taxonomia e validação. A publicação inicial usa o repositório unificado `LucasPedruo/guia-da-ti`, conforme destino indicado. Os repositórios separados e a licença ainda precisam ser definidos.
+Dois repositórios independentes: `LucasPedruo/guia-da-ti` contém a aplicação e `LucasPedruo/guia-da-ti-dados` contém o catálogo público. A integração é um submódulo Git em `database/`, fixado em um commit reproduzível. A licença ainda precisa ser definida.
 
 ## Dados e segurança
 
@@ -14,9 +14,9 @@ A taxonomia central usa IDs estáveis para áreas, tecnologias, idiomas e tipos.
 
 ## Consumo e deploy
 
-O validador produz `dist/catalog.json`. A aplicação aceita esse snapshot por `CATALOG_PATH`; no desenvolvimento, usa o diretório irmão `database`. O frontend consome o snapshot no build e gera HTML com React para cada rota conhecida. C# carrega o mesmo snapshot uma vez na inicialização, oferece API de leitura e serve os arquivos gerados. Um deploy deve publicar HTML e snapshot juntos, com reinício da aplicação; isso evita divergência entre busca e páginas.
+O validador confiável em `tools/catalog` lê somente os JSONs de `database/data` e produz `tools/catalog/dist/catalog.json`. Schema e taxonomia aceitos ficam na aplicação; mudanças de contrato exigem coordenação nos dois repositórios. O frontend gera HTML no build e C# carrega o mesmo snapshot na inicialização. HTML e catálogo devem ser publicados juntos. `CATALOG_PATH` permite configurar outro snapshot validado.
 
-Sincronização proposta: uma Action agendada no repositório da aplicação faz checkout de um commit aprovado do repositório de dados, valida, gera o catálogo e publica um artefato imutável. Executar somente os scripts confiáveis da aplicação nessa integração, nunca scripts do checkout externo. O SHA dos dados deve ser registrado no deploy. Integração remota e deploy ficam para uma fase posterior, após definir repositórios e VPS.
+O workflow raiz valida pushes e PRs usando o commit fixado. Execuções agendadas a cada hora e manuais consultam a main dos dados e geram um artefato com os SHAs de aplicação e catálogo. Nenhum script do submódulo é executado. O ponteiro versionado não muda automaticamente; `scripts/update-data.ps1` atualiza e valida esse ponteiro localmente. Deploy e proteção obrigatória de branch ainda precisam ser configurados. Agendamentos podem atrasar.
 
 ## Rotas
 
@@ -26,7 +26,7 @@ MVP completo: comunidades, cursos, roadmaps, criadores e YouTube. A central de c
 
 ## Contribuição
 
-Fork → JSON individual → validação automática → PR → revisão humana → merge → build/deploy. O repositório de dados inclui guia, template e CI. Os links de contribuição só apontam ao GitHub quando `VITE_DATA_REPOSITORY` estiver configurado. Até lá, o site mostra instruções locais. Dados de demonstração são explicitamente fictícios e não devem ser publicados como cadastros verificados.
+Fork → JSON individual → PR → validação → revisão humana → merge → build → futuro deploy. O catálogo inclui guia, templates, formulário de sugestão e CI. Os links do site apontam por padrão para `LucasPedruo/guia-da-ti-dados`. Dados de demonstração são fictícios e não devem ser publicados como cadastros verificados.
 
 ## Referências técnicas
 

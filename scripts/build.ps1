@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path $PSScriptRoot -Parent
 Push-Location $taskRoot
 try {
-    npm --prefix database run validate
+    npm --prefix tools/catalog run validate
     if ($LASTEXITCODE -ne 0) { throw 'Falha na validação dos dados.' }
     npm --prefix web/frontend run build
     if ($LASTEXITCODE -ne 0) { throw 'Falha no build do frontend.' }

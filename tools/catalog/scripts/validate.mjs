@@ -28,7 +28,7 @@ export function validateResource(resource, file, seen = new Set()) {
   return resource;
 }
 
-export async function buildCatalog(dataRoot = resolve(root, 'data')) {
+export async function buildCatalog(dataRoot = resolve(root, '../../database/data')) {
   const resources = [], seen = new Set();
   for (const dir of await readdir(dataRoot, { withFileTypes: true })) {
     if (!dir.isDirectory() || !taxonomy.types.includes(dir.name)) throw new Error(`Categoria inválida: ${dir.name}`);

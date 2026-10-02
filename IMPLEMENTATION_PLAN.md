@@ -2,7 +2,7 @@
 
 ## Fase 1 — fundação e primeira navegação
 
-- [x] Separação local da aplicação e dos dados.
+- [x] Repositórios separados de aplicação e dados, integrados por submódulo.
 - [x] Schema base, taxonomia e registros de demonstração.
 - [x] Validação, índice consolidado, testes de dados inválidos e CI.
 - [x] C# com API de consulta e publicação de HTML estático.
@@ -27,7 +27,8 @@
 ## Fase 4 — publicação
 
 - [ ] Definir organização, repositórios, licença e domínio canônico.
-- [ ] Sincronização de dados aprovados por SHA, artefatos e rollback.
+- [x] Build agendado do catálogo da main, artefatos com SHAs e atualização local por versão.
+- [ ] Deploy dos artefatos e rollback na VPS.
 - [ ] Container, VPS, TLS e validação no domínio público.
 
 ## Depois do MVP

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { categories, labels, normalize, pageInfo, resourcePath, resources, taxonomy, type Resource } from './catalog';
 
 const icons = [Users, BookOpen, Route, Sparkles, Video];
-const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || '';
+const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/LucasPedruo/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
 
 function ResourceCard({ resource }: { resource: Resource }) {
