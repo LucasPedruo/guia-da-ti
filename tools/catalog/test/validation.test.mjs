@@ -21,3 +21,10 @@ test("accepts all supported resource types and rejects unknown types", () => {
   }
   assert.throws(() => validateResource({ ...sample, type: "unknown" }, "unknown/exemplo.json"));
 });
+
+test("accepts ISO country tags and rejects malformed country tags", () => {
+  assert.doesNotThrow(() => validateResource({ ...sample, countries: ["US", "CA"] }, "courses/exemplo.json"));
+  for (const countries of [["us"], ["USA"], ["U1"], ["US", "US"], Array(21).fill("US")]) {
+    assert.throws(() => validateResource({ ...sample, countries }, "courses/exemplo.json"));
+  }
+});

@@ -26,7 +26,7 @@ app.MapGet("/api/resources", (string? q, string? type, int? page, int? pageSize)
     if (q?.Length > 200 || page is < 1 || pageSize is < 1 or > 100) return Results.BadRequest(new { error = "Parâmetros inválidos." });
     var tokens = Normalize(q ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
     var filtered = catalog.Resources.Where(r => (string.IsNullOrEmpty(type) || r.Type == type)
-        && tokens.All(token => Normalize(string.Join(' ', new[] { r.Name, r.Summary, r.Description }.Concat(r.Areas).Concat(r.Technologies).Concat(r.Languages))).Contains(token))).ToArray();
+        && tokens.All(token => Normalize(string.Join(' ', new[] { r.Name, r.Summary, r.Description }.Concat(r.Areas).Concat(r.Technologies).Concat(r.Languages).Concat(r.Countries ?? []))).Contains(token))).ToArray();
     var current = page ?? 1; var size = pageSize ?? 24;
     return Results.Ok(new { total = filtered.Length, page = current, pageSize = size, items = filtered.Skip((int)Math.Min((long)(current - 1) * size, int.MaxValue)).Take(size) });
 });
@@ -46,4 +46,4 @@ static string Normalize(string value) => string.Concat(value.Normalize(Normaliza
 
 record Catalog(int Version, Resource[] Resources);
 record Resource(string Slug, string Type, string Name, string Summary, string Description, string Url,
-    string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo);
+    string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo, string[]? Countries = null);

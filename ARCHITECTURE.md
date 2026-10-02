@@ -26,7 +26,7 @@ A navegação agora oferece 32 categorias em seis grupos: Aprender, Se informar,
 
 Os componentes visuais são instalados do registry oficial shadcn/ui. Apenas o tema e a composição de páginas são locais. Os menus Radix precisam de estilos inline para posicionamento e controle de rolagem; a CSP permite estilos inline, mantendo scripts restritos à origem do site. Conteúdo do catálogo continua renderizado como texto.
 
-Idioma é um filtro global baseado nos idiomas declarados por cada registro. Selecionar inglês restringe os resultados a conteúdo em inglês; isso não implica origem geográfica ou nacionalidade. Localização é outro atributo e não é inferida a partir do idioma.
+Idioma é um filtro global baseado nos idiomas declarados por cada registro. A opção English (United States) exige tanto o idioma inglês (`en`) quanto o país `US` explicitamente marcado no cadastro. O campo opcional `countries` usa códigos ISO 3166-1 alpha-2 e indica o país de contexto/público do recurso. A aplicação nunca infere país ou nacionalidade pelo idioma.
 
 ## Contribuição
 

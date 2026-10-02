@@ -30,6 +30,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
       </CardHeader>
       <CardFooter className="mt-auto flex flex-wrap gap-2">
         {resource.areas.map(area => <Badge variant="outline" key={area}>{labels[area] || area}</Badge>)}
+        {resource.countries?.map(country => <Badge variant="outline" key={country}>{labels[country] || country}</Badge>)}
       </CardFooter>
     </Card>
   );
@@ -40,7 +41,7 @@ export function App({ path }: { path: string }) {
   const home = path === '/';
   const [query, setQuery] = useState('');
   const [type, setType] = useState(page.category?.id || 'all');
-  const [language, setLanguage] = useState('all');
+  const [locale, setLocale] = useState('all');
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -56,9 +57,10 @@ export function App({ path }: { path: string }) {
   }
 
   const tokens = normalize(query).trim().split(/\s+/).filter(Boolean);
+  const selectedLocale: { language: string; country?: string } = locale === 'en-US' ? { language: 'en', country: 'US' } : { language: locale };
   const filtered = resources.filter(r =>
     (type === 'all' || r.type === type) &&
-    (language === 'all' || r.languages.includes(language)) &&
+    (locale === 'all' || (r.languages.includes(selectedLocale.language) && (!selectedLocale.country || Boolean(r.countries?.includes(selectedLocale.country))))) &&
     (!page.area || r.areas.includes(page.area)) &&
     (!page.technology || r.technologies.includes(page.technology)) &&
     tokens.every(token => normalize([r.name, r.summary, r.description, ...r.areas, ...r.technologies, ...r.languages].join(' ')).includes(token))
@@ -145,7 +147,7 @@ export function App({ path }: { path: string }) {
                   <Input type="search" aria-label="Buscar recursos" placeholder="Buscar por nome, assunto ou tecnologia" value={query} onChange={event => setQuery(event.target.value)} className="h-10 pl-10" />
                 </div>
                 {!page.category && <Select value={type} onValueChange={setType}><SelectTrigger className="h-10 w-full sm:w-60" aria-label="Tipo de recurso"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os tipos</SelectItem>{groups.map(group => <SelectGroup key={group.id}><SelectLabel>{group.name}</SelectLabel>{group.categories.map(c => <SelectItem value={c.id} key={c.id}>{c.name}</SelectItem>)}</SelectGroup>)}</SelectContent></Select>}
-                <Select value={language} onValueChange={setLanguage}><SelectTrigger className="h-10 w-full sm:w-48" aria-label="Idioma dos recursos"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os idiomas</SelectItem>{taxonomy.languages.map(code => <SelectItem value={code} key={code}>{({ 'pt-BR': 'Português', en: 'English', es: 'Español' } as Record<string, string>)[code] || code}</SelectItem>)}</SelectContent></Select>
+                <Select value={locale} onValueChange={setLocale}><SelectTrigger className="h-10 w-full sm:w-56" aria-label="Idioma e região dos recursos"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os idiomas</SelectItem><SelectItem value="pt-BR">Português</SelectItem><SelectItem value="en-US">English (United States)</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent></Select>
               </div>
             </section>
 

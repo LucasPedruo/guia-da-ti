@@ -6,6 +6,8 @@ $search = Invoke-RestMethod "$BaseUrl/api/resources?q=dados&type=roadmaps"
 if ($search.total -ne 1 -or $search.items[0].slug -ne 'roadmap-exemplo') { throw 'Busca falhou.' }
 $accent = Invoke-RestMethod "$BaseUrl/api/resources?q=seguran%C3%A7a"
 if ($accent.total -ne 1) { throw 'Busca com acento falhou.' }
+$creator = Invoke-RestMethod "$BaseUrl/api/resources/creators/criador-exemplo"
+if ($creator.countries -notcontains 'US' -or $creator.languages -notcontains 'en') { throw 'Idioma/região do cadastro falhou.' }
 foreach ($route in @('/', '/explorar/', '/comunidades/', '/cursos/curso-exemplo/', '/areas/dados/', '/tecnologias/react/')) {
     $response = Invoke-WebRequest "$BaseUrl$route" -UseBasicParsing
     if ($response.Content -notmatch '<h1' -or $response.Content -notmatch 'rel="canonical"') { throw "HTML/SEO ausente: $route" }

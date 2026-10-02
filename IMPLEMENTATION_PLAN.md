@@ -7,7 +7,7 @@
 - [x] Validação, índice consolidado, testes de dados inválidos e CI.
 - [x] C# com API de consulta e publicação de HTML estático.
 - [x] React, TypeScript, Tailwind e componentes shadcn/ui.
-- [x] Seleção de idioma para filtrar recursos pelos idiomas cadastrados.
+- [x] Filtro por idioma e região usando apenas metadados explícitos no cadastro.
 - [x] Home, busca, filtro por tipo, páginas de recurso, área e tecnologia.
 - [x] HTML pré-renderizado, metadados, sitemap, dark mode e contribuição.
 
