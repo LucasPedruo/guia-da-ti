@@ -14,6 +14,8 @@ builder.Services.AddHttpClient("discussions", client => client.Timeout = TimeSpa
 builder.Services.AddSingleton<DiscussionsClient>();
 builder.Services.AddSingleton<DiscussionWriter>();
 builder.Services.AddSingleton<ContributorsClient>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<CommunityActivity>();
 builder.AddCommunityAuth();
 var app = builder.Build();
 app.Use(async (context, next) => {
@@ -31,7 +33,9 @@ app.MapCommunityAuth();
 app.MapDiscussionWrites();
 app.MapDiscussions();
 app.MapContributors();
-app.MapGet("/contribuidores", () => Results.Redirect("/sobre#contribuidores", permanent: true));
+app.MapCommunityActivity();
+app.MapGet("/contribuidores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
+app.MapGet("/mantenedores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
 app.MapGet("/health", () => Results.Ok(new { status = "ok", resources = catalog.Resources.Length }));
 app.MapGet("/api/resources", (string? q, string? type, int? page, int? pageSize) => {
     if (q?.Length > 200 || page is < 1 || pageSize is < 1 or > 100) return Results.BadRequest(new { error = "Parâmetros inválidos." });

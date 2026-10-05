@@ -33,7 +33,7 @@ const details: Record<string, { icon: LucideIcon; description: string }> = {
   scholarships: { icon: BookOpen, description: 'Consulte programas de bolsas de estudo.' },
   mentoring: { icon: Users, description: 'Encontre programas de mentoria.' },
   volunteering: { icon: HeartHandshake, description: 'Descubra projetos que buscam voluntários.' },
-  about: { icon: Info, description: 'Conheça o Guia e seus contribuidores.' },
+  about: { icon: Info, description: 'Conheça o Guia e seus mantenedores.' },
   supporters: { icon: HeartHandshake, description: 'Empresas que apoiam a comunidade.' },
 };
 

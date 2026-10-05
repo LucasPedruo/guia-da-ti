@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Discussions } from './Discussions';
 import { Community } from './Community';
+import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
+import { Maintainers, MaintainersProvider } from './Maintainers';
 import { NavigationCard } from './NavigationCard';
 import { BrandMark } from './BrandMark';
 import { Motion } from './Motion';
@@ -73,7 +75,7 @@ export function App({ path }: { path: string }) {
   );
 
   return (
-    <Motion><Participation><div className="flex min-h-dvh flex-col">
+    <Motion><Participation><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
       <Button asChild className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
         <a href="#conteudo">Pular para o conteúdo</a>
       </Button>
@@ -154,13 +156,14 @@ export function App({ path }: { path: string }) {
         {!page.valid ? (
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar ao início</a></Button></EmptyContent></Empty>
         ) : home ? (
-          <div className="space-y-8"><Discussions /><div className="section-divider" aria-hidden="true" /><Community area="supporters" preview /></div>
+          <Discussions />
         ) : path === '/apoiadores' ? (
           <Community area="supporters" />
         ) : path === '/sobre' ? (
-          <article className="mx-auto max-w-2xl space-y-6">
+          <article className="mx-auto max-w-4xl space-y-6 [&>p]:max-w-2xl">
             <h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1>
             <p className="text-lg leading-relaxed">Um guia de links para sites, conteúdos e oportunidades de tecnologia, mantido pela comunidade.</p>
+            <CommunityMetrics />
             <p className="leading-relaxed text-muted-foreground">Você encontra indicações organizadas por categoria e acessa o conteúdo no site de origem. Cursos, tutoriais, artigos e atividades ficam nesses sites externos.</p>
             <p className="leading-relaxed text-muted-foreground">As indicações vão além da programação e incluem dados, segurança, infraestrutura, redes, hardware, design, produto e inteligência artificial.</p>
             <h2 className="text-xl font-semibold">Converse no fórum</h2>
@@ -173,7 +176,7 @@ export function App({ path }: { path: string }) {
             <p className="text-sm text-muted-foreground">Estamos começando. Os cadastros marcados como “Exemplo fictício” demonstram a navegação e não são recomendações de recursos reais.</p>
             <Button asChild variant="outline"><a href="/contribuir">Contribuir com o guia<ArrowUpRight /></a></Button>
             <Separator />
-            <Community area="contributors" embedded />
+            <Maintainers />
           </article>
         ) : path === '/contribuir' ? (
           <article className="mx-auto max-w-2xl space-y-6">
@@ -218,9 +221,10 @@ export function App({ path }: { path: string }) {
         <div className="section-divider" aria-hidden="true" />
         <div className="site-frame mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-6 text-sm text-muted-foreground sm:px-6">
           <span>Feito com <span className="text-primary" aria-label="amor">&lt;3</span> por <a href="https://fulldev.com.br" target="_blank" rel="noopener noreferrer" className="rounded-sm font-medium hover:text-primary focus-visible:outline-2 focus-visible:outline-ring">FullDev</a></span>
-          <nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }].map(link => <Button asChild key={link.href} variant="link" size="sm"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav>
+          <ActiveUsers />
+          <Maintainers compact />
         </div>
       </footer>
-    </div></Participation></Motion>
+    </div></MaintainersProvider></CommunityMetricsProvider></Participation></Motion>
   );
 }

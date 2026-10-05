@@ -43,6 +43,12 @@ try {
   await installDiscussionFixtures(send);
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
+  assert.equal(await evaluate(`!!document.querySelector('main [aria-label="Patrocínio master"], main #apoiadores')`), false);
+  assert.equal(await evaluate(`document.querySelectorAll('footer a[href="/sobre"], footer a[href="/apoiadores"]').length`), 0);
+  await waitFor(`document.querySelector('footer').textContent.includes('12 usuários ativos')`);
+  await waitFor(`!!document.querySelector('footer [aria-label="Mantenedores"] a img')`);
+  await hover(`document.querySelector('footer [aria-label="Mantenedores"] a')`);
+  await waitFor(`document.querySelector('[role="tooltip"]')?.textContent.includes('5 contribuições no Guia')`);
   assert.equal(await evaluate(`document.querySelector('main h1').textContent`), 'Fórum do Guia da TI');
   assert.equal(await evaluate(`document.querySelector('main h1').getBoundingClientRect().height <= 1`), true);
   assert.equal(await evaluate(`document.querySelectorAll('main [aria-label="Categorias"], main [aria-label="Busca"], main [aria-label="Resultados"]').length`), 0);
@@ -95,6 +101,21 @@ try {
   assert.equal(await evaluate(`!!document.querySelector('footer a[href="https://fulldev.com.br"]')`), true);
   await navigate('/sobre/');
   assert.equal(await evaluate(`document.querySelector('h1').textContent`), 'Sobre o Guia da TI');
+  await waitFor(`document.querySelector('[aria-label="O Guia em números"] dd').textContent === '12'`);
+  await waitFor(`!!document.querySelector('#mantenedores a img')`);
+  await hover(`document.querySelector('#mantenedores a')`);
+  await waitFor(`document.querySelector('[role="tooltip"]')?.textContent.includes('ana')`);
+  assert.equal(await evaluate(`document.querySelectorAll('[aria-label="O Guia em números"] dt').length`), 4);
+  assert.equal(await evaluate(`document.querySelectorAll('[aria-label="O Guia em números"] dd')[2].textContent`), '0');
+  for (const width of [320, 390, 768, 1440]) {
+    await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
+    assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, `About overflow at ${width}px`);
+  }
+  await evaluate(`sessionStorage.setItem('activityTestMode', 'error')`);
+  await navigate('/sobre/');
+  await waitFor(`document.querySelector('footer').textContent.includes('Atividade indisponível')`);
+  assert.equal(await evaluate(`document.querySelector('[aria-label="O Guia em números"] dd').textContent`), '—');
+  await evaluate(`sessionStorage.removeItem('activityTestMode')`);
   await navigate('/');
   await click(`document.querySelector('[aria-label="Ativar tema escuro"]')`);
   await waitFor(`document.documentElement.classList.contains('dark')`);

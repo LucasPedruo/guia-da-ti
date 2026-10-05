@@ -14,6 +14,7 @@ static class ContributorChecks
         var people = await client.ListAsync(default);
         Assert(people.Length == 2, "Deduplicate people and omit bots");
         Assert(people[0].Name == "ana" && people[0].Contributions == 5, "Sum contributions across repositories");
+        Assert(people[0].AvatarUrl == "https://avatars.githubusercontent.com/u/1?s=80", "Avatar derived from verified GitHub user ID");
         Assert(people[1].Name == "bia" && people[1].Url == "https://github.com/bia", "Follow next-page link");
         var count = handler.Calls;
         await client.ListAsync(default);

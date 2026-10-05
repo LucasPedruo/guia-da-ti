@@ -7,7 +7,9 @@ export async function installDiscussionFixtures(send) {
     window.discussionRequests = [];
     window.fetch = async (input, options) => {
       const url = new URL(String(input), location.origin);
-      if (url.pathname === '/api/contributors') return Response.json({ items: [{ name: 'ana', url: 'https://github.com/ana', contributions: 5 }] });
+      if (url.pathname === '/api/community/activity') return sessionStorage.getItem('activityTestMode') === 'error'
+        ? new Response('{}', { status: 503 }) : Response.json({ activeUsers: 12, windowMinutes: 5 });
+      if (url.pathname === '/api/contributors') return Response.json({ items: [{ name: 'ana', url: 'https://github.com/ana', avatarUrl: location.origin + '/favicon.svg', contributions: 5 }] });
       if (url.pathname === '/api/auth/session') return Response.json({ enabled: !!sessionStorage.getItem('participationMode'), login: ['member', 'error'].includes(sessionStorage.getItem('participationMode')) ? 'ana' : null, avatarUrl: location.origin + '/favicon.svg', csrfToken: 'test-csrf' });
       if (url.pathname === '/api/discussions/publish') {
         window.lastPublication = JSON.parse(options.body);
@@ -54,7 +56,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   assert.equal(await evaluate(`!!document.querySelector('[aria-label="Publicidade"]').parentElement.previousElementSibling?.querySelector('article') && !!document.querySelector('[aria-label="Publicidade"]').parentElement.nextElementSibling?.querySelector('article')`), true);
   await mode('ready');
   await navigate('/');
-  assert.equal(await evaluate(`!!document.querySelector('main [aria-label="Contribuidores"]')`), false);
+  assert.equal(await evaluate(`!!document.querySelector('main [aria-label="Mantenedores"]')`), false);
   await waitFor(`!!document.querySelector('[aria-label="Conversas"]')`);
   await click(`document.querySelector('#discussion-search')`);
   await send('Input.insertText', { text: 'erro js' });
@@ -203,8 +205,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
     await navigate(`${path}/`);
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
     if (path === '/apoiadores') assert.equal(await evaluate(`!!document.querySelector('main a[href="https://www.hostgator.com.br/"]')`), true);
-    if (path === '/sobre') { await waitFor(`!!document.querySelector('#contribuidores a[href="https://github.com/ana"]')`); assert.equal(await evaluate(`document.querySelector('#contribuidores').textContent.includes('5 contribuições')`), true); assert.equal(await evaluate(`document.querySelector('#contribuidores h2').textContent`), 'Contribuidores'); }
-    if (['/sobre', '/apoiadores'].includes(path)) assert.equal(await evaluate(`!!document.querySelector('a[href="${path}"][aria-current="page"]')`), true);
+    if (path === '/sobre') { await waitFor(`!!document.querySelector('#mantenedores a[href="https://github.com/ana"] img')`); assert.equal(await evaluate(`document.querySelector('#mantenedores h2').textContent`), 'Mantenedores'); }
     if (['/sobre', '/apoiadores', '/contribuidores'].includes(path)) assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()==='Projeto')?.getAttribute('data-current')`), 'true');
   }
 }

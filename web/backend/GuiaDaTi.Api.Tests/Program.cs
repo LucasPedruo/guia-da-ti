@@ -66,6 +66,7 @@ using var invalid = new DiscussionsClient(new FakeFactory(handler), settings);
 Check(!invalid.Configured, "Reject malformed repository");
 await ParticipationChecks.Run();
 await ContributorChecks.Run();
+ActivityChecks.Run();
 Console.WriteLine("Discussions OK: filtering, cursors, cache, thread, replies, moderation, public-only data, errors and configuration.");
 
 static void Check(bool condition, string name) { if (!condition) throw new Exception(name); }

@@ -38,7 +38,7 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
                         if (!Regex.IsMatch(login, @"^[A-Za-z0-9][A-Za-z0-9-]*$")) continue;
                         var id = item.GetProperty("id").GetInt64();
                         var count = item.GetProperty("contributions").GetInt32();
-                        people[id] = new(login, $"https://github.com/{login}", count + (people.TryGetValue(id, out var previous) ? previous.Contributions : 0));
+                        people[id] = new(login, $"https://github.com/{login}", count + (people.TryGetValue(id, out var previous) ? previous.Contributions : 0), $"https://avatars.githubusercontent.com/u/{id}?s=80");
                     }
                     if (!response.Headers.TryGetValues("Link", out var links) || !links.Any(link => link.Contains("rel=\"next\""))) break;
                 }
@@ -64,13 +64,13 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
     }
     public void Dispose() => gate.Dispose();
 }
-public record Contributor(string Name, string Url, int Contributions);
+public record Contributor(string Name, string Url, int Contributions, string AvatarUrl = "");
 public static class ContributorEndpoints
 {
     public static void MapContributors(this WebApplication app) => app.MapGet("/api/contributors", async (ContributorsClient client, CancellationToken cancellation) => {
         try { return Results.Ok(new { items = await client.ListAsync(cancellation) }); }
         catch (Exception error) when (error is HttpRequestException or JsonException or DiscussionsUnavailableException or InvalidOperationException or KeyNotFoundException or OperationCanceledException) {
-            return Results.Json(new { error = "Não foi possível carregar os contribuidores do GitHub. Tente novamente." }, statusCode: 503);
+            return Results.Json(new { error = "Não foi possível carregar os mantenedores do GitHub. Tente novamente." }, statusCode: 503);
         }
     });
 }
