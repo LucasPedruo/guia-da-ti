@@ -1,6 +1,9 @@
 export function BrandMark() {
-  return <svg viewBox="0 0 32 32" className="size-8 shrink-0 text-primary" fill="none" aria-hidden="true">
-    <rect x="2" y="2" width="28" height="28" rx="4" stroke="currentColor" strokeWidth="4" />
-    <text x="7" y="23" fill="currentColor" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="19">G.</text>
+  return <svg viewBox="0 0 32 32" className="size-7 shrink-0 text-foreground" fill="none" aria-hidden="true">
+    <rect x="3" y="3" width="26" height="26" rx="4" fill="currentColor" />
+    <g fill="var(--background)">
+      <path d="M19 12.5A5.5 5.5 0 1 0 19 20v-4h-4" fill="none" stroke="var(--background)" strokeWidth="3" strokeLinecap="square" strokeLinejoin="round" />
+      <circle cx="23.5" cy="22" r="1.5" />
+    </g>
   </svg>;
 }

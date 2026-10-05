@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <style>svg{color:#cc3300}@media(prefers-color-scheme:dark){svg{color:#ff8a65}}</style>
-  <rect x="2" y="2" width="28" height="28" rx="4" stroke="currentColor" stroke-width="4"/>
-  <text x="7" y="23" fill="currentColor" font-family="Arial, sans-serif" font-weight="700" font-size="19">G.</text>
+  <rect x="3" y="3" width="26" height="26" rx="4" fill="#f5f3ef"/>
+  <g fill="#0d0d0d">
+    <path d="M19 12.5A5.5 5.5 0 1 0 19 20v-4h-4" fill="none" stroke="#0d0d0d" stroke-width="3" stroke-linecap="square" stroke-linejoin="round"/>
+    <circle cx="23.5" cy="22" r="1.5"/>
+  </g>
 </svg>
