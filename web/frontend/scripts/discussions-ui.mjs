@@ -40,6 +40,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   const button = label => `[...document.querySelectorAll('main button')].find(e=>e.textContent.trim()===${JSON.stringify(label)})`;
   await mode('ready');
   await navigate('/');
+  assert.equal(await evaluate(`!!document.querySelector('main [aria-label="Contribuidores"]')`), false);
   await waitFor(`!!document.querySelector('[aria-label="Conversas"]')`);
   await click(`document.querySelector('#discussion-search')`);
   await send('Input.insertText', { text: 'erro js' });
@@ -109,7 +110,10 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await evaluate(`sessionStorage.setItem('participationMode', 'guest')`);
   await navigate('/');
   await waitFor(`document.querySelector('a[href^="/api/auth/login"]') !== null`);
-  assert.equal(await evaluate(`!!${button('Novo tópico')}`), false);
+  await waitFor(`!!${button('Novo tópico')}`);
+  await click(button('Novo tópico'));
+  await waitFor(`document.querySelector('main').textContent.includes('Entre com sua conta do GitHub para publicar sua mensagem aqui no Guia.')`);
+  assert.equal(await evaluate(`document.querySelectorAll('textarea').length`), 0);
   await evaluate(`sessionStorage.setItem('participationMode', 'member')`);
   await navigate('/');
   await waitFor(`!!${button('Novo tópico')}`);
@@ -150,11 +154,11 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await navigate('/?conversa=7');
   await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
   assert.equal(await evaluate(`!!${button('Comentar')} || !!${button('Responder')}`), false);
-  for (const [path, title] of [['/apoiadores', 'Empresas apoiadoras'], ['/contribuidores', 'Contribuidores'], ['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
+  for (const [path, title] of [['/apoiadores', 'Empresas apoiadoras'], ['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
     await navigate(`${path}/`);
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
     if (path === '/apoiadores') assert.equal(await evaluate(`!!document.querySelector('main a[href="https://www.hostgator.com.br/"]')`), true);
-    if (path === '/contribuidores') { await waitFor(`!!document.querySelector('main a[href="https://github.com/ana"]')`); assert.equal(await evaluate(`document.querySelector('main').textContent.includes('5 contribuições')`), true); }
+    if (path === '/sobre') { await waitFor(`!!document.querySelector('#contribuidores a[href="https://github.com/ana"]')`); assert.equal(await evaluate(`document.querySelector('#contribuidores').textContent.includes('5 contribuições')`), true); assert.equal(await evaluate(`document.querySelector('#contribuidores h2').textContent`), 'Contribuidores'); }
     assert.equal(await evaluate(`!!document.querySelector('a[href="${path}"][aria-current="page"]')`), true);
     if (['/sobre', '/apoiadores', '/contribuidores'].includes(path)) assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()==='Projeto')?.getAttribute('data-current')`), 'true');
   }

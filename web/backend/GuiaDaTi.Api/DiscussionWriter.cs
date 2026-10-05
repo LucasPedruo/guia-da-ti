@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Antiforgery;
 
 public sealed class DiscussionWriter(IHttpClientFactory clients, IConfiguration configuration)
 {
-    private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "LucasPedruo/guia-da-ti-dados";
+    private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados";
     public async Task<int> PublishAsync(string token, DiscussionDraft draft, CancellationToken cancellation)
     {
         if (!Regex.IsMatch(repository, @"^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+$")) throw new DiscussionsUnavailableException();

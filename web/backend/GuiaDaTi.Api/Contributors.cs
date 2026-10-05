@@ -8,8 +8,8 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
     private Contributor[]? cached;
     private DateTimeOffset expires;
     private readonly string[] repositories = new[] {
-        configuration["GITHUB_APP_REPOSITORY"] ?? "LucasPedruo/guia-da-ti",
-        configuration["DISCUSSIONS_REPOSITORY"] ?? "LucasPedruo/guia-da-ti-dados"
+        configuration["GITHUB_APP_REPOSITORY"] ?? "guia-da-ti/guia-da-ti",
+        configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados"
     }.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
     public async Task<Contributor[]> ListAsync(CancellationToken cancellation)
@@ -18,12 +18,15 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
         try {
             if (cached is not null && expires > DateTimeOffset.UtcNow) return cached;
             var people = new Dictionary<long, Contributor>();
+            var publicRepositories = 0;
             foreach (var repository in repositories) {
                 if (!Regex.IsMatch(repository, @"^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+$")) throw new DiscussionsUnavailableException();
                 // A server credential must never make private repository membership public.
-                using var metadataResponse = await GetAsync($"repos/{repository}", cancellation);
+                using var metadataResponse = await GetAsync($"repos/{repository}", cancellation, allowNotFound: true);
+                if (metadataResponse.StatusCode == System.Net.HttpStatusCode.NotFound) continue;
                 using var metadata = JsonDocument.Parse(await metadataResponse.Content.ReadAsStringAsync(cancellation));
-                if (metadata.RootElement.GetProperty("private").GetBoolean()) throw new DiscussionsUnavailableException();
+                if (metadata.RootElement.GetProperty("private").GetBoolean()) continue;
+                publicRepositories++;
                 for (var page = 1; ; page++) {
                     if (page > 100) throw new DiscussionsUnavailableException();
                     using var response = await GetAsync($"repos/{repository}/contributors?per_page=100&page={page}", cancellation);
@@ -40,13 +43,14 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
                     if (!response.Headers.TryGetValues("Link", out var links) || !links.Any(link => link.Contains("rel=\"next\""))) break;
                 }
             }
+            if (publicRepositories == 0) throw new DiscussionsUnavailableException();
             cached = people.Values.OrderByDescending(person => person.Contributions).ThenBy(person => person.Name, StringComparer.OrdinalIgnoreCase).ToArray();
             expires = DateTimeOffset.UtcNow.AddHours(1);
             return cached;
         }
         finally { gate.Release(); }
     }
-    private async Task<HttpResponseMessage> GetAsync(string path, CancellationToken cancellation)
+    private async Task<HttpResponseMessage> GetAsync(string path, CancellationToken cancellation, bool allowNotFound = false)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/{path}");
         request.Headers.UserAgent.ParseAdd("GuiaDaTi/1.0");
@@ -55,7 +59,7 @@ public sealed class ContributorsClient(IHttpClientFactory clients, IConfiguratio
         if (!string.IsNullOrWhiteSpace(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var client = clients.CreateClient("discussions");
         var response = await client.SendAsync(request, cancellation);
-        if (!response.IsSuccessStatusCode) { response.Dispose(); throw new DiscussionsUnavailableException(); }
+        if (!response.IsSuccessStatusCode && !(allowNotFound && response.StatusCode == System.Net.HttpStatusCode.NotFound)) { response.Dispose(); throw new DiscussionsUnavailableException(); }
         return response;
     }
     public void Dispose() => gate.Dispose();

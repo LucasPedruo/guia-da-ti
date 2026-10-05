@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { categories, groups, labels, normalize, pageInfo, resourcePath, resources, type Resource } from './catalog';
 
-const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/LucasPedruo/guia-da-ti-dados';
+const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/guia-da-ti/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
 
 function ResourceCard({ resource }: { resource: Resource }) {
@@ -107,9 +107,9 @@ export function App({ path }: { path: string }) {
                 </NavigationMenuItem>
               ))}
               <NavigationMenuItem value="projeto">
-                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores', '/contribuidores'].includes(path)} className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary" onPointerMove={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()}>Projeto</NavigationMenuTrigger>
+                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores'].includes(path)} className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary" onPointerMove={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()}>Projeto</NavigationMenuTrigger>
                 <NavigationMenuContent onPointerEnter={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()} className="z-50 !w-64">
-                  {[{ name: 'Sobre', href: '/sobre' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }, { name: 'Contribuidores', href: '/contribuidores' }].map(link => <NavigationMenuLink key={link.href} asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></NavigationMenuLink>)}
+                  {[{ name: 'Sobre', href: '/sobre' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <NavigationMenuLink key={link.href} asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></NavigationMenuLink>)}
                 </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
@@ -148,7 +148,7 @@ export function App({ path }: { path: string }) {
                   </Accordion.Root>
                   <Separator />
                   <div className="space-y-1">
-                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }, { name: 'Contribuidores', href: '/contribuidores' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
+                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
                   </div>
                 </nav>
               </SheetContent>
@@ -162,9 +162,9 @@ export function App({ path }: { path: string }) {
         {!page.valid ? (
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar para a home</a></Button></EmptyContent></Empty>
         ) : home ? (
-          <div className="space-y-12"><Discussions /><Separator /><Community area="supporters" preview /><Community area="contributors" preview /></div>
-        ) : path === '/apoiadores' || path === '/contribuidores' ? (
-          <Community area={path === '/apoiadores' ? 'supporters' : 'contributors'} />
+          <div className="space-y-12"><Discussions /><Separator /><Community area="supporters" preview /></div>
+        ) : path === '/apoiadores' ? (
+          <Community area="supporters" />
         ) : path === '/sobre' ? (
           <article className="mx-auto max-w-2xl space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1>
@@ -177,6 +177,8 @@ export function App({ path }: { path: string }) {
             <p className="leading-relaxed text-muted-foreground">O catálogo é público e seu histórico pode ser consultado no GitHub. Não é necessário criar uma conta para explorar o guia.</p>
             <p className="text-sm text-muted-foreground">Estamos começando. Os cadastros marcados como “Exemplo fictício” demonstram a navegação e não são recomendações de recursos reais.</p>
             <Button asChild variant="outline"><a href="/contribuir">Contribuir com o guia<ArrowUpRight /></a></Button>
+            <Separator />
+            <Community area="contributors" embedded />
           </article>
         ) : path === '/contribuir' ? (
           <article className="mx-auto max-w-2xl space-y-6">
@@ -215,7 +217,7 @@ export function App({ path }: { path: string }) {
           </div>
         )}
       </main>
-      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }, { href: '/contribuidores', name: 'Contribuidores' }].map(link => <Button asChild key={link.href} variant="link" size="sm" className="text-muted-foreground"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav></div></footer>
+      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }].map(link => <Button asChild key={link.href} variant="link" size="sm" className="text-muted-foreground"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav></div></footer>
     </div>
   );
 }

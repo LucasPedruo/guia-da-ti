@@ -4,7 +4,7 @@
 
 A stack definida é C#/.NET 10, React com TypeScript, Tailwind e shadcn/ui. O guia original está em `guia.md.txt` e foi preservado. Não há banco de dados nem painel administrativo. A participação no fórum pode usar autenticação GitHub.
 
-Dois repositórios independentes: `LucasPedruo/guia-da-ti` contém a aplicação e `LucasPedruo/guia-da-ti-dados` centraliza o catálogo público e as conversas da comunidade no GitHub Discussions. A integração do catálogo é um submódulo Git em `database/`, fixado em um commit reproduzível; as conversas são consultadas pela API do GitHub. A licença ainda precisa ser definida.
+Dois repositórios independentes: `guia-da-ti/guia-da-ti` contém a aplicação e `guia-da-ti/guia-da-ti-dados` centraliza o catálogo público e as conversas da comunidade no GitHub Discussions. A integração do catálogo é um submódulo Git em `database/`, fixado em um commit reproduzível; as conversas são consultadas pela API do GitHub. A licença ainda precisa ser definida.
 
 ## Dados e segurança
 
@@ -24,7 +24,7 @@ Primeira entrega: `/`, `/explorar`, `/contribuir`, categorias do MVP e páginas 
 
 A navegação oferece 32 categorias em seis grupos: Aprender, Conteúdos, Artigos e estudos, Comunidade, Praticar e Carreira, com expansão individual. Todas usam o schema base; campos específicos, mapa e filtros avançados continuam incrementais. `/sobre` concentra a apresentação do projeto. Favoritos e avaliações seguem fora do escopo atual.
 
-O Início é dedicado ao GitHub Discussions. A API consulta um repositório público configurável via GraphQL, com credencial exclusiva do backend, timeout de dez segundos e cache de um minuto limitado a 128 consultas. `GET /api/discussions` lista tópicos por atividade com categoria e cursor; `GET /api/discussions/{numero}` lê tópico e comentários paginados. A interface distingue carregamento, ausência de configuração, lista vazia, erro e tópico inexistente. O endereço `/?conversa=NUMERO` abre uma conversa na home. Respostas encadeadas têm uma prévia de cinco itens e continuação no GitHub. Texto contribuído não é renderizado como HTML e comentários moderados são ocultados. Login OAuth permite criar tópicos, comentários e respostas pelo Guia, com token do visitante guardado na sessão do servidor, cookie HttpOnly e proteção CSRF. A credencial de leitura nunca é usada para publicar. Categorias são administradas no GitHub. Apoiadores aparecem na home e em página própria a partir de database/community.json validado no build. Contribuidores vêm da API do GitHub para os dois repositórios, com paginação, remoção de duplicados por ID e cache de uma hora.
+O Início é dedicado ao GitHub Discussions. A API consulta um repositório público configurável via GraphQL, com credencial exclusiva do backend, timeout de dez segundos e cache de um minuto limitado a 128 consultas. `GET /api/discussions` lista tópicos por atividade com categoria e cursor; `GET /api/discussions/{numero}` lê tópico e comentários paginados. A interface distingue carregamento, ausência de configuração, lista vazia, erro e tópico inexistente. O endereço `/?conversa=NUMERO` abre uma conversa na home. Respostas encadeadas têm uma prévia de cinco itens e continuação no GitHub. Texto contribuído não é renderizado como HTML e comentários moderados são ocultados. Login OAuth permite criar tópicos, comentários e respostas pelo Guia, com token do visitante guardado na sessão do servidor, cookie HttpOnly e proteção CSRF. A credencial de leitura nunca é usada para publicar. Categorias são administradas no GitHub. Apoiadores aparecem na home e em página própria a partir de database/community.json validado no build. Contribuidores aparecem em Sobre e vêm da API do GitHub para os dois repositórios, com paginação, remoção de duplicados por ID e cache de uma hora.
 
 Os componentes visuais são instalados do registry oficial shadcn/ui. Apenas o tema e a composição de páginas são locais. Os menus Radix precisam de estilos inline para posicionamento e controle de rolagem; a CSP permite estilos inline, mantendo scripts restritos à origem do site. Conteúdo do catálogo continua renderizado como texto.
 
@@ -34,7 +34,7 @@ Idioma é um filtro global baseado nos idiomas declarados por cada registro. A o
 
 ## Contribuição
 
-Fork → JSON individual → PR → validação → revisão humana → merge → build → futuro deploy. O catálogo inclui guia, templates, formulário de sugestão e CI. Os links do site apontam por padrão para `LucasPedruo/guia-da-ti-dados`. Dados de demonstração são fictícios e não devem ser publicados como cadastros verificados.
+Fork → JSON individual → PR → validação → revisão humana → merge → build → futuro deploy. O catálogo inclui guia, templates, formulário de sugestão e CI. Os links do site apontam por padrão para `guia-da-ti/guia-da-ti-dados`. Dados de demonstração são fictícios e não devem ser publicados como cadastros verificados.
 
 ## Referências técnicas
 

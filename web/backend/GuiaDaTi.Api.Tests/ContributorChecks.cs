@@ -18,6 +18,12 @@ static class ContributorChecks
         var count = handler.Calls;
         await client.ListAsync(default);
         Assert(count == handler.Calls, "Cache avoids duplicate requests");
+        foreach (var mode in new[] { "private-app", "missing-app" }) {
+            handler.Mode = mode;
+            using var publicOnly = new ContributorsClient(new ContributorFactory(handler), config);
+            var visible = await publicOnly.ListAsync(default);
+            Assert(visible.Length == 1 && visible[0].Name == "ana" && visible[0].Contributions == 2, $"Keep public data when application is {mode}");
+        }
         foreach (var mode in new[] { "private", "rate-limit" }) {
             handler.Mode = mode;
             using var rejected = new ContributorsClient(new ContributorFactory(handler), config);
@@ -42,7 +48,9 @@ sealed class ContributorGitHub : HttpMessageHandler
         var listing = url.Contains("/contributors");
         var page2 = url.Contains("page=2");
         var app = url.Contains("/example/app");
-        object body = !listing ? new { @private = Mode == "private" } : page2
+        if (app && Mode == "missing-app") return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+        if (app && listing && Mode == "private-app") throw new Exception("Must not query private contributors");
+        object body = !listing ? new { @private = Mode == "private" || (app && Mode == "private-app") } : page2
             ? new[] { new { id = 2, login = "bia", contributions = 1, type = "User" } }
             : app ? new[] { new { id = 1, login = "ana", contributions = 3, type = "User" }, new { id = 3, login = "bot", contributions = 20, type = "Bot" } }
             : new[] { new { id = 1, login = "ana", contributions = 2, type = "User" } };

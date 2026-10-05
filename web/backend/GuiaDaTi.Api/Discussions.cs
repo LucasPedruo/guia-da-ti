@@ -8,7 +8,7 @@ public sealed class DiscussionsClient(IHttpClientFactory clients, IConfiguration
 {
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 128 });
     private readonly SemaphoreSlim gate = new(1, 1);
-    private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "LucasPedruo/guia-da-ti-dados";
+    private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados";
     private readonly string? token = configuration["DISCUSSIONS_TOKEN"];
     public bool Configured => !string.IsNullOrWhiteSpace(token)
         && Regex.IsMatch(repository, @"^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+$");

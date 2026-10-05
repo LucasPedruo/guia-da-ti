@@ -52,7 +52,14 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  if (!session?.enabled || !session.login) return null;
+  if (!session) return null;
+  if (!session.login || !session.enabled) return <div className="space-y-3">
+    <Button variant={number ? 'outline' : 'default'} onClick={() => setOpen(value => !value)} aria-expanded={open}>{label}</Button>
+    {open && <div className="space-y-3 rounded-lg border p-4 text-sm">
+      <p>{session.enabled ? 'Entre com sua conta do GitHub para publicar sua mensagem aqui no Guia.' : 'A participação pelo Guia está em preparação. Por enquanto, você pode publicar pelo link do GitHub.'}</p>
+      {session.enabled && <LoginButton />}
+    </div>}
+  </div>;
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;

@@ -1,3 +1,3 @@
 [submodule "database"]
 	path = database
-	url = https://github.com/LucasPedruo/guia-da-ti-dados.git
+	url = https://github.com/guia-da-ti/guia-da-ti-dados.git

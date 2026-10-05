@@ -1,23 +1,23 @@
 # Organização do Guia da TI
 
-O nome do espaço que reúne os repositórios no GitHub é **organização**. Ela pode representar a comunidade Guia da TI, com pessoas responsáveis pela administração. O destino ainda precisa ser definido pelo responsável pelo projeto; nenhum repositório foi transferido.
+A organização [guia-da-ti](https://github.com/guia-da-ti) é proprietária dos dois repositórios do projeto. A transferência foi verificada em 5 de outubro de 2026: os commits anteriores foram preservados e o GitHub Discussions continua ativado no repositório de dados. Na verificação final, a aplicação estava privada e o repositório de dados estava público.
 
 Repositórios atuais:
 
-- `LucasPedruo/guia-da-ti`: aplicação.
-- `LucasPedruo/guia-da-ti-dados`: catálogo, apoiadores, contribuidores e GitHub Discussions.
+- `guia-da-ti/guia-da-ti`: aplicação privada.
+- `guia-da-ti/guia-da-ti-dados`: catálogo público, apoiadores e GitHub Discussions.
 
-Após definir ou criar a organização, verificar permissão de criação de repositórios e ausência de repositórios com os mesmos nomes. Usar a transferência de propriedade dos dois repositórios existentes para preservar o histórico, issues, PRs, estrelas e configurações.
+Os remotes locais, a URL do submódulo, os padrões da aplicação e os links da documentação foram atualizados para a organização.
 
-Atualizar na mesma entrega:
+Configuração da hospedagem:
 
-- Remotes locais da aplicação e de `database/`.
-- URL em `.gitmodules` e sincronização do submódulo.
-- `GITHUB_APP_REPOSITORY`, `DISCUSSIONS_REPOSITORY` e `VITE_DATA_REPOSITORY` na hospedagem.
-- Padrões de repositório em `App.tsx`, `Discussions.cs`, `DiscussionWriter.cs` e `Contributors.cs`.
-- Links e nomes nos READMEs, `ARCHITECTURE.md` e `database/CONTRIBUTING.md`.
+- `GITHUB_APP_REPOSITORY=guia-da-ti/guia-da-ti`.
+- `DISCUSSIONS_REPOSITORY=guia-da-ti/guia-da-ti-dados`.
+- `VITE_DATA_REPOSITORY=https://github.com/guia-da-ti/guia-da-ti-dados` (exige novo build do frontend).
 - Autorizações do aplicativo GitHub e credencial de leitura para o novo proprietário, conforme as políticas da organização.
 
-Depois, verificar clonagem com submódulo, Actions, leitura pública das conversas, publicação como visitante e links no domínio real. O GitHub redireciona os endereços antigos dos repositórios; os remotes e configurações devem usar os endereços novos. O histórico de autoria dos commits permanece ligado aos respectivos autores.
+Os padrões novos funcionam quando essas variáveis não estão definidas. Valores antigos configurados na hospedagem devem ser substituídos. Verificar também autorizações da credencial de leitura e do aplicativo OAuth para o novo proprietário, conforme as políticas da organização. O login para publicar como visitante exige configurar o aplicativo OAuth.
+
+Depois da publicação na hospedagem, verificar leitura das conversas, contribuidores, publicação como visitante e links no domínio real. Atualizar o GitHub não comprova a atualização do site hospedado. O histórico de autoria dos commits permanece ligado aos respectivos autores.
 
 Referência: [Transferência de repositórios no GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository).

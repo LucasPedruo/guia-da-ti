@@ -31,6 +31,7 @@ app.MapCommunityAuth();
 app.MapDiscussionWrites();
 app.MapDiscussions();
 app.MapContributors();
+app.MapGet("/contribuidores", () => Results.Redirect("/sobre#contribuidores", permanent: true));
 app.MapGet("/health", () => Results.Ok(new { status = "ok", resources = catalog.Resources.Length }));
 app.MapGet("/api/resources", (string? q, string? type, int? page, int? pageSize) => {
     if (q?.Length > 200 || page is < 1 || pageSize is < 1 or > 100) return Results.BadRequest(new { error = "Parâmetros inválidos." });

@@ -2,8 +2,8 @@
 
 Diretório colaborativo com **C#/.NET 10, React, TypeScript, Tailwind e shadcn/ui**.
 
-- [guia-da-ti](https://github.com/LucasPedruo/guia-da-ti): aplicação e integração.
-- [guia-da-ti-dados](https://github.com/LucasPedruo/guia-da-ti-dados): catálogo público e contribuições.
+- [guia-da-ti](https://github.com/guia-da-ti/guia-da-ti): aplicação e integração.
+- [guia-da-ti-dados](https://github.com/guia-da-ti/guia-da-ti-dados): catálogo público e contribuições.
 
 `database/` é um **submódulo Git**, fixado em um commit do repositório de dados. Envie contribuições de conteúdo para aquele repositório.
 
@@ -12,7 +12,7 @@ Diretório colaborativo com **C#/.NET 10, React, TypeScript, Tailwind e shadcn/u
 Requer Node.js 22.12+ e SDK .NET 10.
 
 ```powershell
-git clone --recurse-submodules https://github.com/LucasPedruo/guia-da-ti.git
+git clone --recurse-submodules https://github.com/guia-da-ti/guia-da-ti.git
 cd guia-da-ti
 # Se o clone já existia:
 git submodule update --init database
@@ -46,20 +46,20 @@ O workflow não faz deploy na VPS. Para executar o artefato, configure `CATALOG_
 
 - `CATALOG_PATH`: snapshot validado, padrão local `tools/catalog/dist/catalog.json`.
 - `SITE_URL`: origem canônica no build, padrão `https://guiadati.com`.
-- `VITE_DATA_REPOSITORY`: padrão `https://github.com/LucasPedruo/guia-da-ti-dados`.
-- `DISCUSSIONS_REPOSITORY`: repositório público das conversas, padrão `LucasPedruo/guia-da-ti-dados` (somente no backend).
+- `VITE_DATA_REPOSITORY`: padrão `https://github.com/guia-da-ti/guia-da-ti-dados`.
+- `DISCUSSIONS_REPOSITORY`: repositório público das conversas, padrão `guia-da-ti/guia-da-ti-dados` (somente no backend).
 - `DISCUSSIONS_TOKEN`: credencial de leitura da API GraphQL do GitHub (somente no backend).
 
 Frontend e backend devem usar o mesmo snapshot. Nunca coloque segredos em variáveis `VITE_*`.
 
 ## Conversas da comunidade
 
-O Início apresenta as conversas, empresas apoiadoras e contribuidores. A integração consulta o GitHub Discussions pela API .NET: lista de 20 tópicos por página, filtro por categoria e leitura do tópico com 20 comentários por página. Cada comentário mostra até cinco respostas, com link para continuar a leitura no GitHub. Com o login GitHub configurado, o visitante pode criar tópicos, comentar e responder pelo Guia. A publicação usa a autorização do visitante; a credencial de leitura do servidor nunca publica. Links para participar no GitHub continuam disponíveis.
+O Início apresenta as conversas e empresas apoiadoras. Os contribuidores aparecem na página Sobre. A integração consulta o GitHub Discussions pela API .NET: lista de 20 tópicos por página, filtro por categoria e leitura do tópico com 20 comentários por página. Cada comentário mostra até cinco respostas, com link para continuar a leitura no GitHub. Com o login GitHub configurado, o visitante pode criar tópicos, comentar e responder pelo Guia. A publicação usa a autorização do visitante; a credencial de leitura do servidor nunca publica. Links para participar no GitHub continuam disponíveis.
 
 Para conectar dados reais:
 
-1. Ative Discussions nas configurações de `LucasPedruo/guia-da-ti-dados` e organize as categorias no GitHub.
-2. O servidor usa esse repositório por padrão. Se já existir uma variável `DISCUSSIONS_REPOSITORY`, atualize-a para `LucasPedruo/guia-da-ti-dados` ou remova-a para usar o padrão.
+1. Ative Discussions nas configurações de `guia-da-ti/guia-da-ti-dados` e organize as categorias no GitHub.
+2. O servidor usa esse repositório por padrão. Se já existir uma variável `DISCUSSIONS_REPOSITORY`, atualize-a para `guia-da-ti/guia-da-ti-dados` ou remova-a para usar o padrão.
 3. Configure `DISCUSSIONS_TOKEN` no gerenciador de segredos do servidor. Use uma credencial com acesso de leitura a Discussions no repositório. Para desenvolvimento, use os [User Secrets do .NET](https://learn.microsoft.com/aspnet/core/security/app-secrets) no projeto `web/backend/GuiaDaTi.Api`, com a chave `DISCUSSIONS_TOKEN`, e execute em ambiente `Development`. Não registre a credencial em arquivos versionados nem envie ao frontend.
 4. Execute `dotnet run --project web/backend/GuiaDaTi.Api`: o perfil local usa `Development`, carrega os User Secrets e inicia em `http://localhost:5080`, sem abrir o navegador. Inicie o frontend com `npm --prefix web/frontend run dev`. A prévia Vite também encaminha `/api` para essa API. O perfil local não configura o servidor de produção.
 
@@ -81,9 +81,9 @@ Endpoints: `GET /api/auth/session`, `GET /api/auth/login`, callback OAuth em `/a
 
 Os apoiadores aparecem na home e em `/apoiadores`, a partir da lista `supporters` em `community.json` no repositório de dados. Cada registro contém `{ "name": "Nome", "url": "https://…", "description": "Descrição curta" }`. O build valida campos, tamanhos, links HTTPS e duplicados. A HostGator é a primeira apoiadora cadastrada. Novos apoiadores entram por PR no repositório de dados; depois, atualize o ponteiro do submódulo na aplicação.
 
-Os contribuidores da home e de `/contribuidores` vêm diretamente de `GET /api/contributors`, que consulta a API de contribuidores do GitHub nos dois repositórios, percorre todas as páginas e reúne os usuários pelo ID sem duplicados. Bots e autores anônimos não aparecem. A lista representa autores de commits reconhecidos pelo GitHub, com a soma das contribuições nos repositórios; não inclui automaticamente participantes de issues ou Discussions. O servidor mantém cache por uma hora, e o próprio GitHub pode atrasar o reconhecimento de novos commits. A consulta pública funciona sem login do visitante; `DISCUSSIONS_TOKEN`, quando configurado, também autentica essas consultas no servidor. O servidor recusa repositórios privados.
+Os contribuidores de `/sobre#contribuidores` vêm diretamente de `GET /api/contributors`, que consulta a API de contribuidores do GitHub nos repositórios públicos disponíveis, percorre todas as páginas e reúne os usuários pelo ID sem duplicados. Bots e autores anônimos não aparecem. A lista representa autores de commits reconhecidos pelo GitHub, com a soma das contribuições nos repositórios; não inclui automaticamente participantes de issues ou Discussions. O servidor mantém cache por uma hora, e o próprio GitHub pode atrasar o reconhecimento de novos commits. A consulta pública funciona sem login do visitante; `DISCUSSIONS_TOKEN`, quando configurado, também autentica essas consultas no servidor. O servidor ignora repositórios privados ou indisponíveis e mantém os contribuidores dos repositórios públicos acessíveis.
 
-`GITHUB_APP_REPOSITORY` define o repositório da aplicação, com padrão `LucasPedruo/guia-da-ti`. O repositório de dados usa `DISCUSSIONS_REPOSITORY`. Atualize ambos após transferir os repositórios para uma organização.
+`GITHUB_APP_REPOSITORY` define o repositório da aplicação, com padrão `guia-da-ti/guia-da-ti`. O repositório de dados usa `DISCUSSIONS_REPOSITORY`. Atualize ambos após transferir os repositórios para uma organização.
 
 A migração dos dois repositórios para uma organização está descrita em [docs/github-organization.md](docs/github-organization.md).
 
@@ -97,7 +97,7 @@ dotnet run --project web/backend/GuiaDaTi.Api.Tests
 ./scripts/smoke.ps1
 ```
 
-O Início apresenta as conversas, empresas apoiadoras e contribuidores. Busca e páginas de categorias, recursos, áreas e tecnologias estão implementadas. A navegação reúne 32 categorias em seis grupos, com expansão de um grupo por vez e destaque da rota atual. O menu Projeto reúne `/sobre`, `/apoiadores` e `/contribuidores`. Categorias sem cadastros mostram um estado vazio; os cinco registros iniciais continuam fictícios.
+O Início apresenta as conversas e empresas apoiadoras. Os contribuidores aparecem na página Sobre. Busca e páginas de categorias, recursos, áreas e tecnologias estão implementadas. A navegação reúne 32 categorias em seis grupos, com expansão de um grupo por vez e destaque da rota atual. O menu Projeto reúne `/sobre` e `/apoiadores`. O endereço antigo `/contribuidores` redireciona para `/sobre#contribuidores`. Categorias sem cadastros mostram um estado vazio; os cinco registros iniciais continuam fictícios.
 
 Todos os controles visuais usam componentes do registry oficial shadcn/ui: Button, Input, Card, Badge, DropdownMenu, Select, Separator e Empty. A composição das páginas usa Tailwind e tokens de tema laranja, sem os antigos componentes visuais manuais. Para atualizar componentes: `npx shadcn@latest add <nome> --overwrite`, dentro de `web/frontend`.
 
