@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Discussions } from './Discussions';
 import { Community } from './Community';
+import { NavigationCard } from './NavigationCard';
 import { ArrowLeft, ArrowUpRight, ChevronDown, Compass, Github, Menu, Moon, Search, Sun } from 'lucide-react';
 import { Accordion } from 'radix-ui';
 import { Button } from '@/components/ui/button';
@@ -76,29 +77,27 @@ export function App({ path }: { path: string }) {
       <Button asChild className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
         <a href="#conteudo">Pular para o conteúdo</a>
       </Button>
-      <header className="relative border-b bg-background">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6">
+      <header className="site-header relative bg-background">
+        <div className="site-frame header-inner mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6">
             <Button asChild variant="ghost" className="h-auto shrink-0 px-0 text-xl font-bold tracking-tight hover:bg-transparent">
             <a href="/" aria-label="Guia da TI — página inicial"><Compass className="size-5 text-primary" />guiadati<span className="text-primary">.</span></a>
             </Button>
-          <NavigationMenu viewport={false} aria-label="Principal" className="hidden min-w-0 flex-1 justify-start xl:flex">
+          <NavigationMenu viewport={false} aria-label="Principal" className="!static hidden min-w-0 flex-1 justify-start xl:flex">
             <NavigationMenuList className="flex-nowrap justify-start gap-0.5">
               <NavigationMenuItem><NavigationMenuLink asChild active={home}><a href="/" aria-current={home ? 'page' : undefined}>Início</a></NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink asChild active={explore}><a href="/explorar" aria-current={explore ? (path === '/explorar' ? 'page' : 'location') : undefined}>Explorar</a></NavigationMenuLink></NavigationMenuItem>
               {groups.map(group => (
-                <NavigationMenuItem key={group.id} value={group.id}>
+                <NavigationMenuItem key={group.id} value={group.id} className="!static">
                   <NavigationMenuTrigger
-                    className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary"
+                    className="rounded-full px-2 data-[current=true]:bg-accent data-[current=true]:text-primary"
                     data-current={group.categories.some(category => category.id === page.category?.id)}
-                    onPointerMove={event => event.preventDefault()}
-                    onPointerLeave={event => event.preventDefault()}
                   >{group.name}</NavigationMenuTrigger>
-                  <NavigationMenuContent onPointerEnter={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()} className="z-50 !w-64">
-                    <ul className="max-h-[calc(100svh-7rem)] space-y-1 overflow-y-auto">
+                  <NavigationMenuContent className="mega-panel">
+                    <ul className="grid max-h-[calc(100svh-7rem)] grid-cols-3 gap-x-4 gap-y-2 overflow-y-auto">
                       {group.categories.map(category => (
                         <li key={category.id}>
                           <NavigationMenuLink asChild active={category.id === page.category?.id}>
-                            <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined} className="px-3 py-2.5">{category.name}</a>
+                            <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined} className="navigation-card"><NavigationCard id={category.id} name={category.name} /></a>
                           </NavigationMenuLink>
                         </li>
                       ))}
@@ -106,10 +105,10 @@ export function App({ path }: { path: string }) {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               ))}
-              <NavigationMenuItem value="projeto">
-                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores'].includes(path)} className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary" onPointerMove={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()}>Projeto</NavigationMenuTrigger>
-                <NavigationMenuContent onPointerEnter={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()} className="z-50 !w-64">
-                  {[{ name: 'Sobre', href: '/sobre' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <NavigationMenuLink key={link.href} asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></NavigationMenuLink>)}
+              <NavigationMenuItem value="projeto" className="!static">
+                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores'].includes(path)} className="rounded-full px-2 data-[current=true]:bg-accent data-[current=true]:text-primary">Projeto</NavigationMenuTrigger>
+                <NavigationMenuContent className="mega-panel">
+                  <ul className="grid grid-cols-3 gap-4">{[{ id: 'about', name: 'Sobre', href: '/sobre' }, { id: 'supporters', name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <li key={link.href}><NavigationMenuLink asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined} className="navigation-card"><NavigationCard id={link.id} name={link.name} /></a></NavigationMenuLink></li>)}</ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
@@ -158,11 +157,11 @@ export function App({ path }: { path: string }) {
         </div>
       </header>
 
-      <main id="conteudo" className="mx-auto min-h-[70vh] max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+      <main id="conteudo" className="site-frame mx-auto min-h-[70vh] max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
         {!page.valid ? (
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar para a home</a></Button></EmptyContent></Empty>
         ) : home ? (
-          <div className="space-y-12"><Discussions /><Separator /><Community area="supporters" preview /></div>
+          <div className="space-y-8"><Discussions /><div className="section-divider" aria-hidden="true" /><Community area="supporters" preview /></div>
         ) : path === '/apoiadores' ? (
           <Community area="supporters" />
         ) : path === '/sobre' ? (
@@ -217,7 +216,7 @@ export function App({ path }: { path: string }) {
           </div>
         )}
       </main>
-      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }].map(link => <Button asChild key={link.href} variant="link" size="sm" className="text-muted-foreground"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav></div></footer>
+      <footer className="site-frame mx-auto max-w-7xl px-4 pb-6 sm:px-6"><div className="section-divider" aria-hidden="true" /><div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }].map(link => <Button asChild key={link.href} variant="link" size="sm" className="text-muted-foreground"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav></div></footer>
     </div>
   );
 }

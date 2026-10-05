@@ -11,6 +11,7 @@ using var client = new DiscussionsClient(new FakeFactory(handler), settings);
 Check(client.Configured, "Configured client");
 var page = await client.ListAsync("category-1", "cursor-1", default);
 Check(page.Items.Length == 1 && page.Items[0].Author == "Usuário removido", "Deleted authors");
+Check(page.Items[0].Preview == "Texto do tópico", "Discussion preview uses plain text");
 Check(page.Items[0].Url == "https://github.com/example/community/discussions/7", "Canonical public URL");
 Check(page.PageInfo.HasNextPage && page.PageInfo.EndCursor == "cursor-2", "Pagination");
 Check(handler.LastVariables.GetProperty("category").GetString() == "category-1"

@@ -69,6 +69,10 @@ Endpoints: `GET /api/discussions?category=ID&after=CURSOR` e `GET /api/discussio
 
 Referência: [API GraphQL para Discussions](https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions).
 
+A home apresenta o fórum sem título visível, com busca, categoria e criação de tópico em uma barra compacta. A lista mostra autor, data, prévia de texto e comentários, separados por linhas. Há um espaço identificado como Publicidade entre os tópicos (ou após o único tópico, em listas com um item). O componente `Advertisement.tsx` reserva a posição e não carrega campanhas, scripts de anúncios ou rastreadores.
+
+A pesquisa acontece ao digitar, após uma pausa de 400 ms, e também ao pressionar Enter. Dentro do tópico, os comentários e respostas aparecem com linhas de encadeamento e podem ser recolhidos. A publicidade fica entre o tópico e o campo para comentar, em um cartão com menu para ocultar ou consultar o espaço reservado. O GitHub mantém respostas vinculadas ao comentário principal; a interface preserva essa estrutura.
+
 ### Publicar pelo Guia
 
 Cadastre uma OAuth App no GitHub. Configure `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET` somente no backend, em User Secrets para desenvolvimento ou no gerenciador de segredos da hospedagem. O callback é `/api/auth/callback` no mesmo endereço usado para abrir o site: por exemplo, `http://localhost:5081/api/auth/callback` no desenvolvimento com Vite. Configure a URL pública HTTPS correspondente em produção; o proxy deve preservar o endereço e protocolo usados no callback. O fluxo usa OAuth com PKCE e o escopo `public_repo` exigido pela API para publicar em nome do visitante em repositórios públicos.

@@ -99,7 +99,11 @@ public sealed class DiscussionsClient(IHttpClientFactory clients, IConfiguration
         item.GetProperty("number").GetInt32(), Text(item, "title"), Category(item.GetProperty("category")),
         Author(item), Text(item, "updatedAt"), item.GetProperty("comments").GetProperty("totalCount").GetInt32(),
         item.GetProperty("isAnswered").ValueKind == JsonValueKind.True, item.GetProperty("locked").GetBoolean(),
-        $"{RepositoryUrl}/{item.GetProperty("number").GetInt32()}");
+        $"{RepositoryUrl}/{item.GetProperty("number").GetInt32()}", Preview(item));
+    private static string Preview(JsonElement item) {
+        var body = Regex.Replace(Text(item, "bodyText"), @"\s+", " ").Trim();
+        return body.Length <= 320 ? body : body[..320] + "…";
+    }
     private static DiscussionCategory Category(JsonElement item) => new(Text(item, "id"), Text(item, "name"));
     private static string Author(JsonElement item) => item.GetProperty("author").ValueKind == JsonValueKind.Null
         ? "Usuário removido" : Text(item.GetProperty("author"), "login");
@@ -134,7 +138,7 @@ public sealed class DiscussionsClient(IHttpClientFactory clients, IConfiguration
           search(query:$search, type:DISCUSSION, first:20, after:$after) {
             discussionCount pageInfo { hasNextPage endCursor }
             nodes { ... on Discussion {
-              number title updatedAt isAnswered locked author { login } category { id name } comments { totalCount }
+              number title bodyText updatedAt isAnswered locked author { login } category { id name } comments { totalCount }
               repository { nameWithOwner isPrivate }
             } }
           }
@@ -147,7 +151,7 @@ public sealed class DiscussionsClient(IHttpClientFactory clients, IConfiguration
             discussionCategories(first:100) { nodes { id name } }
             discussions(first:20, after:$after, categoryId:$category, orderBy:{field:UPDATED_AT,direction:DESC}) {
               pageInfo { hasNextPage endCursor }
-              nodes { number title updatedAt isAnswered locked author { login } category { id name } comments { totalCount } }
+              nodes { number title bodyText updatedAt isAnswered locked author { login } category { id name } comments { totalCount } }
             }
           }
         }
@@ -178,7 +182,7 @@ public sealed class DiscussionsUnavailableException : Exception;
 public record DiscussionCategory(string Id, string Name);
 public record DiscussionPage(bool HasNextPage, string? EndCursor);
 public record DiscussionSummary(int Number, string Title, DiscussionCategory Category, string Author,
-    string UpdatedAt, int CommentCount, bool IsAnswered, bool Locked, string Url);
+    string UpdatedAt, int CommentCount, bool IsAnswered, bool Locked, string Url, string Preview = "");
 public record DiscussionList(string Status, string RepositoryUrl, DiscussionCategory[] Categories, DiscussionSummary[] Items, DiscussionPage PageInfo, int? TotalCount = null);
 public record DiscussionComment(string Id, string Author, string Body, string CreatedAt, bool IsAnswer, DiscussionComment[] Replies, int ReplyCount);
 public record DiscussionThread(string Status, DiscussionSummary Discussion, string Body, DiscussionComment[] Comments, DiscussionPage PageInfo);

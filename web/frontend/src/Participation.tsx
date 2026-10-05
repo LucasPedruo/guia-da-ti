@@ -25,9 +25,9 @@ export function Participation({ children }: { children: ReactNode }) {
     } catch { setError('Não foi possível sair. Atualize a página e tente novamente.'); }
   }
   return <SessionContext.Provider value={session}>
-    {session?.enabled && <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
-      <p>{session.login ? `Você está participando como ${session.login}.` : 'Entre com sua conta do GitHub para criar tópicos, comentar e responder pelo Guia.'}</p>
-      {session.login ? <Button variant="outline" onClick={logout}>Sair</Button> : <LoginButton />}
+    {session?.enabled && <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
+      <p>{session.login ? session.login : 'Participe com sua conta GitHub'}</p>
+      {session.login ? <Button variant="ghost" size="sm" className="h-8" onClick={logout}>Sair</Button> : <LoginButton />}
     </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {children}
@@ -37,11 +37,11 @@ export function Participation({ children }: { children: ReactNode }) {
 function LoginButton() {
   const [returnUrl, setReturnUrl] = useState('/');
   useEffect(() => setReturnUrl(window.location.pathname + window.location.search), []);
-  return <Button asChild><a href={`/api/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`}>Entrar com GitHub</a></Button>;
+  return <Button asChild size="sm"><a href={`/api/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`}>Entrar com GitHub</a></Button>;
 }
 
-export function Composer({ number, replyToId, categories, onPublished, label = 'Comentar' }: {
-  number?: number; replyToId?: string; categories?: { id: string; name: string }[]; onPublished: (number: number) => void; label?: string;
+export function Composer({ number, replyToId, categories, onPublished, label = 'Comentar', compact = false, prompt = false, githubUrl }: {
+  number?: number; replyToId?: string; categories?: { id: string; name: string }[]; onPublished: (number: number) => void; label?: string; compact?: boolean; prompt?: boolean; githubUrl?: string;
 }) {
   const session = useContext(SessionContext);
   const id = useId();
@@ -53,11 +53,16 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   if (!session) return null;
-  if (!session.login || !session.enabled) return <div className="space-y-3">
-    <Button variant={number ? 'outline' : 'default'} onClick={() => setOpen(value => !value)} aria-expanded={open}>{label}</Button>
+  const layout = compact ? 'data-[open=true]:basis-full data-[open=true]:space-y-3' : 'space-y-3';
+  const triggerClass = prompt ? 'h-10 w-full justify-start rounded-full px-4 text-sm font-normal text-muted-foreground' : compact ? 'h-8 px-2 text-xs text-muted-foreground' : undefined;
+  const triggerVariant = number ? compact ? 'ghost' : 'outline' : 'default';
+  const triggerLabel = prompt ? 'Participe da conversa…' : label;
+  if (!session.login || !session.enabled) return <div data-open={open} className={layout}>
+    <Button size={compact ? 'sm' : 'default'} className={triggerClass} variant={triggerVariant} onClick={() => setOpen(value => !value)} aria-expanded={open}>{triggerLabel}</Button>
     {open && <div className="space-y-3 rounded-lg border p-4 text-sm">
       <p>{session.enabled ? 'Entre com sua conta do GitHub para publicar sua mensagem aqui no Guia.' : 'A participação pelo Guia está em preparação. Por enquanto, você pode publicar pelo link do GitHub.'}</p>
       {session.enabled && <LoginButton />}
+      {!session.enabled && githubUrl && <Button asChild variant="outline" size="sm"><a href={githubUrl} target="_blank" rel="noopener noreferrer">{number ? 'Responder no GitHub' : 'Criar tópico no GitHub'}</a></Button>}
     </div>}
   </div>;
   async function submit(event: React.FormEvent) {
@@ -76,8 +81,8 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível confirmar a publicação. Confira o tópico no GitHub antes de tentar novamente.'); }
     finally { setBusy(false); }
   }
-  return <div className="space-y-3">
-    {!open ? <Button variant={number ? 'outline' : 'default'} onClick={() => { setOpen(true); setSuccess(false); }}>{label}</Button> : <form onSubmit={submit} className="space-y-4 rounded-lg border p-4">
+  return <div data-open={open} className={layout}>
+    {!open ? <Button size={compact ? 'sm' : 'default'} className={triggerClass} variant={triggerVariant} onClick={() => { setOpen(true); setSuccess(false); }}>{triggerLabel}</Button> : <form onSubmit={submit} className="space-y-4 rounded-lg border p-4">
       {!number && <>
         <div className="space-y-2"><label htmlFor={`${id}-title`} className="text-sm font-medium">Título do tópico</label><Input id={`${id}-title`} value={title} onChange={event => setTitle(event.target.value)} required maxLength={256} disabled={busy} /></div>
         <Select value={categoryId} onValueChange={setCategoryId} disabled={busy}><SelectTrigger aria-label="Categoria do novo tópico"><SelectValue placeholder="Escolha a categoria" /></SelectTrigger><SelectContent>{categories?.map(category => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent></Select>

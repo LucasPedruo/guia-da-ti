@@ -1,6 +1,6 @@
 // Browser smoke test without extra test dependencies. Uses a local Chrome installation.
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -43,22 +43,25 @@ try {
   await installDiscussionFixtures(send);
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
-  assert.equal(await evaluate(`document.querySelector('main h1').textContent`), 'Conversas da comunidade');
+  assert.equal(await evaluate(`document.querySelector('main h1').textContent`), 'Fórum do Guia da TI');
+  assert.equal(await evaluate(`document.querySelector('main h1').getBoundingClientRect().height <= 1`), true);
   assert.equal(await evaluate(`document.querySelectorAll('main [aria-label="Categorias"], main [aria-label="Busca"], main [aria-label="Resultados"]').length`), 0);
   assert.equal(await evaluate(`document.body.textContent.includes('Seu próximo passo')`), false);
   assert.equal(await evaluate(`document.querySelector('main').textContent.includes('As conversas da comunidade vão aparecer aqui')`), true);
   const groups = JSON.parse(await readFile('src/navigation.json', 'utf8'));
   const openPanels = "document.querySelectorAll('[data-slot=\"navigation-menu-content\"][data-state=\"open\"]')";
   await hover(`document.querySelector('[data-slot="navigation-menu-trigger"]')`);
-  await sleep(400);
-  assert.equal(await evaluate(`${openPanels}.length`), 0, 'Hover should not expand categories');
+  await waitFor(`${openPanels}.length === 1`);
   for (const group of groups) {
-    await click(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()===${JSON.stringify(group.name)})`);
-    await waitFor(`${openPanels}.length === 1`);
+    await hover(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()===${JSON.stringify(group.name)})`);
+    await waitFor(`${openPanels}.length === 1 && !!${openPanels}[0].querySelector('a[href="/${group.categories[0].route}"]')`);
     assert.deepEqual(await evaluate(`[...${openPanels}[0].querySelectorAll('a')].map(a=>a.getAttribute('href'))`), group.categories.map(category => '/' + category.route));
-    const bounds = await evaluate(`(()=>{const r=${openPanels}[0].getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:innerWidth}})()`);
-    assert.ok(bounds.width <= 300 && bounds.left >= 0 && bounds.right <= bounds.viewport, JSON.stringify(bounds));
+    const bounds = await evaluate(`(()=>{const r=${openPanels}[0].getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:document.documentElement.clientWidth,top:r.top,headerBottom:document.querySelector('header').getBoundingClientRect().bottom}})()`);
+    assert.ok(Math.abs(bounds.width - bounds.viewport) <= 1 && bounds.left === 0 && Math.abs(bounds.top - bounds.headerBottom) <= 1, JSON.stringify(bounds));
   }
+  await hover(`${openPanels}[0].querySelector('a')`);
+  await sleep(250);
+  assert.equal(await evaluate(`${openPanels}.length`), 1, 'Panel must stay open when entering it');
   await key('Escape');
   await waitFor(`!document.querySelector('[data-slot="navigation-menu-content"]') || document.querySelector('[data-slot="navigation-menu-content"]').getAttribute('data-state') === 'closed'`);
   await evaluate(`document.querySelector('[data-slot="navigation-menu-trigger"]').focus()`); await key('Enter');
@@ -123,6 +126,18 @@ try {
     assert.ok((await response.text()).includes(category.name), category.route);
   }
   await checkDiscussions({ send, evaluate, click, waitFor, navigate });
+  if (process.env.UI_SCREENSHOT_PATH) {
+    await evaluate(`sessionStorage.setItem('discussionTestMode', 'showcase'); sessionStorage.removeItem('participationMode')`);
+    await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+    await navigate('/');
+    await waitFor(`document.querySelectorAll('[aria-label="Conversas"] > li').length === 4`);
+    const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.UI_SCREENSHOT_PATH, Buffer.from(screenshot.data, 'base64'));
+    await click(`document.querySelector('[data-slot="navigation-menu-trigger"]')`);
+    await waitFor(`${openPanels}.length === 1`);
+    const menuScreenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.UI_SCREENSHOT_PATH.replace(/\.png$/, '.menu.png'), Buffer.from(menuScreenshot.data, 'base64'));
+  }
   assert.deepEqual(errors, [], 'Browser errors');
   console.log('UI OK: individual category menus, single mobile expansion, keyboard navigation, home discussion area, search, empty state, about, dark theme and responsive layout.');
 } finally {

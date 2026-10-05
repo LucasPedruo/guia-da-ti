@@ -78,6 +78,97 @@
 
 header a[aria-current], footer a[aria-current] { background: var(--accent); color: var(--primary); font-weight: 600; }
 
+/* Decorative framework stays at the edges and between sections, away from text. */
+.site-frame {
+  --guide-line: color-mix(in srgb, var(--border) 75%, transparent);
+  position: relative;
+  border-inline: 1px dashed var(--guide-line);
+}
+.site-frame::before, .site-frame::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -4px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--guide-line);
+  border-radius: 50%;
+  background: var(--background);
+  pointer-events: none;
+}
+.site-frame::before { left: -4px; }
+.site-frame::after { right: -4px; }
+.site-header { border-bottom: 1px dashed var(--border); z-index: 30; }
+.header-inner { position: static; }
+.header-inner::before, .header-inner::after { display: none; }
+.section-divider {
+  position: relative;
+  height: 24px;
+  margin-inline: -1rem;
+  border-block: 1px dashed var(--guide-line);
+  background: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--border) 32%, transparent) 5px 6px);
+  pointer-events: none;
+}
+.section-divider::before, .section-divider::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.section-divider::before { left: 0; }
+.section-divider::after { right: 0; }
+@media (min-width: 640px) { .section-divider { margin-inline: -1.5rem; } }
+@media (max-width: 1280px) {
+  .site-frame::before { left: 0; }
+  .site-frame::after { right: 0; }
+}
+
+/* Desktop panels span the viewport and sit flush against the header. */
+.site-header [data-slot="navigation-menu"] > div { position: static !important; }
+.site-header [data-slot="navigation-menu-list"] > li > :is(a, button) {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  letter-spacing: normal;
+}
+.mega-panel[data-slot="navigation-menu-content"] {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0;
+  width: auto !important;
+  z-index: 50;
+  margin-top: 0 !important;
+  padding: 24px !important;
+  border-radius: 0 0 20px 20px !important;
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 7%, transparent) !important;
+}
+.mega-panel > ul { max-width: 1232px; margin-inline: auto; }
+.navigation-card[data-slot="navigation-menu-link"] {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 80px;
+  padding: 16px;
+  border-radius: 12px;
+}
+.navigation-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--primary);
+  background: var(--muted);
+}
+
 /* App-wide interaction policy, including Radix portals and registry cursor-default utilities. */
 :where(a[href], button, select, summary, input[type="button"], input[type="submit"],
   input[type="reset"], input[type="checkbox"], input[type="radio"], [role="button"],
