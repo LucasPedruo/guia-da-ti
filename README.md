@@ -47,22 +47,60 @@ O workflow não faz deploy na VPS. Para executar o artefato, configure `CATALOG_
 - `CATALOG_PATH`: snapshot validado, padrão local `tools/catalog/dist/catalog.json`.
 - `SITE_URL`: origem canônica no build, padrão `https://guiadati.com`.
 - `VITE_DATA_REPOSITORY`: padrão `https://github.com/LucasPedruo/guia-da-ti-dados`.
+- `DISCUSSIONS_REPOSITORY`: repositório público das conversas, padrão `LucasPedruo/guia-da-ti-dados` (somente no backend).
+- `DISCUSSIONS_TOKEN`: credencial de leitura da API GraphQL do GitHub (somente no backend).
 
 Frontend e backend devem usar o mesmo snapshot. Nunca coloque segredos em variáveis `VITE_*`.
+
+## Conversas da comunidade
+
+O Início apresenta as conversas, empresas apoiadoras e contribuidores. A integração consulta o GitHub Discussions pela API .NET: lista de 20 tópicos por página, filtro por categoria e leitura do tópico com 20 comentários por página. Cada comentário mostra até cinco respostas, com link para continuar a leitura no GitHub. Com o login GitHub configurado, o visitante pode criar tópicos, comentar e responder pelo Guia. A publicação usa a autorização do visitante; a credencial de leitura do servidor nunca publica. Links para participar no GitHub continuam disponíveis.
+
+Para conectar dados reais:
+
+1. Ative Discussions nas configurações de `LucasPedruo/guia-da-ti-dados` e organize as categorias no GitHub.
+2. O servidor usa esse repositório por padrão. Se já existir uma variável `DISCUSSIONS_REPOSITORY`, atualize-a para `LucasPedruo/guia-da-ti-dados` ou remova-a para usar o padrão.
+3. Configure `DISCUSSIONS_TOKEN` no gerenciador de segredos do servidor. Use uma credencial com acesso de leitura a Discussions no repositório. Para desenvolvimento, use os [User Secrets do .NET](https://learn.microsoft.com/aspnet/core/security/app-secrets) no projeto `web/backend/GuiaDaTi.Api`, com a chave `DISCUSSIONS_TOKEN`, e execute em ambiente `Development`. Não registre a credencial em arquivos versionados nem envie ao frontend.
+4. Execute `dotnet run --project web/backend/GuiaDaTi.Api`: o perfil local usa `Development`, carrega os User Secrets e inicia em `http://localhost:5080`, sem abrir o navegador. Inicie o frontend com `npm --prefix web/frontend run dev`. A prévia Vite também encaminha `/api` para essa API. O perfil local não configura o servidor de produção.
+
+Sem credencial, a página mostra que o espaço está em preparação. Configuração inválida, serviço indisponível e lista vazia têm estados distintos. A API recusa repositórios privados e mantém um cache em memória por um minuto. Tópicos e comentários são exibidos como texto, sem executar HTML; comentários ocultados pela moderação não têm seu conteúdo exposto. A configuração não ativa Discussions nem cria publicações automaticamente.
+
+Endpoints: `GET /api/discussions?category=ID&after=CURSOR` e `GET /api/discussions/{numero}?after=CURSOR`. Um tópico pode ser compartilhado pelo endereço `/?conversa=NUMERO`.
+
+Referência: [API GraphQL para Discussions](https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions).
+
+### Publicar pelo Guia
+
+Cadastre uma OAuth App no GitHub. Configure `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET` somente no backend, em User Secrets para desenvolvimento ou no gerenciador de segredos da hospedagem. O callback é `/api/auth/callback` no mesmo endereço usado para abrir o site: por exemplo, `http://localhost:5081/api/auth/callback` no desenvolvimento com Vite. Configure a URL pública HTTPS correspondente em produção; o proxy deve preservar o endereço e protocolo usados no callback. O fluxo usa OAuth com PKCE e o escopo `public_repo` exigido pela API para publicar em nome do visitante em repositórios públicos.
+
+O login aparece quando as duas configurações existem. A sessão dura até oito horas, usa cookie HttpOnly e guarda o token no servidor. Reiniciar o servidor encerra as sessões. Esta implementação atende uma instância; várias instâncias exigem armazenamento de sessões compartilhado. Os endpoints de publicação e saída validam CSRF. Falhas preservam o rascunho. A API recusa categorias de outros repositórios, respostas de outros tópicos, comentários moderados e tópicos encerrados. O GitHub valida as permissões de cada pessoa, inclusive categorias de anúncios. A administração de categorias permanece no GitHub.
+
+Endpoints: `GET /api/auth/session`, `GET /api/auth/login`, callback OAuth em `/api/auth/callback`, `POST /api/auth/logout` e `POST /api/discussions/publish`. Para publicar, envie o cabeçalho `X-CSRF-Token` recebido na sessão e JSON com `body`; um tópico novo também exige `title` e `categoryId`; comentário usa `number`; resposta acrescenta `replyToId` do comentário principal. Sem login configurado, a leitura e os links para o GitHub continuam funcionando.
+
+### Apoiadores e contribuidores
+
+Os apoiadores aparecem na home e em `/apoiadores`, a partir da lista `supporters` em `community.json` no repositório de dados. Cada registro contém `{ "name": "Nome", "url": "https://…", "description": "Descrição curta" }`. O build valida campos, tamanhos, links HTTPS e duplicados. A HostGator é a primeira apoiadora cadastrada. Novos apoiadores entram por PR no repositório de dados; depois, atualize o ponteiro do submódulo na aplicação.
+
+Os contribuidores da home e de `/contribuidores` vêm diretamente de `GET /api/contributors`, que consulta a API de contribuidores do GitHub nos dois repositórios, percorre todas as páginas e reúne os usuários pelo ID sem duplicados. Bots e autores anônimos não aparecem. A lista representa autores de commits reconhecidos pelo GitHub, com a soma das contribuições nos repositórios; não inclui automaticamente participantes de issues ou Discussions. O servidor mantém cache por uma hora, e o próprio GitHub pode atrasar o reconhecimento de novos commits. A consulta pública funciona sem login do visitante; `DISCUSSIONS_TOKEN`, quando configurado, também autentica essas consultas no servidor. O servidor recusa repositórios privados.
+
+`GITHUB_APP_REPOSITORY` define o repositório da aplicação, com padrão `LucasPedruo/guia-da-ti`. O repositório de dados usa `DISCUSSIONS_REPOSITORY`. Atualize ambos após transferir os repositórios para uma organização.
+
+A migração dos dois repositórios para uma organização está descrita em [docs/github-organization.md](docs/github-organization.md).
 
 ## Verificação e estágio atual
 
 ```powershell
 npm --prefix tools/catalog test
+dotnet run --project web/backend/GuiaDaTi.Api.Tests
 ./scripts/build.ps1
 # Com o servidor em execução:
 ./scripts/smoke.ps1
 ```
 
-Home, busca e páginas de categorias, recursos, áreas e tecnologias estão implementadas. A navegação reúne 32 categorias em seis grupos, com dropdowns e escolhas visíveis na home. A apresentação do projeto fica em `/sobre`. Categorias sem cadastros mostram um estado vazio; os cinco registros iniciais continuam fictícios.
+O Início apresenta as conversas, empresas apoiadoras e contribuidores. Busca e páginas de categorias, recursos, áreas e tecnologias estão implementadas. A navegação reúne 32 categorias em seis grupos, com expansão de um grupo por vez e destaque da rota atual. O menu Projeto reúne `/sobre`, `/apoiadores` e `/contribuidores`. Categorias sem cadastros mostram um estado vazio; os cinco registros iniciais continuam fictícios.
 
 Todos os controles visuais usam componentes do registry oficial shadcn/ui: Button, Input, Card, Badge, DropdownMenu, Select, Separator e Empty. A composição das páginas usa Tailwind e tokens de tema laranja, sem os antigos componentes visuais manuais. Para atualizar componentes: `npx shadcn@latest add <nome> --overwrite`, dentro de `web/frontend`.
 
-Com o site rodando em `http://localhost:5081`, execute `npm --prefix web/frontend run test:ui` para verificar menus, teclado, busca, estados vazios, página Sobre, tema escuro, filtro de idioma e região e largura de tela no Chrome. Use `TEST_URL` e `CHROME_PATH` para outros endereços e instalações. `English (United States)` mostra apenas cadastros com idioma `en` e país `US` explicitamente marcado.
+Com o site rodando em `http://localhost:5081`, execute `npm --prefix web/frontend run test:ui` para verificar menus, teclado, busca, estados vazios, página Sobre, tema escuro, filtro de idioma e região e largura de tela no Chrome. Os testes de conversas usam respostas simuladas no navegador para verificar categorias, paginação, leitura, respostas, falha e nova tentativa, sem publicar no GitHub. Os testes .NET verificam o cliente GraphQL com um servidor HTTP simulado. Use `TEST_URL` e `CHROME_PATH` para outros endereços e instalações. `English (United States)` mostra apenas cadastros com idioma `en` e país `US` explicitamente marcado.
 
 Mapa e filtros avançados permanecem no [plano](IMPLEMENTATION_PLAN.md). Veja a [arquitetura](ARCHITECTURE.md) e o [guia original](guia.md.txt).

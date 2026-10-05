@@ -1,0 +1,167 @@
+import { useEffect, useRef, useState } from 'react';
+import { Composer, Participation } from './Participation';
+import { ArrowLeft, ArrowUpRight, MessageSquareText, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type Category = { id: string; name: string };
+type PageInfo = { hasNextPage: boolean; endCursor: string | null };
+type Discussion = { number: number; title: string; category: Category; author: string; updatedAt: string; commentCount: number; isAnswered: boolean; locked: boolean; url: string };
+type Comment = { id: string; author: string; body: string; createdAt: string; isAnswer: boolean; replies: Comment[]; replyCount: number };
+type DiscussionList = { status: 'ready'; repositoryUrl: string; categories: Category[]; items: Discussion[]; pageInfo: PageInfo; totalCount?: number | null };
+type Thread = { status: 'ready'; discussion: Discussion; body: string; comments: Comment[]; pageInfo: PageInfo };
+
+function useDiscussions<T>(url: string) {
+  const [result, setResult] = useState<T | { status: 'unconfigured' } | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setResult(null);
+    setError('');
+    fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } })
+      .then(async response => {
+        if (!response.ok) throw new Error(response.status === 404 ? 'Esta conversa não foi encontrada.' : 'Não foi possível carregar as conversas. Tente novamente.');
+        return response.json();
+      })
+      .then(data => { if (!controller.signal.aborted) setResult(data); })
+      .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof SyntaxError ? 'Não foi possível carregar as conversas. Tente novamente.' : reason.message || 'Não foi possível conectar. Tente novamente.'); });
+    return () => controller.abort();
+  }, [url, attempt]);
+  return { result, error, retry: () => setAttempt(value => value + 1) };
+}
+
+function DateLabel({ value }: { value: string }) {
+  return <time dateTime={value}>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(value))}</time>;
+}
+
+function RequestState({ error, unconfigured, retry }: { error: string; unconfigured: boolean; retry: () => void }) {
+  if (error) return <div role="alert" className="space-y-3 rounded-lg border p-6"><p>{error}</p><Button variant="outline" onClick={retry}>Tentar novamente</Button></div>;
+  if (unconfigured) return <Empty className="min-h-52 border bg-card"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>As conversas da comunidade vão aparecer aqui</EmptyTitle><EmptyDescription>Estamos preparando este espaço para trocar experiências, tirar dúvidas e compartilhar ideias.</EmptyDescription></EmptyHeader></Empty>;
+  return <p role="status" className="py-10 text-center text-sm text-muted-foreground">Carregando conversas…</p>;
+}
+
+function Pagination({ pageInfo, cursors, setCursors }: { pageInfo: PageInfo; cursors: string[]; setCursors: (cursors: string[]) => void }) {
+  if (!cursors.length && !pageInfo.hasNextPage) return null;
+  return <nav aria-label="Paginação das conversas" className="flex items-center justify-between gap-3">
+    <Button variant="outline" disabled={!cursors.length} onClick={() => setCursors(cursors.slice(0, -1))}>Anterior</Button>
+    <span className="text-sm text-muted-foreground" aria-live="polite">Página {cursors.length + 1}</span>
+    <Button variant="outline" disabled={!pageInfo.hasNextPage || !pageInfo.endCursor} onClick={() => setCursors([...cursors, pageInfo.endCursor!])}>Próxima</Button>
+  </nav>;
+}
+
+function CommentCard({ comment, url, number, onPublished, rootId }: { comment: Comment; url: string; number: number; onPublished: () => void; rootId?: string }) {
+  return <article className="min-w-0 space-y-3 rounded-lg border p-4">
+    <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-medium">{comment.author}</span><span className="text-muted-foreground"><DateLabel value={comment.createdAt} /></span>{comment.isAnswer && <Badge variant="secondary">Resposta aceita</Badge>}</div>
+    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{comment.body}</p>
+    {comment.replies.length > 0 && <div className="space-y-3 border-l-2 pl-3">{comment.replies.map(reply => <CommentCard key={reply.id} comment={reply} url={url} number={number} onPublished={onPublished} rootId={rootId || comment.id} />)}</div>}
+    {number > 0 && <Composer number={number} replyToId={rootId || comment.id} onPublished={onPublished} label="Responder" />}
+    {comment.replyCount > comment.replies.length && <a className="text-sm text-primary underline underline-offset-4" href={url} target="_blank" rel="noopener noreferrer">Ver todas as {comment.replyCount} respostas no GitHub</a>}
+  </article>;
+}
+
+function DiscussionThread({ number }: { number: number }) {
+  const [cursors, setCursors] = useState<string[]>([]);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const { result, error, retry } = useDiscussions<Thread>(`/api/discussions/${number}?${new URLSearchParams(cursors.length ? { after: cursors[cursors.length - 1] } : {})}`);
+  const ready = result?.status === 'ready' ? result : null;
+  const returnParameters = new URLSearchParams(window.location.search);
+  returnParameters.delete('conversa');
+  const returnUrl = returnParameters.size ? `/?${returnParameters}` : '/';
+  useEffect(() => { if (ready) heading.current?.focus(); }, [ready]);
+  return <section className="space-y-6" aria-label="Conversa">
+    <Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button>
+    {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
+      <article className="space-y-4">
+        <div className="flex flex-wrap gap-2"><Badge variant="secondary">{ready.discussion.category.name}</Badge>{ready.discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{ready.discussion.locked && <Badge variant="outline">Conversa encerrada</Badge>}</div>
+        <h2 ref={heading} tabIndex={-1} className="break-words text-2xl font-semibold tracking-tight outline-none [overflow-wrap:anywhere]">{ready.discussion.title}</h2>
+        <p className="text-sm text-muted-foreground">por {ready.discussion.author} · Atualizada em <DateLabel value={ready.discussion.updatedAt} /></p>
+        <p className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">{ready.body}</p>
+        <Button asChild variant="outline"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">{ready.discussion.locked ? 'Ver no GitHub' : 'Responder no GitHub'}<ArrowUpRight /></a></Button>
+        {!ready.discussion.locked && <Composer number={number} onPublished={() => { setCursors([]); retry(); }} />}
+      </article>
+      <section aria-label="Comentários" className="space-y-4">
+        <h3 className="text-lg font-semibold">Comentários ({ready.discussion.commentCount})</h3>
+        {ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={retry} />) : <p className="text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}
+      </section>
+      <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
+    </>}
+  </section>;
+}
+
+function DiscussionFeed() {
+  const [category, setCategory] = useState(() => new URLSearchParams(window.location.search).get('categoria') || 'all');
+  const [query, setQuery] = useState(() => (new URLSearchParams(window.location.search).get('q') || '').slice(0, 200).trim());
+  const [draft, setDraft] = useState(query);
+  const [cursors, setCursors] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const parameters = new URLSearchParams();
+  if (category !== 'all') parameters.set('category', category);
+  if (query) parameters.set('q', query);
+  if (cursors.length) parameters.set('after', cursors[cursors.length - 1]);
+  const { result, error, retry } = useDiscussions<DiscussionList>(`/api/discussions?${parameters}`);
+  const ready = result?.status === 'ready' ? result : null;
+  useEffect(() => { if (ready) setCategories(ready.categories); }, [ready]);
+  function applyFilters(nextQuery: string, nextCategory = category) {
+    setQuery(nextQuery);
+    setCategory(nextCategory);
+    setCursors([]);
+    const url = new URL(window.location.href);
+    if (nextQuery) url.searchParams.set('q', nextQuery); else url.searchParams.delete('q');
+    if (nextCategory !== 'all') url.searchParams.set('categoria', nextCategory); else url.searchParams.delete('categoria');
+    window.history.replaceState(null, '', url);
+  }
+  function discussionUrl(number: number) {
+    const filters = new URLSearchParams({ conversa: String(number) });
+    if (query) filters.set('q', query);
+    if (category !== 'all') filters.set('categoria', category);
+    return `/?${filters}`;
+  }
+  return <div className="space-y-5">
+    <form role="search" aria-label="Buscar conversas" className="space-y-2" onSubmit={event => { event.preventDefault(); applyFilters(draft.trim()); }}>
+      <label htmlFor="discussion-search" className="text-sm font-medium">Pesquise uma dúvida ou assunto</label>
+      <div className="flex flex-wrap gap-2">
+        <div className="relative min-w-0 basis-full sm:basis-auto sm:flex-1"><Search aria-hidden="true" className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground" /><Input id="discussion-search" type="search" maxLength={200} placeholder="Ex.: JavaScript, erro no React, carreira" value={draft} onChange={event => setDraft(event.target.value)} className="h-10 pl-10" aria-describedby="discussion-search-help" /></div>
+        <Button type="submit" className="h-10">Buscar</Button>
+        {query && <Button type="button" variant="ghost" className="h-10" onClick={() => { setDraft(''); applyFilters(''); }}>Limpar busca</Button>}
+      </div>
+      <p id="discussion-search-help" className="text-xs text-muted-foreground">Busca nos títulos, textos e comentários das conversas.</p>
+    </form>
+    {(ready || categories.length > 0) && <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Select value={category} onValueChange={value => applyFilters(query, value)}><SelectTrigger aria-label="Categoria das conversas" className="w-full sm:w-64"><SelectValue placeholder="Todas as conversas" /></SelectTrigger><SelectContent><SelectItem value="all">Todas as conversas</SelectItem>{categories.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
+      {ready && <Button asChild><a href={`${ready.repositoryUrl}/new`} target="_blank" rel="noopener noreferrer">Nova conversa no GitHub<ArrowUpRight /></a></Button>}
+    </div>}
+    {ready && <Composer categories={categories} label="Novo tópico" onPublished={number => { window.location.assign(`/?conversa=${number}`); }} />}
+    {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
+      <p className="text-sm text-muted-foreground" role="status">{query ? `${ready.totalCount ?? ready.items.length} ${(ready.totalCount ?? ready.items.length) === 1 ? 'conversa encontrada' : 'conversas encontradas'} para “${query}”. Resultados por relevância.` : 'Atividade mais recente primeiro. Para criar ou responder, use sua conta no GitHub.'}</p>
+      {ready.items.length ? <ul className="space-y-3" aria-label="Conversas">{ready.items.map(discussion => <li key={discussion.number}>
+        <Card className="gap-3 shadow-none">
+          <CardHeader className="gap-2">
+            <div className="flex flex-wrap gap-2"><Badge variant="secondary">{discussion.category.name}</Badge>{discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{discussion.locked && <Badge variant="outline">Encerrada</Badge>}</div>
+            <h2 className="min-w-0 text-lg font-semibold leading-snug"><a className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-ring [overflow-wrap:anywhere]" href={discussionUrl(discussion.number)}>{discussion.title}</a></h2>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"><span>por {discussion.author}</span><span>Atualizada em <DateLabel value={discussion.updatedAt} /></span><span className="inline-flex items-center gap-1.5"><MessageSquareText className="size-4" aria-hidden="true" />{discussion.commentCount} {discussion.commentCount === 1 ? 'comentário' : 'comentários'}</span></CardContent>
+        </Card>
+      </li>)}</ul> : <Empty className="border"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>{query ? 'Nenhuma conversa encontrada' : category === 'all' ? 'Comece a primeira conversa' : 'Ainda não há conversas nesta categoria'}</EmptyTitle><EmptyDescription>{query ? 'Tente outras palavras ou selecione todas as categorias. Você também pode abrir uma nova conversa.' : 'Compartilhe uma dúvida, uma descoberta ou uma experiência com a comunidade.'}</EmptyDescription></EmptyHeader></Empty>}
+      <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
+    </>}
+  </div>;
+}
+
+export function Discussions() {
+  // Read the URL after hydration so the pre-rendered homepage remains consistent.
+  const [number, setNumber] = useState<number | null | undefined>(undefined);
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('conversa');
+    const parsed = value && /^\d+$/.test(value) ? Number(value) : 0;
+    setNumber(Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 2147483647 ? parsed : null);
+  }, []);
+  return <section id="comunidade" aria-labelledby="discussions-title" className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-2"><h1 id="discussions-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">Conversas da comunidade</h1><p className="text-muted-foreground">Conversas, dúvidas e ideias de quem vive tecnologia.</p></div>
+    <Participation>{number === undefined ? <p role="status">Carregando conversas…</p> : number ? <DiscussionThread number={number} /> : <DiscussionFeed />}</Participation>
+  </section>;
+}

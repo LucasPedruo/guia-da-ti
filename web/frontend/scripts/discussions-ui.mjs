@@ -1,0 +1,161 @@
+import assert from 'node:assert/strict';
+
+// Fixtures exist only in the browser test; production always uses the backend.
+export async function installDiscussionFixtures(send) {
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `
+    const originalFetch = window.fetch.bind(window);
+    window.discussionRequests = [];
+    window.fetch = async (input, options) => {
+      const url = new URL(String(input), location.origin);
+      if (url.pathname === '/api/contributors') return Response.json({ items: [{ name: 'ana', url: 'https://github.com/ana', contributions: 5 }] });
+      if (url.pathname === '/api/auth/session') return Response.json({ enabled: !!sessionStorage.getItem('participationMode'), login: sessionStorage.getItem('participationMode') === 'guest' ? null : 'ana', csrfToken: 'test-csrf' });
+      if (url.pathname === '/api/discussions/publish') {
+        window.lastPublication = JSON.parse(options.body);
+        window.lastCsrf = options.headers['X-CSRF-Token'];
+        if (sessionStorage.getItem('participationMode') === 'error') return Response.json({ error: 'Publicação recusada.' }, { status: 403 });
+        return Response.json({ number: window.lastPublication.number || 7 });
+      }
+      if (!url.pathname.startsWith('/api/discussions')) return originalFetch(input, options);
+      window.discussionRequests.push(url.pathname + url.search);
+      const mode = sessionStorage.getItem('discussionTestMode') || 'unconfigured';
+      if (mode === 'error') return new Response('{}', { status: 503 });
+      if (mode === 'unconfigured') return Response.json({ status: 'unconfigured' });
+      if (mode === 'slow') await new Promise(resolve => setTimeout(resolve, 1200));
+      const category = { id: 'questions', name: 'Dúvidas' };
+      const repositoryUrl = 'https://github.com/example/community/discussions';
+      const secondPage = url.searchParams.has('after');
+      const discussion = { number: 7, title: 'Como começar em tecnologia?', category, author: 'ana', updatedAt: '2026-10-05T12:00:00Z', commentCount: 2, isAnswered: true, locked: mode === 'locked', url: repositoryUrl + '/7' };
+      const comment = { id: 'comment-1', author: 'bia', body: 'Resposta de exemplo', createdAt: '2026-10-05T12:00:00Z', isAnswer: true, replies: [], replyCount: 0 };
+      const pageInfo = { hasNextPage: !secondPage, endCursor: secondPage ? null : 'cursor-2' };
+      if (url.pathname === '/api/discussions/404') return new Response('{}', { status: 404 });
+      if (url.pathname.endsWith('/7')) return Response.json({ status: 'ready', discussion, body: '<img src=x onerror=alert(1)> Texto da conversa', comments: [secondPage ? { ...comment, id: 'comment-2', body: 'Segundo comentário' } : { ...comment, replies: [{ ...comment, id: 'reply-1', isAnswer: false }], replyCount: 6 }], pageInfo });
+      if (url.searchParams.has('q')) return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, title: 'Dúvida sobre JavaScript' }], totalCount: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? 0 : 21, pageInfo });
+      return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, number: secondPage ? 8 : 7, title: secondPage ? 'Outra conversa' : discussion.title }], pageInfo: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? { hasNextPage: false, endCursor: null } : pageInfo });
+    };
+  ` });
+}
+
+export async function checkDiscussions({ send, evaluate, click, waitFor, navigate }) {
+  const mode = value => evaluate(`sessionStorage.setItem('discussionTestMode', ${JSON.stringify(value)})`);
+  const button = label => `[...document.querySelectorAll('main button')].find(e=>e.textContent.trim()===${JSON.stringify(label)})`;
+  await mode('ready');
+  await navigate('/');
+  await waitFor(`!!document.querySelector('[aria-label="Conversas"]')`);
+  await click(`document.querySelector('#discussion-search')`);
+  await send('Input.insertText', { text: 'erro js' });
+  await click(button('Buscar'));
+  await waitFor(`document.querySelector('main').textContent.includes('Dúvida sobre JavaScript')`);
+  assert.equal(await evaluate(`document.querySelector('[role="status"]').textContent.includes('21 conversas encontradas')`), true);
+  await click(button('Próxima'));
+  await waitFor(`window.discussionRequests.at(-1).includes('after=cursor-2') && window.discussionRequests.at(-1).includes('q=erro+js')`);
+  await waitFor(`!!document.querySelector('a[href*="conversa=7"]')`);
+  await click(`document.querySelector('a[href*="conversa=7"]')`);
+  await waitFor(`!!document.querySelector('[aria-label="Comentários"]')`);
+  await click(`[...document.querySelectorAll('main a')].find(e=>e.textContent.includes('Voltar à busca'))`);
+  await waitFor(`document.querySelector('#discussion-search')?.value === 'erro js'`);
+  await click(`document.querySelector('[aria-label="Categoria das conversas"]')`);
+  await click(`[...document.querySelectorAll('[role="option"]')].find(e=>e.textContent.trim()==='Ideias')`);
+  await waitFor(`document.querySelector('main').textContent.includes('Nenhuma conversa encontrada')`);
+  assert.equal(await evaluate(`window.discussionRequests.at(-1).includes('q=erro+js') && window.discussionRequests.at(-1).includes('category=ideas') && !window.discussionRequests.at(-1).includes('after=')`), true);
+  await click(button('Limpar busca'));
+  await waitFor(`document.querySelector('main').textContent.includes('Ainda não há conversas nesta categoria')`);
+  assert.equal(await evaluate(`document.querySelector('#discussion-search').value`), '');
+  await navigate('/?q=semresultado');
+  await waitFor(`document.querySelector('main').textContent.includes('Nenhuma conversa encontrada')`);
+  await navigate('/');
+  await waitFor(`!!document.querySelector('[aria-label="Conversas"]')`);
+  assert.equal(await evaluate(`document.querySelector('a[href="/?conversa=7"]').textContent`), 'Como começar em tecnologia?');
+  assert.equal(await evaluate(`document.querySelector('a[href$="/discussions/new"]').getAttribute('target')`), '_blank');
+  await click(button('Próxima'));
+  await waitFor(`document.querySelector('main').textContent.includes('Outra conversa')`);
+  assert.equal(await evaluate(`window.discussionRequests.some(url=>url.includes('after=cursor-2'))`), true);
+  await click(button('Anterior'));
+  await waitFor(`!!document.querySelector('a[href="/?conversa=7"]')`);
+  await click(`document.querySelector('[aria-label="Categoria das conversas"]')`);
+  await click(`[...document.querySelectorAll('[role="option"]')].find(e=>e.textContent.trim()==='Ideias')`);
+  await waitFor(`document.querySelector('main').textContent.includes('Ainda não há conversas nesta categoria')`);
+  assert.equal(await evaluate(`window.discussionRequests.at(-1).includes('category=ideas') && !window.discussionRequests.at(-1).includes('after=')`), true);
+  await mode('empty');
+  await navigate('/');
+  await waitFor(`document.querySelector('main').textContent.includes('Comece a primeira conversa')`);
+  await mode('error');
+  await navigate('/');
+  await waitFor(`!!document.querySelector('main [role="alert"]')`);
+  await mode('ready');
+  await click(button('Tentar novamente'));
+  await waitFor(`!!document.querySelector('a[href="/?conversa=7"]')`);
+  await click(`document.querySelector('a[href="/?conversa=7"]')`);
+  await waitFor(`!!document.querySelector('[aria-label="Comentários"]')`);
+  assert.equal(await evaluate(`location.search`), '?conversa=7');
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('Resposta aceita')`), true);
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('Ver todas as 6 respostas no GitHub')`), true);
+  assert.equal(await evaluate(`document.querySelectorAll('main img').length`), 0, 'Discussion body must be escaped');
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('<img src=x onerror=alert(1)>')`), true);
+  await click(button('Próxima'));
+  await waitFor(`document.querySelector('main').textContent.includes('Segundo comentário')`);
+  await mode('locked');
+  await navigate('/?conversa=7');
+  await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('Responder no GitHub')`), false);
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 844, deviceScaleFactor: 1, mobile: false });
+  assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, 'Mobile thread overflow');
+  await navigate('/?conversa=404');
+  await waitFor(`document.querySelector('main').textContent.includes('Esta conversa não foi encontrada')`);
+  await mode('unconfigured');
+  await navigate('/');
+  await waitFor(`document.querySelector('main').textContent.includes('As conversas da comunidade vão aparecer aqui')`);
+
+  await mode('ready');
+  await evaluate(`sessionStorage.setItem('participationMode', 'guest')`);
+  await navigate('/');
+  await waitFor(`document.querySelector('a[href^="/api/auth/login"]') !== null`);
+  assert.equal(await evaluate(`!!${button('Novo tópico')}`), false);
+  await evaluate(`sessionStorage.setItem('participationMode', 'member')`);
+  await navigate('/');
+  await waitFor(`!!${button('Novo tópico')}`);
+  await click(button('Novo tópico'));
+  await click(`document.querySelector('input[id$="-title"]')`);
+  await send('Input.insertText', { text: 'Um novo tópico' });
+  await click(`document.querySelector('[aria-label="Categoria do novo tópico"]')`);
+  await click(`[...document.querySelectorAll('[role="option"]')].find(e=>e.textContent.trim()==='Dúvidas')`);
+  await click(`document.querySelector('textarea')`);
+  await send('Input.insertText', { text: 'Texto do tópico' });
+  await click(button('Publicar'));
+  await waitFor(`location.search === '?conversa=7' && !!document.querySelector('[aria-label="Comentários"]')`);
+  await click(button('Comentar'));
+  await click(`document.querySelector('textarea')`);
+  await send('Input.insertText', { text: 'Meu comentário' });
+  await click(button('Publicar'));
+  await waitFor(`window.lastPublication?.body === 'Meu comentário'`);
+  assert.equal(await evaluate(`window.lastPublication.number`), 7);
+  assert.equal(await evaluate(`window.lastCsrf`), 'test-csrf');
+  await waitFor(`!document.querySelector('textarea')`);
+  await waitFor(`!!${button('Responder')}`);
+  await click(button('Responder'));
+  await click(`document.querySelector('textarea')`);
+  await send('Input.insertText', { text: 'Minha resposta' });
+  await click(button('Publicar'));
+  await waitFor(`window.lastPublication?.body === 'Minha resposta'`);
+  assert.equal(await evaluate(`window.lastPublication.replyToId`), 'comment-1');
+  await evaluate(`sessionStorage.setItem('participationMode', 'error')`);
+  await navigate('/?conversa=7');
+  await waitFor(`!!${button('Comentar')}`);
+  await click(button('Comentar'));
+  await click(`document.querySelector('textarea')`);
+  await send('Input.insertText', { text: 'Preservar rascunho' });
+  await click(button('Publicar'));
+  await waitFor(`document.querySelector('main [role="alert"]')?.textContent === 'Publicação recusada.'`);
+  assert.equal(await evaluate(`document.querySelector('textarea').value`), 'Preservar rascunho');
+  await mode('locked');
+  await navigate('/?conversa=7');
+  await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
+  assert.equal(await evaluate(`!!${button('Comentar')} || !!${button('Responder')}`), false);
+  for (const [path, title] of [['/apoiadores', 'Empresas apoiadoras'], ['/contribuidores', 'Contribuidores'], ['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
+    await navigate(`${path}/`);
+    assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
+    if (path === '/apoiadores') assert.equal(await evaluate(`!!document.querySelector('main a[href="https://www.hostgator.com.br/"]')`), true);
+    if (path === '/contribuidores') { await waitFor(`!!document.querySelector('main a[href="https://github.com/ana"]')`); assert.equal(await evaluate(`document.querySelector('main').textContent.includes('5 contribuições')`), true); }
+    assert.equal(await evaluate(`!!document.querySelector('a[href="${path}"][aria-current="page"]')`), true);
+    if (['/sobre', '/apoiadores', '/contribuidores'].includes(path)) assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()==='Projeto')?.getAttribute('data-current')`), 'true');
+  }
+}

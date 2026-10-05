@@ -42,7 +42,7 @@
   },
   {
     "id": "inform",
-    "name": "Se informar",
+    "name": "Conteúdos",
     "categories": [
       {
         "id": "news",
@@ -78,7 +78,7 @@
   },
   {
     "id": "deepen",
-    "name": "Aprofundar",
+    "name": "Artigos e estudos",
     "categories": [
       {
         "id": "articles",
@@ -109,7 +109,7 @@
   },
   {
     "id": "connect",
-    "name": "Se conectar",
+    "name": "Comunidade",
     "categories": [
       {
         "id": "communities",
@@ -140,7 +140,7 @@
   },
   {
     "id": "create",
-    "name": "Criar e praticar",
+    "name": "Praticar",
     "categories": [
       {
         "id": "tools",
@@ -166,7 +166,7 @@
   },
   {
     "id": "opportunities",
-    "name": "Oportunidades",
+    "name": "Carreira",
     "categories": [
       {
         "id": "jobs",

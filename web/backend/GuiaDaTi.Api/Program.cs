@@ -10,6 +10,11 @@ var catalog = JsonSerializer.Deserialize<Catalog>(json, new JsonSerializerOption
     ?? throw new InvalidDataException("Catálogo ausente. Execute a validação dos dados.");
 if (catalog.Version != 1) throw new InvalidDataException("Versão de catálogo incompatível.");
 builder.Services.AddSingleton(catalog);
+builder.Services.AddHttpClient("discussions", client => client.Timeout = TimeSpan.FromSeconds(10));
+builder.Services.AddSingleton<DiscussionsClient>();
+builder.Services.AddSingleton<DiscussionWriter>();
+builder.Services.AddSingleton<ContributorsClient>();
+builder.AddCommunityAuth();
 var app = builder.Build();
 app.Use(async (context, next) => {
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
@@ -21,6 +26,11 @@ app.Use(async (context, next) => {
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.MapCommunityAuth();
+app.MapDiscussionWrites();
+app.MapDiscussions();
+app.MapContributors();
 app.MapGet("/health", () => Results.Ok(new { status = "ok", resources = catalog.Resources.Length }));
 app.MapGet("/api/resources", (string? q, string? type, int? page, int? pageSize) => {
     if (q?.Length > 200 || page is < 1 || pageSize is < 1 or > 100) return Results.BadRequest(new { error = "Parâmetros inválidos." });

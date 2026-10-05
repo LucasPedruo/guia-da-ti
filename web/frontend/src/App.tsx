@@ -1,23 +1,21 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, Compass, Github, Menu, MessageSquareText, Moon, Search, Sun } from 'lucide-react';
+import { Discussions } from './Discussions';
+import { Community } from './Community';
+import { ArrowLeft, ArrowUpRight, ChevronDown, Compass, Github, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Accordion } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { categories, groups, labels, normalize, pageInfo, resourcePath, resources, taxonomy, type Resource } from './catalog';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { categories, groups, labels, normalize, pageInfo, resourcePath, resources, type Resource } from './catalog';
 
 const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/LucasPedruo/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
-const megaMenuColumns = [
-  groups.filter(group => ['learn', 'deepen'].includes(group.id)),
-  groups.filter(group => ['inform', 'connect'].includes(group.id)),
-  groups.filter(group => ['create', 'opportunities'].includes(group.id)),
-];
 
 function ResourceCard({ resource }: { resource: Resource }) {
   return (
@@ -42,57 +40,10 @@ function ResourceCard({ resource }: { resource: Resource }) {
   );
 }
 
-type DiscussionPreview = {
-  id: string;
-  title: string;
-  category: string;
-  author: string;
-  updatedAt: string;
-  replyCount: number;
-  url: string;
-};
-
-function DiscussionsPreview({ discussions = [] }: { discussions?: DiscussionPreview[] }) {
-  return (
-    <section id="comunidade" aria-labelledby="discussions-title" className="scroll-mt-8 space-y-4">
-      <div className="space-y-1">
-        <h2 id="discussions-title" className="text-xl font-semibold tracking-tight">Comunidade</h2>
-        <p className="text-sm text-muted-foreground">Conversas, dúvidas e ideias de quem vive tecnologia.</p>
-      </div>
-      {discussions.length ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          {discussions.map(discussion => (
-            <Card key={discussion.id} className="shadow-none">
-              <CardHeader className="gap-3">
-                <div className="flex flex-wrap items-center gap-2"><Badge variant="secondary">{discussion.category}</Badge><CardDescription>por {discussion.author}</CardDescription></div>
-                <CardTitle className="text-base leading-snug">{discussion.title}</CardTitle>
-              </CardHeader>
-              <CardFooter className="justify-between gap-3 border-t pt-4 text-sm text-muted-foreground">
-                <span>{discussion.replyCount} respostas · {discussion.updatedAt}</span>
-                <Button asChild variant="ghost" size="sm"><a href={discussion.url}>Abrir conversa<ArrowUpRight /></a></Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Empty className="min-h-44 border bg-card p-6 md:flex-row md:justify-between md:text-left">
-          <EmptyHeader className="md:items-start md:text-left">
-            <EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia>
-            <EmptyTitle>As conversas da comunidade vão aparecer aqui</EmptyTitle>
-            <EmptyDescription>Estamos preparando a integração com o GitHub Discussions para você ler, navegar e participar pelo Guia da TI.</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="md:w-auto md:max-w-none md:items-end">
-            <Button variant="outline" disabled>Fórum em preparação</Button>
-          </EmptyContent>
-        </Empty>
-      )}
-    </section>
-  );
-}
-
 export function App({ path }: { path: string }) {
   const page = pageInfo(path);
   const home = path === '/';
+  const explore = path === '/explorar' || Boolean(page.area || page.technology);
   const [query, setQuery] = useState('');
   const [type, setType] = useState(page.category?.id || 'all');
   const [locale, setLocale] = useState('all');
@@ -132,36 +83,35 @@ export function App({ path }: { path: string }) {
             </Button>
           <NavigationMenu viewport={false} aria-label="Principal" className="hidden min-w-0 flex-1 justify-start xl:flex">
             <NavigationMenuList className="flex-nowrap justify-start gap-0.5">
-              <NavigationMenuItem><NavigationMenuLink asChild active={home}><a href="/" aria-current={home ? 'page' : undefined}>Home</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Explorar</NavigationMenuTrigger>
-                <NavigationMenuContent className="!fixed !top-[72px] !left-0 z-50 mt-0 !w-screen max-w-none !translate-x-0 rounded-none border-x-0 border-t bg-background p-0 shadow-none">
-                  <div className="mx-auto grid max-h-[min(70vh,36rem)] w-full max-w-7xl grid-cols-1 gap-x-10 gap-y-6 overflow-y-auto px-6 py-7 sm:grid-cols-2 lg:grid-cols-3 lg:px-10">
-                    {megaMenuColumns.map((column, index) => (
-                      <div key={index} className="space-y-5">
-                        {column.map(group => (
-                          <section key={group.id} aria-labelledby={`menu-${group.id}`} className="space-y-1.5">
-                            <h2 id={`menu-${group.id}`} className="px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{group.name}</h2>
-                            <ul className="grid grid-cols-2 gap-x-2">
-                              {group.categories.map(category => (
-                                <li key={category.id}><NavigationMenuLink asChild active={category.id === page.category?.id}>
-                                  <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined} className="rounded-md px-2 py-1">{category.name}</a>
-                                </NavigationMenuLink></li>
-                              ))}
-                            </ul>
-                          </section>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+              <NavigationMenuItem><NavigationMenuLink asChild active={home}><a href="/" aria-current={home ? 'page' : undefined}>Início</a></NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink asChild active={explore}><a href="/explorar" aria-current={explore ? (path === '/explorar' ? 'page' : 'location') : undefined}>Explorar</a></NavigationMenuLink></NavigationMenuItem>
+              {groups.map(group => (
+                <NavigationMenuItem key={group.id} value={group.id}>
+                  <NavigationMenuTrigger
+                    className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary"
+                    data-current={group.categories.some(category => category.id === page.category?.id)}
+                    onPointerMove={event => event.preventDefault()}
+                    onPointerLeave={event => event.preventDefault()}
+                  >{group.name}</NavigationMenuTrigger>
+                  <NavigationMenuContent onPointerEnter={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()} className="z-50 !w-64">
+                    <ul className="max-h-[calc(100svh-7rem)] space-y-1 overflow-y-auto">
+                      {group.categories.map(category => (
+                        <li key={category.id}>
+                          <NavigationMenuLink asChild active={category.id === page.category?.id}>
+                            <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined} className="px-3 py-2.5">{category.name}</a>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              ))}
+              <NavigationMenuItem value="projeto">
+                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores', '/contribuidores'].includes(path)} className="px-2 data-[current=true]:bg-accent data-[current=true]:text-primary" onPointerMove={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()}>Projeto</NavigationMenuTrigger>
+                <NavigationMenuContent onPointerEnter={event => event.preventDefault()} onPointerLeave={event => event.preventDefault()} className="z-50 !w-64">
+                  {[{ name: 'Sobre', href: '/sobre' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }, { name: 'Contribuidores', href: '/contribuidores' }].map(link => <NavigationMenuLink key={link.href} asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></NavigationMenuLink>)}
                 </NavigationMenuContent>
               </NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/comunidades'}><a href="/comunidades" aria-current={path === '/comunidades' ? 'page' : undefined}>Comunidades</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/cursos'}><a href="/cursos">Aprender</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/criadores'}><a href="/criadores">Criadores</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/eventos'}><a href="/eventos">Eventos</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/ferramentas'}><a href="/ferramentas">Ferramentas</a></NavigationMenuLink></NavigationMenuItem>
-              <NavigationMenuItem><NavigationMenuLink asChild active={path === '/sobre'}><a href="/sobre" aria-current={path === '/sobre' ? 'page' : undefined}>Sobre</a></NavigationMenuLink></NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -172,31 +122,38 @@ export function App({ path }: { path: string }) {
               <SheetTrigger asChild><Button variant="ghost" size="icon" className="xl:hidden" aria-label="Abrir navegação"><Menu /></Button></SheetTrigger>
               <SheetContent className="w-[min(88vw,24rem)] overflow-y-auto p-0">
                 <SheetHeader className="border-b px-5 py-5">
-                  <SheetTitle>Explore o Guia da TI</SheetTitle>
-                  <SheetDescription>Encontre recursos e caminhos em tecnologia.</SheetDescription>
+                  <SheetTitle>Navegação</SheetTitle>
+                  <SheetDescription>Escolha uma categoria para ver as opções.</SheetDescription>
                 </SheetHeader>
                 <nav aria-label="Navegação para celular" className="space-y-5 px-4 py-5">
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { name: 'Home', href: '/' }, { name: 'Comunidades', href: '/comunidades' },
-                      { name: 'Aprender', href: '/cursos' }, { name: 'Criadores', href: '/criadores' },
-                      { name: 'Eventos', href: '/eventos' }, { name: 'Ferramentas', href: '/ferramentas' },
-                      { name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' },
-                    ].map(link => <SheetClose asChild key={link.href}><Button asChild variant="outline" className="justify-start"><a href={link.href}>{link.name}</a></Button></SheetClose>)}
-                  </div>
+                  <SheetClose asChild><Button asChild variant={home ? 'secondary' : 'ghost'} className="w-full justify-start"><a href="/" aria-current={home ? 'page' : undefined}>Início</a></Button></SheetClose>
+                  <SheetClose asChild><Button asChild variant={explore ? 'secondary' : 'ghost'} className="w-full justify-start"><a href="/explorar" aria-current={explore ? (path === '/explorar' ? 'page' : 'location') : undefined}>Explorar</a></Button></SheetClose>
+                  <Accordion.Root type="single" collapsible className="divide-y" defaultValue={groups.find(group => group.categories.some(category => category.id === page.category?.id))?.id}>
+                    {groups.map(group => (
+                      <Accordion.Item key={group.id} value={group.id}>
+                        <Accordion.Header>
+                          <Accordion.Trigger data-current={group.categories.some(category => category.id === page.category?.id)} className="group flex w-full items-center justify-between rounded-md px-3 py-4 text-left text-sm font-medium hover:bg-accent data-[current=true]:bg-accent data-[current=true]:text-primary focus-visible:outline-2 focus-visible:outline-ring">
+                            {group.name}<ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+                          </Accordion.Trigger>
+                        </Accordion.Header>
+                        <Accordion.Content>
+                          <ul className="mb-3 ml-3 space-y-1 border-l pl-2">
+                            {group.categories.map(category => (
+                              <li key={category.id}><SheetClose asChild><Button asChild variant={category.id === page.category?.id ? 'secondary' : 'ghost'} className="h-auto min-h-11 w-full justify-start whitespace-normal py-2 text-left"><a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined}>{category.name}</a></Button></SheetClose></li>
+                            ))}
+                          </ul>
+                        </Accordion.Content>
+                      </Accordion.Item>
+                    ))}
+                  </Accordion.Root>
                   <Separator />
-                  {groups.map(group => (
-                    <section key={group.id} aria-labelledby={`mobile-menu-${group.id}`} className="space-y-2">
-                      <h2 id={`mobile-menu-${group.id}`} className="px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{group.name}</h2>
-                      <div className="grid grid-cols-2 gap-1">
-                        {group.categories.map(category => <SheetClose asChild key={category.id}><Button asChild variant="ghost" size="sm" className="justify-start whitespace-normal text-left"><a href={`/${category.route}`}>{category.name}</a></Button></SheetClose>)}
-                      </div>
-                    </section>
-                  ))}
+                  <div className="space-y-1">
+                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }, { name: 'Contribuidores', href: '/contribuidores' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
+                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
-            <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><a href="/contribuir">Contribuir</a></Button>
+            <Button asChild variant={path === '/contribuir' ? 'secondary' : 'outline'} size="sm" className="hidden sm:inline-flex"><a href="/contribuir" aria-current={path === '/contribuir' ? 'page' : undefined}>Contribuir</a></Button>
           </div>
         </div>
       </header>
@@ -204,6 +161,10 @@ export function App({ path }: { path: string }) {
       <main id="conteudo" className="mx-auto min-h-[70vh] max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
         {!page.valid ? (
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar para a home</a></Button></EmptyContent></Empty>
+        ) : home ? (
+          <div className="space-y-12"><Discussions /><Separator /><Community area="supporters" preview /><Community area="contributors" preview /></div>
+        ) : path === '/apoiadores' || path === '/contribuidores' ? (
+          <Community area={path === '/apoiadores' ? 'supporters' : 'contributors'} />
         ) : path === '/sobre' ? (
           <article className="mx-auto max-w-2xl space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1>
@@ -247,14 +208,6 @@ export function App({ path }: { path: string }) {
               </div>
             </section>
 
-            {home && !query && type === 'all' && (
-              <section aria-label="Categorias" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {groups.map(group => <Card key={group.id} className="gap-3 shadow-none"><CardHeader><CardTitle><h2>{group.name}</h2></CardTitle></CardHeader><CardContent className="flex flex-wrap gap-x-2 gap-y-1">{group.categories.map(category => <Button asChild key={category.id} variant="ghost" size="sm" className="h-9 justify-start px-2 font-normal"><a href={`/${category.route}`}>{category.name}</a></Button>)}</CardContent></Card>)}
-              </section>
-            )}
-
-            {home && !query && type === 'all' && <DiscussionsPreview />}
-
             <section aria-label="Resultados" className="space-y-4">
               <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-medium">{query || type !== 'all' ? 'Resultados' : 'Recursos'}</h2><span className="text-sm text-muted-foreground" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'recurso' : 'recursos'}</span></div>
               {filtered.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(resource => <ResourceCard key={`${resource.type}/${resource.slug}`} resource={resource} />)}</div> : <Empty className="border"><EmptyHeader><EmptyTitle>{query ? 'Nenhum resultado' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{query ? 'Tente outro nome, assunto ou tecnologia.' : 'Você pode sugerir o primeiro recurso desta categoria.'}</EmptyDescription></EmptyHeader><EmptyContent>{query ? <Button variant="outline" onClick={() => setQuery('')}>Limpar busca</Button> : <Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button>}</EmptyContent></Empty>}
@@ -262,7 +215,7 @@ export function App({ path }: { path: string }) {
           </div>
         )}
       </main>
-      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><Button asChild variant="link" size="sm" className="text-muted-foreground"><a href="/sobre">Sobre o projeto</a></Button></div></footer>
+      <footer className="mx-auto max-w-7xl px-4 pb-6 sm:px-6"><Separator /><div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground"><span>Guia da TI</span><nav aria-label="Projeto" className="flex flex-wrap gap-2">{[{ href: '/sobre', name: 'Sobre o projeto' }, { href: '/apoiadores', name: 'Empresas apoiadoras' }, { href: '/contribuidores', name: 'Contribuidores' }].map(link => <Button asChild key={link.href} variant="link" size="sm" className="text-muted-foreground"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button>)}</nav></div></footer>
     </div>
   );
 }
