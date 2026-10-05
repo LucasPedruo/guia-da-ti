@@ -55,7 +55,7 @@ public static class CommunityAuth
                 },
                 OnRemoteFailure = context => {
                     context.HandleResponse();
-                    context.Response.Redirect("/?login=failed");
+                    context.Response.Redirect(context.Properties?.RedirectUri == "/auth/complete.html" ? "/auth/complete.html?login=failed" : "/?login=failed");
                     return Task.CompletedTask;
                 }
             };
@@ -67,6 +67,8 @@ public static class CommunityAuth
         app.MapGet("/api/auth/session", (HttpContext context, IAntiforgery csrf, IConfiguration config) => {
             context.Response.Headers.CacheControl = "no-store";
             return Results.Ok(new { enabled = Enabled(config), login = context.User.Identity?.IsAuthenticated == true ? context.User.Identity.Name : null,
+                avatarUrl = context.User.Identity?.IsAuthenticated == true && long.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
+                    ? $"https://avatars.githubusercontent.com/u/{userId}?s=80" : null,
                 csrfToken = csrf.GetAndStoreTokens(context).RequestToken });
         });
         app.MapGet("/api/auth/login", (string? returnUrl, IConfiguration config) => {

@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @custom-variant dark (&:is(.dark *));
 
+.skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; }
+@keyframes skeleton-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+
 /* Theme tokens shared by the official shadcn/ui components. */
 :root {
   --radius: 0.625rem;
@@ -99,6 +106,12 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
 .site-frame::before { left: -4px; }
 .site-frame::after { right: -4px; }
 .site-header { border-bottom: 1px dashed var(--border); z-index: 30; }
+.site-footer { border-top: 1px dashed var(--border); }
+.site-footer > .section-divider {
+  --guide-line: color-mix(in srgb, var(--border) 75%, transparent);
+  margin-inline: 0;
+  border-top: 0;
+}
 .header-inner { position: static; }
 .header-inner::before, .header-inner::after { display: none; }
 .section-divider {
@@ -129,11 +142,21 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
 /* Desktop panels span the viewport and sit flush against the header. */
 .site-header [data-slot="navigation-menu"] > div { position: static !important; }
 .site-header [data-slot="navigation-menu-list"] > li > :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25rem;
   letter-spacing: normal;
+}
+.site-header [data-slot="navigation-menu-list"] > li > :is(a, button):is(:hover, :focus, [data-state="open"], [aria-current], [data-current="true"]) {
+  background: var(--accent);
+  color: var(--primary);
 }
 .mega-panel[data-slot="navigation-menu-content"] {
   position: absolute !important;

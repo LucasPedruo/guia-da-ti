@@ -90,6 +90,9 @@ try {
   await waitFor(`document.querySelector('[aria-live="polite"]').textContent === '1 recurso'`);
   await navigate('/eventos/');
   await waitFor(`document.body.textContent.includes('Ainda não há recursos aqui')`);
+  const footerBounds = await evaluate(`(()=>{const r=document.querySelector('footer').getBoundingClientRect();return {bottom:r.bottom,left:r.left,right:r.right,viewport:document.documentElement.clientWidth,height:innerHeight}})()`);
+  assert.ok(Math.abs(footerBounds.bottom - footerBounds.height) <= 1 && footerBounds.left === 0 && Math.abs(footerBounds.right - footerBounds.viewport) <= 1, JSON.stringify(footerBounds));
+  assert.equal(await evaluate(`!!document.querySelector('footer a[href="https://fulldev.com.br"]')`), true);
   await navigate('/sobre/');
   assert.equal(await evaluate(`document.querySelector('h1').textContent`), 'Sobre o Guia da TI');
   await navigate('/');

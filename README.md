@@ -1,6 +1,8 @@
 # Guia da TI
 
-Diretório colaborativo com **C#/.NET 10, React, TypeScript, Tailwind e shadcn/ui**.
+Guia colaborativo de links para sites, conteúdos e oportunidades de tecnologia. Os guias organizam indicações e levam você ao site de origem, onde ficam os cursos, artigos, tutoriais e atividades. No fórum, a comunidade pode tirar dúvidas e trocar conhecimento dentro do Guia.
+
+Aplicação com **C#/.NET 10, React, TypeScript, Tailwind e shadcn/ui**.
 
 - [guia-da-ti](https://github.com/guia-da-ti/guia-da-ti): aplicação e integração.
 - [guia-da-ti-dados](https://github.com/guia-da-ti/guia-da-ti-dados): catálogo público e contribuições.
@@ -71,11 +73,13 @@ Referência: [API GraphQL para Discussions](https://docs.github.com/en/graphql/g
 
 A home apresenta o fórum sem título visível, com busca, categoria e criação de tópico em uma barra compacta. A lista mostra autor, data, prévia de texto e comentários, separados por linhas. Há um espaço identificado como Publicidade entre os tópicos (ou após o único tópico, em listas com um item). O componente `Advertisement.tsx` reserva a posição e não carrega campanhas, scripts de anúncios ou rastreadores.
 
-A pesquisa acontece ao digitar, após uma pausa de 400 ms, e também ao pressionar Enter. Dentro do tópico, os comentários e respostas aparecem com linhas de encadeamento e podem ser recolhidos. A publicidade fica entre o tópico e o campo para comentar, em um cartão com menu para ocultar ou consultar o espaço reservado. O GitHub mantém respostas vinculadas ao comentário principal; a interface preserva essa estrutura.
+A pesquisa acontece ao digitar, após uma pausa de 400 ms, e também ao pressionar Enter. Dentro do tópico, os comentários e respostas aparecem com linhas de encadeamento e podem ser recolhidos. A publicidade fica entre o tópico e o campo para comentar, em um cartão com menu para consultar o espaço reservado. O GitHub mantém respostas vinculadas ao comentário principal; a interface preserva essa estrutura.
 
 ### Publicar pelo Guia
 
 Cadastre uma OAuth App no GitHub. Configure `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET` somente no backend, em User Secrets para desenvolvimento ou no gerenciador de segredos da hospedagem. O callback é `/api/auth/callback` no mesmo endereço usado para abrir o site: por exemplo, `http://localhost:5081/api/auth/callback` no desenvolvimento com Vite. Configure a URL pública HTTPS correspondente em produção; o proxy deve preservar o endereço e protocolo usados no callback. O fluxo usa OAuth com PKCE e o escopo `public_repo` exigido pela API para publicar em nome do visitante em repositórios públicos.
+
+O login abre em uma janela menor e retorna para `/auth/complete.html`, que avisa a página original e fecha a janela. O Guia confirma a sessão pelo backend e atualiza o usuário sem recarregar a página. Se o navegador bloquear a janela, o login usa a navegação normal. A foto de perfil usa o ID autenticado do GitHub. No ambiente local, o Vite redireciona `127.0.0.1` para `localhost` para manter o endereço cadastrado no OAuth.
 
 O login aparece quando as duas configurações existem. A sessão dura até oito horas, usa cookie HttpOnly e guarda o token no servidor. Reiniciar o servidor encerra as sessões. Esta implementação atende uma instância; várias instâncias exigem armazenamento de sessões compartilhado. Os endpoints de publicação e saída validam CSRF. Falhas preservam o rascunho. A API recusa categorias de outros repositórios, respostas de outros tópicos, comentários moderados e tópicos encerrados. O GitHub valida as permissões de cada pessoa, inclusive categorias de anúncios. A administração de categorias permanece no GitHub.
 

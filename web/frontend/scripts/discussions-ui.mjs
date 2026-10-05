@@ -8,7 +8,7 @@ export async function installDiscussionFixtures(send) {
     window.fetch = async (input, options) => {
       const url = new URL(String(input), location.origin);
       if (url.pathname === '/api/contributors') return Response.json({ items: [{ name: 'ana', url: 'https://github.com/ana', contributions: 5 }] });
-      if (url.pathname === '/api/auth/session') return Response.json({ enabled: !!sessionStorage.getItem('participationMode'), login: sessionStorage.getItem('participationMode') === 'guest' ? null : 'ana', csrfToken: 'test-csrf' });
+      if (url.pathname === '/api/auth/session') return Response.json({ enabled: !!sessionStorage.getItem('participationMode'), login: ['member', 'error'].includes(sessionStorage.getItem('participationMode')) ? 'ana' : null, avatarUrl: location.origin + '/favicon.svg', csrfToken: 'test-csrf' });
       if (url.pathname === '/api/discussions/publish') {
         window.lastPublication = JSON.parse(options.body);
         window.lastCsrf = options.headers['X-CSRF-Token'];
@@ -30,7 +30,7 @@ export async function installDiscussionFixtures(send) {
       if (url.pathname === '/api/discussions/404') return new Response('{}', { status: 404 });
       if (url.pathname.endsWith('/7')) return Response.json({ status: 'ready', discussion, body: '<img src=x onerror=alert(1)> Texto da conversa', comments: [secondPage ? { ...comment, id: 'comment-2', body: 'Segundo comentário' } : { ...comment, replies: [{ ...comment, id: 'reply-1', isAnswer: false }], replyCount: 6 }], pageInfo });
       if (mode === 'showcase') return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: [discussion, { ...discussion, number: 8, title: 'Qual foi o seu primeiro projeto?', author: 'bia', isAnswered: false }, { ...discussion, number: 9, title: 'Como organizar uma rotina de estudos?', author: 'caio', isAnswered: false }], pageInfo: { hasNextPage: false, endCursor: null } });
-      if (url.searchParams.has('q')) return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, title: 'Dúvida sobre JavaScript' }], totalCount: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? 0 : 21, pageInfo });
+      if (url.searchParams.has('q')) return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, title: secondPage ? 'Dúvida sobre JavaScript (continuação)' : 'Dúvida sobre JavaScript' }], totalCount: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? 0 : 21, pageInfo });
       return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, number: secondPage ? 8 : 7, title: secondPage ? 'Outra conversa' : discussion.title }], pageInfo: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? { hasNextPage: false, endCursor: null } : pageInfo });
     };
   ` });
@@ -39,6 +39,15 @@ export async function installDiscussionFixtures(send) {
 export async function checkDiscussions({ send, evaluate, click, waitFor, navigate }) {
   const mode = value => evaluate(`sessionStorage.setItem('discussionTestMode', ${JSON.stringify(value)})`);
   const button = label => `[...document.querySelectorAll('main button')].find(e=>e.textContent.trim()===${JSON.stringify(label)})`;
+  await mode('slow');
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await navigate('/');
+  assert.equal(await evaluate(`!!document.querySelector('main [role="status"] [data-slot="skeleton"]')`), true);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('main [data-slot="skeleton"]')).animationName`), 'none');
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('main')).transform`), 'none');
+  await waitFor(`!!document.querySelector('[aria-label="Conversas"]')`);
+  await waitFor(`!document.querySelector('main [data-slot="skeleton"]')`);
+  await send('Emulation.setEmulatedMedia', { features: [] });
   await mode('showcase');
   await navigate('/');
   await waitFor(`document.querySelectorAll('[aria-label="Conversas"] > li').length === 4`);
@@ -54,10 +63,11 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   assert.equal(await evaluate(`document.querySelector('[role="status"]').textContent.includes('21 conversas encontradas')`), true);
   await click(button('Próxima'));
   await waitFor(`window.discussionRequests.at(-1).includes('after=cursor-2') && window.discussionRequests.at(-1).includes('q=erro+js')`);
-  await waitFor(`!!document.querySelector('a[href*="conversa=7"]')`);
-  await click(`document.querySelector('a[href*="conversa=7"]')`);
+  await waitFor(`document.querySelector('a[href*="conversa=7"]')?.textContent === 'Dúvida sobre JavaScript (continuação)'`);
+  await click(`document.querySelector('[aria-label="Conversas"] article')`);
   await waitFor(`!!document.querySelector('[aria-label="Comentários"]')`);
-  assert.equal(await evaluate(`!!document.querySelector('[aria-label="Publicidade"]').nextElementSibling?.querySelector('button')`), true);
+  await waitFor(`!!document.querySelector('[aria-label="Publicidade"]').nextElementSibling`);
+  assert.equal(await evaluate(`(()=>{const next=document.querySelector('[aria-label="Publicidade"]').nextElementSibling;return next.matches('button') || !!next.querySelector('button')})()`), true);
   await click(`document.querySelector('[aria-label="Comentários"] details > summary')`);
   assert.equal(await evaluate(`document.querySelector('[aria-label="Comentários"] details').open`), false);
   await click(`document.querySelector('[aria-label="Comentários"] details > summary')`);
@@ -120,13 +130,36 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await mode('ready');
   await evaluate(`sessionStorage.setItem('participationMode', 'guest')`);
   await navigate('/');
-  await waitFor(`document.querySelector('a[href^="/api/auth/login"]') !== null`);
+  await waitFor(`!![...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`);
+  await click(`[...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`);
+  await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('O que é o GitHub?')`);
+  assert.equal(await evaluate(`document.querySelector('[role="dialog"] a[href="https://github.com/signup"]')?.target`), '_blank');
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(e=>e.textContent.trim()==='Cancelar')`);
+  await waitFor(`!document.querySelector('[role="dialog"]')`);
   await waitFor(`!!${button('Novo tópico')}`);
   await click(button('Novo tópico'));
-  await waitFor(`document.querySelector('main').textContent.includes('Entre com sua conta do GitHub para publicar sua mensagem aqui no Guia.')`);
+  await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Você está deslogado')`);
+  assert.equal(await evaluate(`!!document.querySelector('[role="dialog"] [aria-label="Sobre o GitHub"]')`), true);
+  assert.equal(await evaluate(`!![...document.querySelectorAll('[role="dialog"] button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`), true);
   assert.equal(await evaluate(`document.querySelectorAll('textarea').length`), 0);
+  await evaluate(`window.realPopupOpen = window.open; window.popupPageMarker = 'preserved'; window.popupOriginalUrl = location.href; window.open = (url) => { window.popupLoginUrl = url; return window.testLoginPopup = { closed: false, close() { this.closed = true; }, focus() {} }; }`);
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`);
+  assert.equal(await evaluate(`window.popupLoginUrl`), '/api/auth/login?returnUrl=%2Fauth%2Fcomplete.html');
+  assert.equal(await evaluate(`location.href === window.popupOriginalUrl`), true);
   await evaluate(`sessionStorage.setItem('participationMode', 'member')`);
-  await navigate('/');
+  await waitFor(`!!document.querySelector('header [aria-label="Menu do usuário ana"]')`);
+  assert.equal(await evaluate(`window.popupPageMarker`), 'preserved');
+  assert.equal(await evaluate(`window.testLoginPopup.closed`), true);
+  assert.equal(await evaluate(`!!document.querySelector('header img[alt="Foto de ana"]')`), true);
+  assert.equal(await evaluate(`!![...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`), false);
+  await waitFor(`!!document.querySelector('main textarea')`);
+  await click(button('Cancelar'));
+  await evaluate(`window.open = window.realPopupOpen`);
+  await click(`document.querySelector('header [aria-label="Menu do usuário ana"]')`);
+  await waitFor(`!!document.querySelector('[role="menu"]')`);
+  assert.equal(await evaluate(`document.querySelector('[role="menu"]').textContent.includes('Contribuir') && document.querySelector('[role="menu"]').textContent.includes('Sair') && document.querySelector('[role="menu"]').textContent.includes('Ativar tema')`), true);
+  await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  await waitFor(`!document.querySelector('[role="menu"]')`);
   await waitFor(`!!${button('Novo tópico')}`);
   await click(button('Novo tópico'));
   await click(`document.querySelector('input[id$="-title"]')`);
@@ -171,7 +204,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
     if (path === '/apoiadores') assert.equal(await evaluate(`!!document.querySelector('main a[href="https://www.hostgator.com.br/"]')`), true);
     if (path === '/sobre') { await waitFor(`!!document.querySelector('#contribuidores a[href="https://github.com/ana"]')`); assert.equal(await evaluate(`document.querySelector('#contribuidores').textContent.includes('5 contribuições')`), true); assert.equal(await evaluate(`document.querySelector('#contribuidores h2').textContent`), 'Contribuidores'); }
-    assert.equal(await evaluate(`!!document.querySelector('a[href="${path}"][aria-current="page"]')`), true);
+    if (['/sobre', '/apoiadores'].includes(path)) assert.equal(await evaluate(`!!document.querySelector('a[href="${path}"][aria-current="page"]')`), true);
     if (['/sobre', '/apoiadores', '/contribuidores'].includes(path)) assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()==='Projeto')?.getAttribute('data-current')`), 'true');
   }
 }
