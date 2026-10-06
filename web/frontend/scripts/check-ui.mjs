@@ -109,6 +109,67 @@ try {
   await click(`document.querySelector('main table a[aria-label="Ver detalhes: Primeiros passos com C#"]')`);
   await waitFor(`document.querySelector('main h1').textContent === 'Primeiros passos com C#'`);
   assert.equal(await evaluate(`!!document.querySelector('main a[href="https://example.org/curso-exemplo"][target="_blank"]')`), true);
+  await navigate('/comunidades/');
+  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
+  assert.equal(await evaluate(`!!document.querySelector('main a[href="/contribuir?categoria=communities"]')`),true);
+  assert.equal(await evaluate(`document.querySelectorAll('svg [data-uf]').length`),0);
+  const filterButton = "[...document.querySelectorAll('main button')].find(button=>button.textContent.includes('Filtrar comunidades'))";
+  await click(filterButton);
+  await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Filtrar comunidades')`);
+  assert.equal(await evaluate(`document.querySelectorAll('svg [data-uf]').length`),27);
+  await evaluate(`document.querySelector('[data-uf="SP"]').focus()`); await key('Enter');
+  await evaluate(`document.querySelector('[data-uf="RJ"]').focus()`); await key('Enter');
+  assert.equal(await evaluate(`document.querySelectorAll('svg path[aria-pressed="true"]').length`),2);
+  assert.equal(await evaluate(`location.search`),'');
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.trim()==='Regiões')`);
+  await evaluate(`document.querySelector('[data-uf="SP"]').focus()`); await key('Enter');
+  assert.equal(await evaluate(`document.querySelectorAll('svg path[aria-pressed="true"]').length`),4);
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.trim()==='Sul')`);
+  assert.equal(await evaluate(`document.querySelectorAll('svg path[aria-pressed="true"]').length`),7);
+  for(const width of [320,390,768,1440]) {
+    await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
+    assert.equal(await evaluate(`document.documentElement.scrollWidth<=innerWidth`),true,'Community dialog overflow at '+width);
+    assert.equal(await evaluate(`document.querySelector('[role="dialog"]').scrollWidth <= document.querySelector('[role="dialog"]').clientWidth`),true);
+  }
+  if(process.env.COMMUNITY_SCREENSHOT_PATH) {const screenshot=await send('Page.captureScreenshot',{format:'png'});await writeFile(process.env.COMMUNITY_SCREENSHOT_PATH,Buffer.from(screenshot.data,'base64'));}
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Brasil inteiro'))`);
+  assert.equal(await evaluate(`document.querySelectorAll('svg path[aria-pressed="true"]').length`),27);
+  assert.equal(await evaluate(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Brasil inteiro')).getAttribute('data-variant')`),'default');
+  const nationalDialogSize=await evaluate(`(()=>{const r=document.querySelector('[role="dialog"]').getBoundingClientRect();return {width:r.width,height:r.height}})()`);
+  assert.equal(await evaluate(`!!document.querySelector('select[name="filterModality"]')`),false);
+  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Internacionais'))`);
+  await waitFor(`!!document.querySelector('svg[aria-label="Mapa do mundo inteiro selecionado"]')`);
+  assert.deepEqual(await evaluate(`(()=>{const r=document.querySelector('[role="dialog"]').getBoundingClientRect();return {width:r.width,height:r.height}})()`),nationalDialogSize);
+  await waitFor(`[...document.querySelectorAll('svg[aria-label="Mapa do mundo inteiro selecionado"] path')].some(path=>path.style.opacity && Number(path.style.opacity)<1)`);
+  await waitFor(`[...document.querySelectorAll('svg[aria-label="Mapa do mundo inteiro selecionado"] path')].every(path=>!path.style.opacity)`);
+  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  await waitFor(`(()=>{const rect=document.querySelector('[role="dialog"]').getBoundingClientRect();return rect.left>=0 && rect.right<=innerWidth && rect.top>=0 && rect.bottom<=innerHeight})()`);
+  if(process.env.COMMUNITY_SCREENSHOT_PATH){const screenshot=await send('Page.captureScreenshot',{format:'png'});await writeFile(process.env.COMMUNITY_SCREENSHOT_PATH.replace('.png','.world.png'),Buffer.from(screenshot.data,'base64'));}
+  for(const width of [320,768,1440]) {
+    await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
+    await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Brasil inteiro'))`);
+    const size=await evaluate(`(()=>{const r=document.querySelector('[role="dialog"]').getBoundingClientRect();return {width:r.width,height:r.height}})()`);
+    await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Internacionais'))`);
+    assert.deepEqual(await evaluate(`(()=>{const r=document.querySelector('[role="dialog"]').getBoundingClientRect();return {width:r.width,height:r.height}})()`),size,'Dialog size changed at '+width);
+  }
+  await evaluate(`(()=>{for(const [name,value] of Object.entries({filterCategory:'networking',filterPlatform:'discord'})){const select=document.querySelector('select[name="'+name+'"]');select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}));}})()`);
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Aplicar filtros')`);
+  await waitFor(`!document.querySelector('[role="dialog"]')`);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('alcance')`),'international');
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('categorias')`),'networking');
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('ninhos')`),'discord');
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('Ainda não há comunidades nesta localização')`),true);
+  await click(filterButton);
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Limpar filtros')`);
+  await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Cancelar')`);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('ninhos')`),'discord');
+  await click(`[...document.querySelectorAll('main button')].find(button=>button.textContent==='Limpar filtros')`);
+  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
+  await navigate('/comunidades/?alcance=regional&estados=SP,RJ,XX');
+  await click(filterButton);
+  await waitFor(`document.querySelectorAll('svg path[aria-pressed="true"]').length===2`);
+  await key('Escape');
   await navigate('/criadores/');
   assert.equal(await evaluate(`document.querySelector('main h1').textContent`), 'Criadores');
   assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('[role="tab"]'), element => element.textContent.trim())`), ['YouTube', 'Instagram', 'TikTok', 'LinkedIn', 'Twitter / X']);
@@ -208,6 +269,29 @@ try {
   assert.equal(await evaluate(`!!document.querySelector('img[alt="Foto de Canal da Ana"]')`), false);
   assert.equal(await evaluate(`document.querySelector('input[name="name"]').value`), '');
   await evaluate(`sessionStorage.removeItem('creatorTestMode')`);
+  await evaluate(`(()=>{const select=document.querySelector('main form select');select.value='communities';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await waitFor(`!!document.querySelector('select[name="communityScope"]')`);
+  await evaluate(`(()=>{const select=document.querySelector('select[name="communityScope"]');select.value='regional';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await waitFor(`!!document.querySelector('input[name="communityStates"][value="SP"]')`);
+  await click(`document.querySelector('input[name="communityStates"][value="SP"]')`);
+  await evaluate(`(()=>{
+    for(const [name,value] of Object.entries({url:'https://example.org/new-community',name:'Comunidade Paulista',summary:'Uma comunidade de tecnologia em São Paulo.'})) {
+      const input=document.querySelector('input[name="'+name+'"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    const textarea=document.querySelector('textarea[name="description"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(textarea,'Uma comunidade de tecnologia para pessoas de São Paulo.');textarea.dispatchEvent(new Event('input',{bubbles:true}));
+    const modality=document.querySelector('select[name="communityModality"]');modality.value='online';modality.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('input[name="communityPlatforms"][value="discord"]').click();
+    const area=document.querySelector('select[name="area"]');area.value='networking';area.dispatchEvent(new Event('change',{bubbles:true}));
+  })()`);
+  await click(`document.querySelector('main form button[type="submit"]')`);
+  await waitFor(`window.lastContribution?.communityLocation?.states?.includes('SP')`);
+  assert.deepEqual(await evaluate(`window.lastContribution.communityLocation`), {scope:'regional',states:['SP']});
+  assert.deepEqual(await evaluate(`window.lastContribution.communityPlatforms`), ['discord']);
+  assert.equal(await evaluate(`window.lastContribution.communityModality`), 'online');
+  await navigate('/contribuir/?categoria=communities');
+  await waitFor(`document.querySelector('main form select')?.value==='communities'`);
+  assert.equal(await evaluate(`!!document.querySelector('input[name="communityPlatforms"]')`),true);
+  assert.equal(await evaluate(`document.querySelector('main form button[type="submit"]').disabled`),true);
   if (process.env.UI_SCREENSHOT_PATH) {
     await evaluate(`sessionStorage.setItem('discussionTestMode', 'showcase'); sessionStorage.removeItem('participationMode')`);
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });

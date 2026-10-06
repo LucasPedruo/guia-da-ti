@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Antiforgery;
@@ -18,7 +19,9 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
         if (catalog.Resources.Any(r => r.Slug == slug && r.Type == proposal.Type || SameUrl(r.Url, resource.Url)))
             throw new ContributionRejectedException("Esse recurso ou link já existe no catálogo.");
         var serialized = JsonSerializer.Serialize(resource, JsonOptions);
-        var body = $"### {resource.Name}\n\n**Categoria do guia:** {resource.Type}\n\n{resource.Summary}\n\n{resource.Description}\n\n**Link:** {resource.Url}\n\n**Assuntos:** {string.Join(", ", resource.Areas)}\n\n**Tecnologias:** {(resource.Technologies.Length == 0 ? "Nenhuma informada" : string.Join(", ", resource.Technologies))}\n\n**Idiomas:** {string.Join(", ", resource.Languages)}\n\n<!-- guia-da-ti:resource:v1:{Convert.ToBase64String(Encoding.UTF8.GetBytes(serialized))} -->";
+        var location = resource.CommunityLocation is { } coverage ? $"\n\n**Localização:** {coverage.Scope switch { "regional" => "Regional · " + string.Join(", ", coverage.States!), "national" => "Nacional · Brasil inteiro", _ => "Internacional" }}" : "";
+        if (resource.Type == "communities") location += $"\n\n**Modalidade:** {resource.CommunityModality switch { "online" => "Online", "in-person" => "Presencial", _ => "Híbrida" }}\n\n**Plataformas:** {string.Join(", ", resource.CommunityPlatforms!)}";
+        var body = $"### {resource.Name}\n\n**Categoria do guia:** {resource.Type}\n\n{resource.Summary}\n\n{resource.Description}\n\n**Link:** {resource.Url}\n\n**Assuntos:** {string.Join(", ", resource.Areas)}\n\n**Tecnologias:** {(resource.Technologies.Length == 0 ? "Nenhuma informada" : string.Join(", ", resource.Technologies))}\n\n**Idiomas:** {string.Join(", ", resource.Languages)}{location}\n\n<!-- guia-da-ti:resource:v1:{Convert.ToBase64String(Encoding.UTF8.GetBytes(serialized))} -->";
         var number = await new DiscussionWriter(clients, configuration).PublishAsync(token,
             new DiscussionDraft(body, $"[Sugestão] {resource.Name}", CategoryName: "Ideias"), cancellation);
         return number;
@@ -114,15 +117,19 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
             throw new ContributionRejectedException("Informe um link público seguro começando com https://.");
         if (p.Areas is null || p.Areas.Length < 1 || p.Areas.Length > 15 || p.Areas.Any(a => !c.Taxonomy.Areas.Contains(a)) || p.Technologies is null || p.Technologies.Length > 20 || p.Technologies.Any(t => !c.Taxonomy.Technologies.Contains(t)) || p.Languages is null || p.Languages.Length < 1 || p.Languages.Length > 15 || p.Languages.Any(l => !c.Taxonomy.Languages.Contains(l)))
             throw new ContributionRejectedException("Escolha assuntos, tecnologias e idiomas disponíveis no guia.");
-        return new(slug, p.Type, p.Name.Trim(), p.Summary.Trim(), p.Description.Trim(), url.AbsoluteUri, p.Areas.Distinct().ToArray(), p.Technologies.Distinct().ToArray(), p.Languages.Distinct().ToArray(), DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        CommunityLocationRules.ValidateContribution(p.Type, p.CommunityLocation, p.CommunityPlatforms, p.CommunityModality);
+        return new(slug, p.Type, p.Name.Trim(), p.Summary.Trim(), p.Description.Trim(), url.AbsoluteUri, p.Areas.Distinct().ToArray(), p.Technologies.Distinct().ToArray(), p.Languages.Distinct().ToArray(), DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), CommunityLocation: p.CommunityLocation, CommunityPlatforms: p.CommunityPlatforms, CommunityModality: p.CommunityModality);
     }
     private static string Slug(string value) => Regex.Replace(string.Concat((value ?? "").Normalize(NormalizationForm.FormD).Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)).ToLowerInvariant(), @"[^a-z0-9]+", "-").Trim('-');
     private static bool SameUrl(string a, string b) { static string Key(string value) { var uri = new Uri(value); return uri.GetLeftPart(UriPartial.Path).TrimEnd('/').ToLowerInvariant(); } return Key(a) == Key(b); }
 }
 
-public record ContributionDraft(string Type, string Name, string Url, string Summary, string Description, string[] Areas, string[] Technologies, string[] Languages);
-public record ContributionResource(string Slug, string Type, string Name, string Summary, string Description, string Url, string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo = false)
-{ public ContributionDraft ToDraft() => new(Type, Name, Url, Summary, Description, Areas, Technologies, Languages); }
+public record ContributionDraft(string Type, string Name, string Url, string Summary, string Description, string[] Areas, string[] Technologies, string[] Languages, CommunityLocation? CommunityLocation = null, string[]? CommunityPlatforms = null, string? CommunityModality = null);
+public record ContributionResource(string Slug, string Type, string Name, string Summary, string Description, string Url, string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CommunityLocation? CommunityLocation = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string[]? CommunityPlatforms = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CommunityModality = null)
+{ public ContributionDraft ToDraft() => new(Type, Name, Url, Summary, Description, Areas, Technologies, Languages, CommunityLocation, CommunityPlatforms, CommunityModality); }
 public sealed class ContributionRejectedException(string message) : Exception(message);
 
 public static class ContributionEndpoints

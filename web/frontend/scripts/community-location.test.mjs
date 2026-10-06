@@ -1,0 +1,44 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { matchesCommunityLocation, matchesCommunityFilters, emptyCommunityFilters, readCommunityFilters, readLocationSelection, toggleStates, brazilRegions, stateCodes } from '../src/community-location.ts';
+
+test('regional selection matches any selected UF without leaking other scopes', () => {
+  const selected={scope:'regional',states:['SP','RJ']};
+  assert.equal(matchesCommunityLocation({scope:'regional',states:['RJ','MG']},selected),true);
+  assert.equal(matchesCommunityLocation({scope:'regional',states:['AM']},selected),false);
+  assert.equal(matchesCommunityLocation({scope:'national'},selected),false);
+  assert.equal(matchesCommunityLocation({scope:'international'},selected),false);
+  assert.equal(matchesCommunityLocation(undefined,selected),false);
+});
+test('national and international communities remain separate and no selection includes all results', () => {
+  for(const scope of ['national','international']) {
+    assert.equal(matchesCommunityLocation({scope}, {scope,states:[]}),true);
+    assert.equal(matchesCommunityLocation({scope:scope==='national'?'international':'national'}, {scope,states:[]}),false);
+    assert.equal(matchesCommunityLocation({scope}, {scope:null,states:[]}),true);
+  }
+});
+test('no filters includes legacy communities and categories and platforms combine with location',()=>{
+  const resource={areas:['networking','carreira'],communityPlatforms:['discord','telegram'],communityModality:'hybrid',communityLocation:{scope:'regional',states:['SP']}};
+  assert.equal(matchesCommunityFilters({areas:['frontend']},emptyCommunityFilters()),true);
+  const filters={scope:'regional',states:['SP'],categories:['networking'],platforms:['discord']};
+  assert.equal(matchesCommunityFilters(resource,filters),true);
+  for(const override of [{platforms:['whatsapp']},{categories:['dados']},{states:['RJ']}]) assert.equal(matchesCommunityFilters(resource,{...filters,...override}),false);
+  assert.deepEqual(readCommunityFilters('?categorias=networking,unknown&ninhos=discord,unknown&modalidade=online',['networking']),{...emptyCommunityFilters(),categories:['networking'],platforms:['discord']});
+});
+test('regions add all UFs, partial selections fill the region and toggling preserves other regions', () => {
+  const southeast=brazilRegions.find(region=>region.id==='sudeste').states;
+  let selected=toggleStates({scope:null,states:[]},['SP']);
+  selected=toggleStates(selected,southeast);
+  assert.deepEqual(selected.states,['ES','MG','RJ','SP']);
+  selected=toggleStates(selected,['AM']);
+  selected=toggleStates(selected,southeast);
+  assert.deepEqual(selected,{scope:'regional',states:['AM']});
+  assert.deepEqual(toggleStates(selected,['AM']),{scope:null,states:[]});
+  assert.deepEqual(toggleStates({scope:'national',states:[]},['SP']),{scope:'regional',states:['SP']});
+  assert.equal(new Set(stateCodes).size,27);
+});
+test('shared filter URLs restore valid states and reject unsupported values', () => {
+  assert.deepEqual(readLocationSelection('?alcance=regional&estados=SP,RJ,XX,SP'),{scope:'regional',states:['RJ','SP']});
+  assert.deepEqual(readLocationSelection('?alcance=international&estados=SP'),{scope:'international',states:[]});
+  assert.deepEqual(readLocationSelection('?alcance=invalid&estados=XX'),{scope:null,states:[]});
+});

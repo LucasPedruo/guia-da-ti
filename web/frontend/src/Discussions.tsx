@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { SuggestResource } from './SuggestResource';
 import { Advertisement } from './Advertisement';
 import { ApproveContribution, Composer } from './Participation';
 import { DiscussionSkeleton } from './Loading';
@@ -84,7 +85,7 @@ function DiscussionThread({ number }: { number: number }) {
   const returnUrl = returnParameters.size ? `/?${returnParameters}` : '/';
   useEffect(() => { if (ready) heading.current?.focus(); }, [ready]);
   return <section className="space-y-5" aria-label="Conversa">
-    <Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button>
+    <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button><SuggestResource /></div>
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
       <article data-motion className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /></div>
@@ -147,6 +148,7 @@ function DiscussionFeed() {
       </form>
       {(ready || categories.length > 0) && <Select value={category} onValueChange={value => applyFilters(query, value)}><SelectTrigger aria-label="Categoria das conversas" className="h-9 min-w-0 flex-1 sm:w-44 sm:flex-none"><SelectValue placeholder="Todas as categorias" /></SelectTrigger><SelectContent><SelectItem value="all">Todas as categorias</SelectItem>{categories.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>}
       {ready && <Composer compact categories={categories} githubUrl={`${ready.repositoryUrl}/new`} label="Novo tópico" onPublished={number => { window.location.assign(`/?conversa=${number}`); }} />}
+      <SuggestResource />
     </div>
     {query && <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><p role="status">{ready ? `${ready.totalCount ?? ready.items.length} ${(ready.totalCount ?? ready.items.length) === 1 ? 'conversa encontrada' : 'conversas encontradas'} para “${query}”.` : 'Buscando…'}</p><Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(''); applyFilters(''); }}>Limpar busca</Button></div>}
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>

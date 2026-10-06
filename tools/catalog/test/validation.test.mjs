@@ -28,3 +28,19 @@ test("accepts ISO country tags and rejects malformed country tags", () => {
     assert.throws(() => validateResource({ ...sample, countries }, "courses/exemplo.json"));
   }
 });
+
+test('validates community location scopes and official UFs', () => {
+ const community={...sample,type:'communities'};
+ for(const communityLocation of [{scope:'regional',states:['SP','RJ']},{scope:'national'},{scope:'international'}]) assert.doesNotThrow(()=>validateResource({...community,communityLocation},'communities/exemplo.json'));
+ for(const communityLocation of [{scope:'regional',states:[]},{scope:'regional',states:['XX']},{scope:'regional',states:['SP','SP']},{scope:'national',states:['SP']},{scope:'international',states:[]},{scope:'world'},{scope:'regional',states:['SP'],unknown:true}]) assert.throws(()=>validateResource({...community,communityLocation},'communities/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityLocation:{scope:'national'}},'courses/exemplo.json'));
+ assert.doesNotThrow(()=>validateResource(community,'communities/exemplo.json'));
+});
+
+test('validates community platforms and meeting modalities',()=>{
+ const community={...sample,type:'communities'};
+ for(const communityModality of ['online','in-person','hybrid']) assert.doesNotThrow(()=>validateResource({...community,communityModality,communityPlatforms:['discord','telegram']},'communities/exemplo.json'));
+ for(const extra of [{communityPlatforms:[]},{communityPlatforms:['unknown']},{communityPlatforms:['discord','discord']},{communityModality:'unknown'}]) assert.throws(()=>validateResource({...community,...extra},'communities/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityPlatforms:['discord']},'courses/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityModality:'online'},'courses/exemplo.json'));
+});

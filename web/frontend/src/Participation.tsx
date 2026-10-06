@@ -8,6 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Skeleton } from '@/components/ui/skeleton';
 import { categories, labels, taxonomy } from './catalog';
 import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
+import { brazilRegions, type CommunityLocation } from './community-location';
+import brazilMap from './data/brazil-states.json';
+import { communityCategoryOrder, communityModalities, communityPlatforms } from './community-options';
 
 type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
 const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
@@ -198,7 +201,7 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
   </div>;
 }
 
-const typeNames: Record<string, string> = { platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Vagas', internships: 'Estágios', scholarships: 'Bolsas', mentoring: 'Mentorias', volunteering: 'Voluntariado' };
+const typeNames: Record<string, string> = { courses: 'Cursos', platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Vagas', internships: 'Estágios', scholarships: 'Bolsas', mentoring: 'Mentorias', volunteering: 'Voluntariado' };
 
 export function ResourceContribution() {
   const session = useContext(SessionContext)?.session;
@@ -210,6 +213,14 @@ export function ResourceContribution() {
   const [area, setArea] = useState('');
   const [languages, setLanguages] = useState<string[]>(['pt-BR']);
   const [technologies, setTechnologies] = useState<string[]>([]);
+  const [communityScope, setCommunityScope] = useState<CommunityLocation['scope'] | ''>('');
+  const [communityStates, setCommunityStates] = useState<string[]>([]);
+  const [communityPlatformIds, setCommunityPlatformIds] = useState<string[]>([]);
+  const [communityModality, setCommunityModality] = useState('');
+  useEffect(() => {
+    const requested=new URLSearchParams(window.location.search).get('categoria');
+    if(requested && taxonomy.types.includes(requested)) setType(requested);
+  }, []);
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
@@ -228,7 +239,9 @@ export function ResourceContribution() {
     setBusy(true); setError(''); setSuccess('');
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages };
+    const communityLocation = type === 'communities' && communityScope ? { scope: communityScope, ...(communityScope === 'regional' ? { states: communityStates } : {}) } : undefined;
+    const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages, communityLocation,
+      ...(type === 'communities' ? {communityPlatforms:communityPlatformIds,communityModality} : {}) };
     try {
       const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(proposal) });
       const result = await response.json().catch(() => ({}));
@@ -237,12 +250,27 @@ export function ResourceContribution() {
       setSuccessUrl(`/?conversa=${result.number}`);
       formElement.reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
       setUrl(''); setName(''); setSummary(''); setDescription('');
+      setCommunityScope(''); setCommunityStates([]);
+      setCommunityPlatformIds([]); setCommunityModality('');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
     finally { setBusy(false); }
   }
   if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. A sugestão e os comentários ficam juntos no fórum.</p><LoginButton /></div>;
   return <form onSubmit={submit} className="space-y-4 rounded-lg border p-5">
-    <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.filter((id: string) => id !== 'courses').map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
+    <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
+    {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Localização da comunidade</legend>
+      <label className="block space-y-2 text-sm">Área de atuação<select name="communityScope" required value={communityScope} onChange={event => setCommunityScope(event.target.value as CommunityLocation['scope'])} className="h-10 w-full rounded-md border bg-background px-3"><option value="">Escolha o alcance</option><option value="regional">Regional</option><option value="national">Nacional</option><option value="international">Internacional</option></select></label>
+      {communityScope === 'regional' && <>
+        <p className="text-xs text-muted-foreground">Marque os estados onde a comunidade atua ou selecione uma região inteira.</p>
+        <div className="flex flex-wrap gap-2">{brazilRegions.map(region => <Button key={region.id} type="button" size="sm" variant="outline" onClick={() => setCommunityStates(current => [...new Set([...current, ...region.states])])}>{region.name}</Button>)}</div>
+        <div className="grid gap-2 sm:grid-cols-2">{[...brazilMap.states].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR')).map(state => <label key={state.uf} className="flex items-center gap-2 text-xs"><input type="checkbox" name="communityStates" value={state.uf} checked={communityStates.includes(state.uf)} onChange={event => setCommunityStates(current => event.target.checked ? [...current, state.uf] : current.filter(uf => uf !== state.uf))} />{state.name} ({state.uf})</label>)}</div>
+      </>}
+    </fieldset>}
+    {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Como a comunidade se reúne</legend>
+      <label className="block space-y-2 text-sm">Modalidade<select name="communityModality" required value={communityModality} onChange={event=>setCommunityModality(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3"><option value="">Escolha a modalidade</option>{communityModalities.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <p className="text-sm font-medium">Plataforma</p><p className="text-xs text-muted-foreground">Marque pelo menos uma plataforma onde as pessoas se encontram.</p>
+      <div className="grid gap-2 sm:grid-cols-2">{communityPlatforms.map(item=><label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="communityPlatforms" value={item.id} checked={communityPlatformIds.includes(item.id)} onChange={event=>setCommunityPlatformIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} />{item.name}</label>)}</div>
+    </fieldset>}
     <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
       setUrl(event.target.value);
       if (creatorCategory) { setName(''); setSummary(''); setDescription(''); }
@@ -256,11 +284,11 @@ export function ResourceContribution() {
     <label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
     <label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" value={summary} onChange={event => setSummary(event.target.value)} /></label>
     <label className="block space-y-2 text-sm font-medium">Descrição<textarea name="description" required minLength={10} maxLength={4000} rows={4} value={description} onChange={event => setDescription(event.target.value)} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></label>
-    <label className="block space-y-2 text-sm font-medium">Assunto principal<select required value={area} onChange={event => setArea(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha um assunto</option>{taxonomy.areas.map((id: string) => <option key={id} value={id}>{labels[id] || id}</option>)}</select></label>
+    <label className="block space-y-2 text-sm font-medium">{type === 'communities' ? 'Categoria da comunidade' : 'Assunto principal'}<select name="area" required value={area} onChange={event => setArea(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">{type === 'communities' ? 'Escolha uma categoria' : 'Escolha um assunto'}</option>{(type === 'communities' ? [...communityCategoryOrder, ...taxonomy.areas.filter(id=>!communityCategoryOrder.includes(id))] : taxonomy.areas).map((id: string) => <option key={id} value={id}>{labels[id] || id}</option>)}</select></label>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>
     <p className="text-xs text-muted-foreground">A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação abre um Pull Request com estes dados no catálogo.</p>
-    <Button type="submit" disabled={busy || !type || !area || !languages.length}>{busy ? 'Enviando…' : 'Enviar sugestão e abrir conversa'}</Button>
+    <Button type="submit" disabled={busy || !type || !area || !languages.length || type === 'communities' && (!communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length)}>{busy ? 'Enviando…' : 'Enviar sugestão e abrir conversa'}</Button>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>Abrir conversa</a></p>}
   </form>;
 }

@@ -17,7 +17,10 @@ export function Motion({ children }: { children: ReactNode }) {
           const slot = element.getAttribute('data-slot') || '';
           const overlay = slot.endsWith('overlay');
           const anchored = slot.includes('menu-content') || slot === 'select-content';
-          gsap.from(element, { opacity: 0, ...(overlay || anchored ? {} : { y: '+=10' }), duration: overlay ? 0.2 : 0.32, ease: 'power2.out', clearProps: 'opacity,transform' });
+          // Tailwind 4 positions dialogs with CSS translate. GSAP transform
+          // conversion and matchMedia reversion can apply that translation twice.
+          const positioned = anchored || slot === 'dialog-content' || slot === 'sheet-content';
+          gsap.from(element, { opacity: 0, ...(overlay || positioned ? {} : { y: '+=10' }), duration: overlay ? 0.2 : 0.32, ease: 'power2.out', clearProps: overlay || positioned ? 'opacity' : 'opacity,transform' });
         });
       }
       function scan(node: Element) {

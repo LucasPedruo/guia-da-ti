@@ -1,14 +1,15 @@
 import snapshot from './generated/catalog.json';
 import navigation from './navigation.json';
+import type { CommunityLocation } from './community-location';
 export type Resource = {
   slug: string; type: string; name: string; summary: string; description: string;
-  url: string; areas: string[]; technologies: string[]; languages: string[]; countries?: string[]; updatedAt: string; demo?: boolean;
+  url: string; areas: string[]; technologies: string[]; languages: string[]; countries?: string[]; communityLocation?: CommunityLocation; communityPlatforms?: string[]; communityModality?: string; updatedAt: string; demo?: boolean;
 };
-export const resources: Resource[] = snapshot.resources;
+export const resources = snapshot.resources as Resource[];
 export const taxonomy = snapshot.taxonomy;
 export const groups = navigation;
 export const categories = [...groups.flatMap(group => group.categories), { id: 'youtube', route: 'youtube', name: 'YouTube' }];
-export const labels: Record<string, string> = { frontend: 'Front-end', backend: 'Back-end', dados: 'Dados', devops: 'DevOps', cybersecurity: 'Segurança', design: 'Design', produto: 'Produto', cloud: 'Cloud', qa: 'Qualidade', mobile: 'Mobile', ia: 'Inteligência artificial', redes: 'Redes', hardware: 'Hardware', carreira: 'Carreira', educacao: 'Educação', react: 'React', typescript: 'TypeScript', csharp: 'C#', dotnet: '.NET', python: 'Python', linux: 'Linux', figma: 'Figma', US: 'Estados Unidos' };
+export const labels: Record<string, string> = { geral: 'Geral', networking: 'Networking', eventos: 'Eventos', vagas: 'Vagas', frontend: 'Front-end', backend: 'Back-end', dados: 'Dados', devops: 'DevOps', cybersecurity: 'Segurança', design: 'Design', produto: 'Produto', cloud: 'Cloud', qa: 'Qualidade', mobile: 'Mobile', ia: 'Inteligência artificial', redes: 'Redes', hardware: 'Hardware', carreira: 'Carreira', educacao: 'Educação', react: 'React', typescript: 'TypeScript', csharp: 'C#', dotnet: '.NET', python: 'Python', linux: 'Linux', figma: 'Figma', US: 'Estados Unidos' };
 export const resourcePath = (r: Resource) => `/${categories.find(c => c.id === r.type)!.route}/${r.slug}`;
 export const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export function pageInfo(path: string) {

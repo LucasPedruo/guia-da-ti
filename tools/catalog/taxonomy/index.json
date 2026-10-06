@@ -14,7 +14,11 @@
     "redes",
     "hardware",
     "carreira",
-    "educacao"
+    "educacao",
+    "geral",
+    "networking",
+    "eventos",
+    "vagas"
   ],
   "technologies": [
     "react",

@@ -22,6 +22,10 @@ export async function installDiscussionFixtures(send) {
         if (sessionStorage.getItem('participationMode') === 'error') return Response.json({ error: 'Publicação recusada.' }, { status: 403 });
         return Response.json({ number: window.lastPublication.number || 7 });
       }
+      if (url.pathname === '/api/contributions') {
+        window.lastContribution = JSON.parse(options.body);
+        return Response.json({ number: 10 });
+      }
       if (!url.pathname.startsWith('/api/discussions')) return originalFetch(input, options);
       window.discussionRequests.push(url.pathname + url.search);
       const mode = sessionStorage.getItem('discussionTestMode') || 'unconfigured';
