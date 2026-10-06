@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
 import { Community } from './Community';
 import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
@@ -6,56 +6,94 @@ import { Maintainers, MaintainersProvider } from './Maintainers';
 import { NavigationCard } from './NavigationCard';
 import { BrandMark } from './BrandMark';
 import { Motion } from './Motion';
-import { Participation, UserControls } from './Participation';
-import { ArrowLeft, ArrowUpRight, ChevronDown, Github, Menu, Search } from 'lucide-react';
+import { Participation, ResourceContribution, UserControls } from './Participation';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Award, BookOpen, BriefcaseBusiness, CalendarDays, ChevronDown, Code, ExternalLink, FileText, FlaskConical, Github, Globe2, GraduationCap, Headphones, Instagram, Linkedin, Mail, Map, Menu, Newspaper, Twitter, Users, Wrench, Youtube, type LucideIcon } from 'lucide-react';
 import { Accordion } from 'radix-ui';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { categories, groups, labels, normalize, pageInfo, resourcePath, resources, type Resource } from './catalog';
+import { Dialog } from 'radix-ui';
+import { categories, groups, labels, pageInfo, resourcePath, resources, type Resource } from './catalog';
 
 const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/guia-da-ti/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
 
-function ResourceCard({ resource }: { resource: Resource }) {
-  return (
-    <Card data-motion className="h-full shadow-none">
-      <CardHeader>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{categories.find(c => c.id === resource.type)?.name}</Badge>
-          {resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}
-        </div>
-        <CardTitle className="pt-2 text-lg leading-snug">
-          <a href={resourcePath(resource)} className="inline-flex items-center gap-2 rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-ring">{resource.name}<ArrowUpRight className="size-4 shrink-0" /></a>
-        </CardTitle>
-        <CardDescription className="leading-relaxed">{resource.summary}</CardDescription>
-      </CardHeader>
-      <CardFooter className="mt-auto flex flex-wrap gap-2">
-        {resource.areas.map(area => <Badge variant="outline" key={area}>{labels[area] || area}</Badge>)}
-        {resource.countries?.map(country => <Badge variant="outline" key={country}>{labels[country] || country}</Badge>)}
-      </CardFooter>
-    </Card>
-  );
+const resourceIcons: Record<string, LucideIcon> = {
+  courses: GraduationCap, platforms: BookOpen, universities: GraduationCap, bootcamps: Code, roadmaps: Map, books: BookOpen, certifications: Award,
+  news: Newspaper, blogs: FileText, newsletters: Mail, podcasts: Headphones, youtube: Youtube, creators: Users, articles: FileText, tutorials: Code,
+  studies: FlaskConical, 'case-studies': BriefcaseBusiness, reports: FileText, communities: Users, events: CalendarDays, meetups: Users,
+  conferences: CalendarDays, hackathons: Code, tools: Wrench, 'open-source': Code, challenges: Award, labs: FlaskConical, jobs: BriefcaseBusiness,
+  internships: GraduationCap, scholarships: BookOpen, mentoring: Users, volunteering: Users,
+};
+const platformIcons: Record<string, LucideIcon> = { youtube: Youtube, instagram: Instagram, linkedin: Linkedin, twitter: Twitter, tiktok: Globe2 };
+const dialogTypes = new Set(['articles', 'tutorials', 'studies', 'case-studies', 'reports', 'news', 'blogs', 'newsletters', 'podcasts']);
+const profileTypes = new Set(['creators', 'youtube']);
+
+function resourceExtra(resource: Resource) {
+  if (profileTypes.has(resource.type)) {
+    try { return new URL(resource.url).hostname.replace(/^www\./, ''); } catch { return 'Perfil externo'; }
+  }
+  if (['jobs', 'internships', 'scholarships', 'events', 'meetups', 'conferences', 'hackathons'].includes(resource.type)) {
+    return resource.countries?.length ? resource.countries.map(country => labels[country] || country).join(' · ') : resource.areas.map(area => labels[area] || area).join(' · ');
+  }
+  if (resource.technologies.length) return resource.technologies.map(technology => labels[technology] || technology).join(' · ');
+  return resource.areas.map(area => labels[area] || area).join(' · ');
+}
+
+function ResourceIcon({ resource, platform }: { resource: Resource; platform: string | null }) {
+  const Icon = platformIcons[platform || resource.type] || resourceIcons[resource.type] || Globe2;
+  return <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-lg border bg-muted/50 text-primary"><Icon className="size-5" /></span>;
+}
+
+function ResourcePreview({ resource, extra }: { resource: Resource; extra: string }) {
+  return <span role="tooltip" className="absolute left-11 top-[calc(100%-4px)] z-30 hidden max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-3rem))] overflow-y-auto rounded-lg border bg-popover p-4 text-popover-foreground shadow-xl group-hover:block group-focus-within:block">
+    <span className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground"><Globe2 className="size-4" />{new URL(resource.url).hostname.replace(/^www\./, '')}</span>
+    <span className="block text-base font-semibold">{resource.name}</span>
+    <span className="mt-1 block text-sm leading-relaxed">{resource.description}</span>
+    {extra && <span className="mt-3 block border-t pt-2 text-xs text-muted-foreground">{extra}</span>}
+  </span>;
+}
+
+function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: string }) {
+  return <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/55" /><Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 space-y-4 overflow-y-auto rounded-xl border bg-popover p-6 text-popover-foreground shadow-xl">
+    <Dialog.Title className="text-xl font-semibold">{resource.name}</Dialog.Title>
+    <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">{resource.summary}</Dialog.Description>
+    <p className="whitespace-pre-wrap text-sm leading-relaxed">{resource.description}</p>
+    {extra && <p className="text-sm text-muted-foreground">{extra}</p>}
+    <div className="flex flex-wrap gap-2">{resource.areas.map(area => <Badge variant="outline" key={area}>{labels[area] || area}</Badge>)}{resource.languages.map(language => <Badge variant="secondary" key={language}>{language}</Badge>)}</div>
+    <div className="flex gap-2"><Button asChild><a href={resource.url} target="_blank" rel="noopener noreferrer">Abrir conteúdo<ExternalLink /></a></Button><Dialog.Close asChild><Button variant="outline">Fechar</Button></Dialog.Close></div>
+  </Dialog.Content></Dialog.Portal>;
+}
+
+function ResourceRow({ resource, platform }: { resource: Resource; platform: string | null }) {
+  const extra = resourceExtra(resource);
+  const content: ReactNode = <>
+    <ResourceIcon resource={resource} platform={platform} />
+    <span className="min-w-0 flex-1 py-0.5">
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="font-semibold leading-snug">{resource.name}</span>{resource.demo && <Badge variant="outline" className="text-[10px]">Exemplo</Badge>}</span>
+      <span className="mt-1 block truncate text-sm text-muted-foreground">{resource.summary}</span>
+      {extra && <span className="mt-1 block truncate text-xs text-muted-foreground">{extra}</span>}
+    </span>
+    <ArrowRight aria-hidden="true" className="mt-3 size-4 shrink-0 text-muted-foreground" />
+  </>;
+  const rowClass = 'group relative flex w-full items-start gap-3 px-3 py-3 text-left outline-none hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring';
+  const preview = <ResourcePreview resource={resource} extra={extra} />;
+  if (profileTypes.has(resource.type)) return <div className="group relative"><a className={`${rowClass} pr-4`} href={resource.url} target="_blank" rel="noopener noreferrer">{content}</a>{preview}</div>;
+  if (dialogTypes.has(resource.type)) return <Dialog.Root><div className="group relative"><Dialog.Trigger asChild><button type="button" className={rowClass}>{content}</button></Dialog.Trigger>{preview}</div><ResourceDetailDialog resource={resource} extra={extra} /></Dialog.Root>;
+  return <div className="group relative"><a className={`${rowClass} pr-4`} href={resourcePath(resource)}>{content}</a>{preview}</div>;
 }
 
 export function App({ path }: { path: string }) {
   const page = pageInfo(path);
   const home = path === '/';
-  const [query, setQuery] = useState('');
-  const [type, setType] = useState(page.category?.id || 'all');
-  const [locale, setLocale] = useState('all');
   const [dark, setDark] = useState(false);
   const platform = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('plataforma');
 
   useEffect(() => {
     try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Optional preference. */ }
-    setQuery(new URLSearchParams(window.location.search).get('q') || '');
   }, []);
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
 
@@ -65,22 +103,18 @@ export function App({ path }: { path: string }) {
     try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* Optional preference. */ }
   }
 
-  const tokens = normalize(query).trim().split(/\s+/).filter(Boolean);
-  const selectedLocale: { language: string; country?: string } = locale === 'en-US' ? { language: 'en', country: 'US' } : { language: locale };
   const platformDomains: Record<string, string[]> = {
     youtube: ['youtube.com', 'youtu.be'], instagram: ['instagram.com'], tiktok: ['tiktok.com'],
     linkedin: ['linkedin.com'], twitter: ['twitter.com', 'x.com'],
   };
   const filtered = resources.filter(r =>
-    (type === 'all' || r.type === type || (type === 'creators' && r.type === 'youtube')) &&
+    (!page.category || r.type === page.category.id || (page.category.id === 'creators' && r.type === 'youtube')) &&
     (!platform || (platformDomains[platform] || []).some(domain => {
       try { const host = new URL(r.url).hostname.toLowerCase(); return host === domain || host.endsWith(`.${domain}`); }
       catch { return false; }
     })) &&
-    (locale === 'all' || (r.languages.includes(selectedLocale.language) && (!selectedLocale.country || Boolean(r.countries?.includes(selectedLocale.country))))) &&
     (!page.area || r.areas.includes(page.area)) &&
-    (!page.technology || r.technologies.includes(page.technology)) &&
-    tokens.every(token => normalize([r.name, r.summary, r.description, ...r.areas, ...r.technologies, ...r.languages].join(' ')).includes(token))
+    (!page.technology || r.technologies.includes(page.technology))
   );
 
   return (
@@ -103,7 +137,7 @@ export function App({ path }: { path: string }) {
                   >{group.name}</NavigationMenuTrigger>
                   <NavigationMenuContent className="mega-panel">
                     <ul className="grid max-h-[calc(100svh-7rem)] grid-cols-3 gap-x-4 gap-y-2 overflow-y-auto">
-                      {group.categories.map(category => (
+                      {group.categories.filter(category => category.id !== 'courses').map(category => (
                         <li key={category.id}>
                           <NavigationMenuLink asChild active={category.id === page.category?.id}>
                             <a href={'platform' in category ? `/criadores?plataforma=${category.platform}` : `/${category.route}`} aria-current={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'page' : undefined} className="navigation-card"><NavigationCard id={category.id.startsWith('creator-') ? 'creators' : category.id} name={category.name} /></a>
@@ -144,7 +178,7 @@ export function App({ path }: { path: string }) {
                         </Accordion.Header>
                         <Accordion.Content>
                           <ul className="mb-3 ml-3 space-y-1 border-l pl-2">
-                            {group.categories.map(category => (
+                            {group.categories.filter(category => category.id !== 'courses').map(category => (
                               <li key={category.id}><SheetClose asChild><Button asChild size="menu" variant={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'secondary' : 'ghost'}><a href={'platform' in category ? `/criadores?plataforma=${category.platform}` : `/${category.route}`} aria-current={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'page' : undefined}>{category.name}</a></Button></SheetClose></li>
                             ))}
                           </ul>
@@ -192,8 +226,9 @@ export function App({ path }: { path: string }) {
         ) : path === '/contribuir' ? (
           <article className="mx-auto max-w-2xl space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight">Contribuir</h1>
-            <p className="text-muted-foreground">Conhece um site, conteúdo ou oportunidade que merece entrar no guia? Envie o link para revisão. Você também pode corrigir informações das indicações existentes.</p>
-            {repository ? <div className="flex flex-wrap gap-3"><Button asChild><a href={`${repository}/issues/new?template=recurso.yml`}>Sugerir recurso<ArrowUpRight /></a></Button><Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button></div> : <p>O canal de contribuições está em preparação.</p>}
+            <p className="text-muted-foreground">Sugira um recurso uma vez. A conversa, os comentários e a revisão ficam no mesmo tópico do fórum.</p>
+            <ResourceContribution />
+            {repository && <Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button>}
           </article>
         ) : page.resource ? (
           <article className="mx-auto max-w-3xl space-y-6">
@@ -207,25 +242,10 @@ export function App({ path }: { path: string }) {
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
           </article>
         ) : (
-          <div className="space-y-8">
-            <section aria-label="Busca" className="space-y-5">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1>
-              <p className="text-sm text-muted-foreground">Encontre links para outros sites. Consulte os detalhes de cada indicação e acesse o conteúdo no site de origem.</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div role="search" className="relative flex-1">
-                  <Search className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground" aria-hidden="true" />
-                  <Input type="search" aria-label="Buscar recursos" placeholder="Buscar por nome, assunto ou tecnologia" value={query} onChange={event => setQuery(event.target.value)} className="h-10 pl-10" />
-                </div>
-                {!page.category && <Select value={type} onValueChange={setType}><SelectTrigger className="h-10 w-full sm:w-60" aria-label="Tipo de recurso"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os tipos</SelectItem>{groups.map(group => <SelectGroup key={group.id}><SelectLabel>{group.name}</SelectLabel>{group.categories.map(c => <SelectItem value={c.id} key={c.id}>{c.name}</SelectItem>)}</SelectGroup>)}</SelectContent></Select>}
-                <Select value={locale} onValueChange={setLocale}><SelectTrigger className="h-10 w-full sm:w-56" aria-label="Idioma e região dos recursos"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os idiomas</SelectItem><SelectItem value="pt-BR">Português</SelectItem><SelectItem value="en-US">English (United States)</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent></Select>
-              </div>
-            </section>
-
-            <section aria-label="Resultados" className="space-y-4">
-              <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-medium">{query || type !== 'all' ? 'Resultados' : 'Recursos'}</h2><span className="text-sm text-muted-foreground" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'recurso' : 'recursos'}</span></div>
-              {filtered.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(resource => <ResourceCard key={`${resource.type}/${resource.slug}`} resource={resource} />)}</div> : <Empty className="border"><EmptyHeader><EmptyTitle>{query ? 'Nenhum resultado' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{query ? 'Tente outro nome, assunto ou tecnologia.' : 'Você pode sugerir o primeiro recurso desta categoria.'}</EmptyDescription></EmptyHeader><EmptyContent>{query ? <Button variant="outline" onClick={() => setQuery('')}>Limpar busca</Button> : <Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button>}</EmptyContent></Empty>}
-            </section>
-          </div>
+          <section aria-label="Recursos" className="space-y-5">
+            <div className="flex items-center justify-between gap-3"><div className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><p className="text-sm text-muted-foreground">Indicações organizadas para você explorar no próprio ritmo.</p></div><span className="shrink-0 text-sm text-muted-foreground" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'item' : 'itens'}</span></div>
+            {filtered.length ? <ul aria-label={`Lista: ${page.title}`} className="divide-y border-y">{filtered.map(resource => <li key={`${resource.type}/${resource.slug}`}><ResourceRow resource={resource} platform={platform} /></li>)}</ul> : <Empty className="border"><EmptyHeader><EmptyTitle>Ainda não há recursos aqui</EmptyTitle><EmptyDescription>Você pode sugerir o primeiro item desta categoria.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button></EmptyContent></Empty>}
+          </section>
         )}
       </main>
       <footer className="site-footer w-full shrink-0">

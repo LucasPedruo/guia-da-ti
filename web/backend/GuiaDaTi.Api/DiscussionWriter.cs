@@ -13,7 +13,7 @@ public sealed class DiscussionWriter(IHttpClientFactory clients, IConfiguration 
         var metadata = await Query(token, """
             query($owner:String!,$name:String!,$number:Int!,$existing:Boolean!){
               repository(owner:$owner,name:$name){ id isPrivate hasDiscussionsEnabled
-                discussionCategories(first:100){nodes{id}}
+                discussionCategories(first:100){nodes{id name}}
                 discussion(number:$number) @include(if:$existing){id locked closed}
               }
             }
@@ -22,11 +22,15 @@ public sealed class DiscussionWriter(IHttpClientFactory clients, IConfiguration 
         if (repo.ValueKind == JsonValueKind.Null || repo.GetProperty("isPrivate").GetBoolean()
             || !repo.GetProperty("hasDiscussionsEnabled").GetBoolean()) throw new DiscussionsUnavailableException();
         if (draft.Number is null) {
-            if (!repo.GetProperty("discussionCategories").GetProperty("nodes").EnumerateArray().Any(c => c.GetProperty("id").GetString() == draft.CategoryId))
+            var availableCategories = repo.GetProperty("discussionCategories").GetProperty("nodes").EnumerateArray();
+            var selectedCategory = availableCategories.FirstOrDefault(c => draft.CategoryId is not null
+                ? c.GetProperty("id").GetString() == draft.CategoryId
+                : string.Equals(c.GetProperty("name").GetString(), draft.CategoryName, StringComparison.OrdinalIgnoreCase));
+            if (selectedCategory.ValueKind == JsonValueKind.Undefined)
                 throw new DiscussionWriteRejectedException("Escolha uma categoria válida.");
             var result = await Query(token, """
                 mutation($input:CreateDiscussionInput!){createDiscussion(input:$input){discussion{number}}}
-                """, new { input = new { repositoryId = repo.GetProperty("id").GetString(), categoryId = draft.CategoryId, title = draft.Title!.Trim(), body = draft.Body.Trim() } }, cancellation);
+                """, new { input = new { repositoryId = repo.GetProperty("id").GetString(), categoryId = selectedCategory.GetProperty("id").GetString(), title = draft.Title!.Trim(), body = draft.Body.Trim() } }, cancellation);
             return result.GetProperty("createDiscussion").GetProperty("discussion").GetProperty("number").GetInt32();
         }
         var discussion = repo.GetProperty("discussion");
@@ -64,7 +68,7 @@ public sealed class DiscussionWriter(IHttpClientFactory clients, IConfiguration 
     }
 }
 
-public record DiscussionDraft(string Body, string? Title = null, string? CategoryId = null, int? Number = null, string? ReplyToId = null);
+public record DiscussionDraft(string Body, string? Title = null, string? CategoryId = null, int? Number = null, string? ReplyToId = null, string? CategoryName = null);
 public sealed class DiscussionWriteRejectedException(string message) : Exception(message);
 public static class DiscussionWriteEndpoints
 {

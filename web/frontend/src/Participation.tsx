@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog } from 'radix-ui';
-import { Github, Moon, Sun, LogOut, HeartHandshake } from 'lucide-react';
+import { Github, Moon, Sun, LogOut, HeartHandshake, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { categories, labels, taxonomy } from './catalog';
 
 type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
 const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
@@ -101,13 +102,17 @@ export function UserControls({ dark, toggleTheme }: { dark: boolean; toggleTheme
 const loginPanelClass = 'fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4 overflow-y-auto rounded-xl border bg-popover p-6 text-popover-foreground shadow-lg';
 
 function GitHubHelp() {
-  return <section aria-label="Sobre o GitHub" className="space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
-    <h3 className="font-semibold">O que é o GitHub?</h3>
-    <p className="leading-relaxed text-muted-foreground">É um site que reúne projetos e comunidades. Usamos sua conta para identificar você no fórum. Você não precisa saber programar para participar.</p>
-    <h3 className="font-semibold">Ainda não tem conta?</h3>
-    <ol className="list-decimal space-y-1 pl-5 text-muted-foreground"><li>Crie uma conta gratuita no GitHub.</li><li>Confirme seu e-mail.</li><li>Volte aqui e clique em “Entrar com GitHub”.</li></ol>
-    <Button asChild variant="outline" size="sm"><a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">Criar conta no GitHub</a></Button>
-  </section>;
+  return <details aria-label="Ajuda para entrar com GitHub" className="group rounded-lg border bg-muted/30 text-sm">
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+      Primeira vez no GitHub?<ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
+    </summary>
+    <div className="space-y-3 border-t px-4 py-3">
+      <p className="leading-relaxed text-muted-foreground">Usamos sua conta para identificar você no fórum. Não precisa saber programar para participar.</p>
+      <p className="font-medium">Ainda não tem conta?</p>
+      <ol className="list-decimal space-y-1 pl-5 text-muted-foreground"><li>Crie uma conta gratuita no GitHub.</li><li>Confirme seu e-mail.</li><li>Volte aqui e clique em “Entrar com GitHub”.</li></ol>
+      <Button asChild variant="outline" size="sm"><a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">Criar conta no GitHub</a></Button>
+    </div>
+  </details>;
 }
 
 function LoginPrompt({ enabled }: { enabled: boolean }) {
@@ -190,4 +195,73 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
     </form>}
     {success && <p role="status" className="text-sm text-muted-foreground">Mensagem publicada.</p>}
   </div>;
+}
+
+const typeNames: Record<string, string> = { platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Vagas', internships: 'Estágios', scholarships: 'Bolsas', mentoring: 'Mentorias', volunteering: 'Voluntariado' };
+
+export function ResourceContribution() {
+  const session = useContext(SessionContext)?.session;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [successUrl, setSuccessUrl] = useState('');
+  const [type, setType] = useState('');
+  const [area, setArea] = useState('');
+  const [languages, setLanguages] = useState<string[]>(['pt-BR']);
+  const [technologies, setTechnologies] = useState<string[]>([]);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!session?.login || busy) return;
+    setBusy(true); setError(''); setSuccess('');
+    const form = new FormData(event.currentTarget);
+    const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages };
+    try {
+      const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(proposal) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw Error(result.error || 'Não foi possível enviar a contribuição.');
+      setSuccess(`Sugestão enviada! A conversa #${result.number} já está aberta para comentários.`);
+      setSuccessUrl(`/?conversa=${result.number}`);
+      (event.currentTarget as HTMLFormElement).reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
+    finally { setBusy(false); }
+  }
+  if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. A sugestão e os comentários ficam juntos no fórum.</p><LoginButton /></div>;
+  return <form onSubmit={submit} className="space-y-4 rounded-lg border p-5">
+    <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.filter((id: string) => id !== 'courses').map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
+    <label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} /></label>
+    <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" /></label>
+    <label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" /></label>
+    <label className="block space-y-2 text-sm font-medium">Descrição<textarea name="description" required minLength={10} maxLength={4000} rows={4} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></label>
+    <label className="block space-y-2 text-sm font-medium">Assunto principal<select required value={area} onChange={event => setArea(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha um assunto</option>{taxonomy.areas.map((id: string) => <option key={id} value={id}>{labels[id] || id}</option>)}</select></label>
+    <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
+    <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>
+    <p className="text-xs text-muted-foreground">A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação abre um Pull Request com estes dados no catálogo.</p>
+    <Button type="submit" disabled={busy || !type || !area || !languages.length}>{busy ? 'Enviando…' : 'Enviar sugestão e abrir conversa'}</Button>
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>Abrir conversa</a></p>}
+  </form>;
+}
+
+export function ApproveContribution({ number }: { number: number }) {
+  const session = useContext(SessionContext)?.session;
+  const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [url, setUrl] = useState('');
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    if (!session?.login) { setAllowed(false); return; }
+    const controller = new AbortController();
+    fetch(`/api/discussions/${number}/approval-status`, { signal: controller.signal, cache: 'no-store' }).then(response => response.ok ? response.json() : { allowed: false }).then(result => { if (!controller.signal.aborted) setAllowed(result.allowed === true); }).catch(() => {});
+    return () => controller.abort();
+  }, [number, session?.login]);
+  if (!session?.login) return null;
+  if (!allowed && !url) return null;
+  async function approve() {
+    setBusy(true); setError('');
+    try {
+      const response = await fetch(`/api/discussions/${number}/approve`, { method: 'POST', headers: { 'X-CSRF-Token': session!.csrfToken } });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw Error(result.error || 'Não foi possível aprovar esta sugestão.');
+      setUrl(result.url);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível aprovar esta sugestão.'); }
+    finally { setBusy(false); }
+  }
+  return <div className="space-y-2">{url ? <p className="text-sm">Pull Request criado: <a className="text-primary underline" href={url} target="_blank" rel="noopener noreferrer">revisar e mesclar no GitHub</a></p> : <Button variant="outline" size="sm" disabled={busy} onClick={() => void approve()}>{busy ? 'Preparando cadastro…' : 'Aprovar e preparar cadastro'}</Button>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>;
 }

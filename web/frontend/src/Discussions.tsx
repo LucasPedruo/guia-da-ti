@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Advertisement } from './Advertisement';
-import { Composer } from './Participation';
+import { ApproveContribution, Composer } from './Participation';
 import { DiscussionSkeleton } from './Loading';
 import { ArrowLeft, ArrowUpRight, MessageSquareText, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { categories } from './catalog';
 
 type Category = { id: string; name: string };
 type PageInfo = { hasNextPage: boolean; endCursor: string | null };
-type Discussion = { number: number; title: string; preview: string; category: Category; author: string; updatedAt: string; commentCount: number; isAnswered: boolean; locked: boolean; url: string };
+type Discussion = { number: number; title: string; preview: string; category: Category; resourceCategory?: string | null; author: string; updatedAt: string; commentCount: number; isAnswered: boolean; locked: boolean; url: string };
 type Comment = { id: string; author: string; body: string; createdAt: string; isAnswer: boolean; replies: Comment[]; replyCount: number };
 type DiscussionList = { status: 'ready'; repositoryUrl: string; categories: Category[]; items: Discussion[]; pageInfo: PageInfo; totalCount?: number | null };
 type Thread = { status: 'ready'; discussion: Discussion; body: string; comments: Comment[]; pageInfo: PageInfo };
@@ -88,8 +89,9 @@ function DiscussionThread({ number }: { number: number }) {
       <article data-motion className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /></div>
         <h2 ref={heading} tabIndex={-1} className="break-words text-2xl font-semibold tracking-tight outline-none [overflow-wrap:anywhere]">{ready.discussion.title}</h2>
-        <div className="flex flex-wrap gap-2"><Badge variant="secondary">{ready.discussion.category.name}</Badge>{ready.discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{ready.discussion.locked && <Badge variant="outline">Conversa encerrada</Badge>}</div>
+        <div className="flex flex-wrap gap-2"><Badge variant="secondary">{ready.discussion.category.name}</Badge>{ready.discussion.resourceCategory && <Badge variant="outline">{categories.find(category => category.id === ready.discussion.resourceCategory)?.name || ready.discussion.resourceCategory}</Badge>}{ready.discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{ready.discussion.locked && <Badge variant="outline">Conversa encerrada</Badge>}</div>
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{ready.body}</p>
+        {ready.body.includes('Categoria do guia:') && <ApproveContribution number={number} />}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><MessageSquareText className="size-3.5" />{ready.discussion.commentCount} comentários</span><Button asChild variant="ghost" size="xs"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">Ver no GitHub<ArrowUpRight /></a></Button></div>
       </article>
       <Advertisement />
@@ -150,7 +152,7 @@ function DiscussionFeed() {
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
       {ready.items.length ? <ul className="divide-y border-y" aria-label="Conversas">{ready.items.map((discussion, index) => <Fragment key={discussion.number}><li>
         <article data-motion className="relative min-w-0 space-y-2 px-1 py-4 transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><span className="font-medium text-foreground">{discussion.category.name}</span><span aria-hidden="true">·</span><span>{discussion.author}</span><span aria-hidden="true">·</span><DateLabel value={discussion.updatedAt} />{discussion.isAnswered && <Badge variant="secondary" className="text-[10px]">Respondida</Badge>}{discussion.locked && <Badge variant="outline" className="text-[10px]">Encerrada</Badge>}</div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><span className="font-medium text-foreground">{discussion.category.name}</span>{discussion.resourceCategory && <Badge variant="outline" className="text-[10px]">{categories.find(category => category.id === discussion.resourceCategory)?.name || discussion.resourceCategory}</Badge>}<span aria-hidden="true">·</span><span>{discussion.author}</span><span aria-hidden="true">·</span><DateLabel value={discussion.updatedAt} />{discussion.isAnswered && <Badge variant="secondary" className="text-[10px]">Respondida</Badge>}{discussion.locked && <Badge variant="outline" className="text-[10px]">Encerrada</Badge>}</div>
           <h2 className="text-base font-semibold leading-snug sm:text-lg"><a className="rounded-sm hover:text-primary after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-ring [overflow-wrap:anywhere]" href={discussionUrl(discussion.number)}>{discussion.title}</a></h2>
           {discussion.preview && <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{discussion.preview}</p>}
           <Button asChild variant="secondary" size="xs" className="relative"><a href={discussionUrl(discussion.number)} aria-label={`${discussion.commentCount} comentários em ${discussion.title}`}><MessageSquareText aria-hidden="true" />{discussion.commentCount} {discussion.commentCount === 1 ? 'comentário' : 'comentários'}</a></Button>

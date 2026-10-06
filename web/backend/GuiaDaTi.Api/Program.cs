@@ -13,6 +13,7 @@ builder.Services.AddSingleton(catalog);
 builder.Services.AddHttpClient("discussions", client => client.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddSingleton<DiscussionsClient>();
 builder.Services.AddSingleton<DiscussionWriter>();
+builder.Services.AddSingleton<ContributionService>();
 builder.Services.AddSingleton<ContributorsClient>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CommunityActivity>();
@@ -32,6 +33,7 @@ app.UseAuthentication();
 app.MapCommunityAuth();
 app.MapDiscussionWrites();
 app.MapDiscussions();
+app.MapContributions();
 app.MapContributors();
 app.MapCommunityActivity();
 app.MapGet("/contribuidores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
@@ -59,6 +61,7 @@ app.Run();
 static string Normalize(string value) => string.Concat(value.Normalize(NormalizationForm.FormD)
     .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)).ToLowerInvariant();
 
-record Catalog(int Version, Resource[] Resources);
-record Resource(string Slug, string Type, string Name, string Summary, string Description, string Url,
+public record Catalog(int Version, Taxonomy Taxonomy, Resource[] Resources);
+public record Taxonomy(string[] Areas, string[] Technologies, string[] Languages, string[] Types);
+public record Resource(string Slug, string Type, string Name, string Summary, string Description, string Url,
     string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo, string[]? Countries = null);
