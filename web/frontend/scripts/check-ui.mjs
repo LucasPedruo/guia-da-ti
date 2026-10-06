@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { checkYouTubeCuration } from './youtube-curation-ui.mjs';
+import { checkSocialCuration } from './social-curation-ui.mjs';
 import { checkCreatorCategories } from './creator-categories-ui.mjs';
 import { checkRouteFlash } from './navigation-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
@@ -50,6 +51,7 @@ try {
   await installDiscussionFixtures(send);
   await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
   await checkYouTubeCuration({send, evaluate, waitFor, navigate, click, selectOption});
+  await checkSocialCuration({send, evaluate, waitFor, navigate, click, selectOption});
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
   await checkRouteFlash({send,evaluate,waitFor,navigate});
@@ -108,9 +110,13 @@ try {
   assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('main table th'), element => element.textContent)`), ['Item', 'Categoria', 'Atualização', 'Ações']);
   assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`), Math.min(pageSize, catalog.resources.length));
   assert.deepEqual(await evaluate(`(()=>{const style=getComputedStyle(document.querySelector('main table').parentElement); return {background:style.backgroundColor,shadow:style.boxShadow}})()`), { background: 'rgb(255, 255, 255)', shadow: 'none' });
+  await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Pessoa Criadora');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await waitFor(`!!document.querySelector('main table a[aria-label="Ver perfil: Pessoa Criadora — exemplo"]')`);
   const profileAction = "document.querySelector('main table a[aria-label=\"Ver perfil: Pessoa Criadora — exemplo\"]')";
   assert.equal(await evaluate(`${profileAction}.target`), '_blank');
   assert.equal(await evaluate(`${profileAction}.getAttribute('href')`), 'https://example.org/criador-exemplo');
+  await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await waitFor(`document.querySelectorAll('main table tbody tr').length === ${Math.min(pageSize, catalog.resources.length)}`);
   for (const width of [320, 390, 768, 1440]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, `Catalog overflow at ${width}px`);
