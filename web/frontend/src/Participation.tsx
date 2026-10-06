@@ -7,6 +7,7 @@ import { Github, Moon, Sun, LogOut, HeartHandshake, ChevronDown } from 'lucide-r
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { categories, labels, taxonomy } from './catalog';
+import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
 
 type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
 const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
@@ -209,11 +210,24 @@ export function ResourceContribution() {
   const [area, setArea] = useState('');
   const [languages, setLanguages] = useState<string[]>(['pt-BR']);
   const [technologies, setTechnologies] = useState<string[]>([]);
+  const [url, setUrl] = useState('');
+  const [name, setName] = useState('');
+  const [summary, setSummary] = useState('');
+  const [description, setDescription] = useState('');
+  const creatorCategory = type === 'creators' || type === 'youtube';
+  const lookup = useCreatorProfile(url, creatorCategory && !!session?.login);
+  useEffect(() => {
+    if (!lookup.profile) return;
+    setName(lookup.profile.name.slice(0, 100));
+    setSummary(lookup.profile.description.slice(0, 240));
+    setDescription(lookup.profile.description.slice(0, 4000));
+  }, [lookup.profile]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session?.login || busy) return;
     setBusy(true); setError(''); setSuccess('');
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages };
     try {
       const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(proposal) });
@@ -221,17 +235,27 @@ export function ResourceContribution() {
       if (!response.ok) throw Error(result.error || 'Não foi possível enviar a contribuição.');
       setSuccess(`Sugestão enviada! A conversa #${result.number} já está aberta para comentários.`);
       setSuccessUrl(`/?conversa=${result.number}`);
-      (event.currentTarget as HTMLFormElement).reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
+      formElement.reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
+      setUrl(''); setName(''); setSummary(''); setDescription('');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
     finally { setBusy(false); }
   }
   if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. A sugestão e os comentários ficam juntos no fórum.</p><LoginButton /></div>;
   return <form onSubmit={submit} className="space-y-4 rounded-lg border p-5">
     <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.filter((id: string) => id !== 'courses').map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
-    <label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} /></label>
-    <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" /></label>
-    <label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" /></label>
-    <label className="block space-y-2 text-sm font-medium">Descrição<textarea name="description" required minLength={10} maxLength={4000} rows={4} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></label>
+    <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
+      setUrl(event.target.value);
+      if (creatorCategory) { setName(''); setSummary(''); setDescription(''); }
+    }} /></label>
+    {creatorCategory && <div aria-live="polite" className="space-y-2 text-sm text-muted-foreground">
+      <p>Cole o link do perfil para buscar os dados automaticamente. Confira as informações antes de enviar.</p>
+      {lookup.loading && <p role="status">Buscando perfil…</p>}
+      {lookup.error && <p role="status">{lookup.error}</p>}
+      {lookup.profile && <div className="flex items-center gap-3 rounded-md border p-3"><CreatorAvatar profile={lookup.profile} name={lookup.profile.name} /><div><p className="font-medium text-foreground">{lookup.profile.name}</p><p>{followersLabel(lookup.profile)}</p></div></div>}
+    </div>}
+    <label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
+    <label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" value={summary} onChange={event => setSummary(event.target.value)} /></label>
+    <label className="block space-y-2 text-sm font-medium">Descrição<textarea name="description" required minLength={10} maxLength={4000} rows={4} value={description} onChange={event => setDescription(event.target.value)} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></label>
     <label className="block space-y-2 text-sm font-medium">Assunto principal<select required value={area} onChange={event => setArea(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha um assunto</option>{taxonomy.areas.map((id: string) => <option key={id} value={id}>{labels[id] || id}</option>)}</select></label>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>

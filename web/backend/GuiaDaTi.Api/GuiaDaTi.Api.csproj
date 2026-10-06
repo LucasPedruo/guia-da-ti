@@ -5,4 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>guia-da-ti-discussions</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="App_Data/**" />
+    <None Remove="App_Data/**" />
+  </ItemGroup>
 </Project>

@@ -15,6 +15,10 @@ builder.Services.AddSingleton<DiscussionsClient>();
 builder.Services.AddSingleton<DiscussionWriter>();
 builder.Services.AddSingleton<ContributionService>();
 builder.Services.AddSingleton<ContributorsClient>();
+builder.Logging.AddFilter("System.Net.Http.HttpClient.creator-profiles", LogLevel.None);
+builder.Services.AddHttpClient("creator-profiles", client => client.Timeout = TimeSpan.FromSeconds(8))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+builder.Services.AddSingleton<CreatorProfiles>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CommunityActivity>();
 builder.AddCommunityAuth();
@@ -23,7 +27,7 @@ app.Use(async (context, next) => {
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     // Radix menus/selects use inline positioning and scroll-lock styles. Scripts remain self-only.
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com https://*.googleusercontent.com https://*.ggpht.com https://*.cdninstagram.com https://*.fbcdn.net https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.licdn.com https://*.twimg.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
     await next();
 });
 app.UseDefaultFiles();
@@ -35,7 +39,10 @@ app.MapDiscussionWrites();
 app.MapDiscussions();
 app.MapContributions();
 app.MapContributors();
+app.MapCreatorProfiles();
 app.MapCommunityActivity();
+app.MapRegisteredUsers();
+app.MapGet("/apoiadores", () => Results.Redirect("/sobre#apoiadores", permanent: true));
 app.MapGet("/contribuidores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
 app.MapGet("/mantenedores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
 app.MapGet("/health", () => Results.Ok(new { status = "ok", resources = catalog.Resources.Length }));

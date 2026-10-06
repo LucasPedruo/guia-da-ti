@@ -3,10 +3,13 @@ import { categories, resources } from './catalog';
 import community from './generated/community.json';
 
 const ActivityContext = createContext<number | null>(null);
+type RegisteredSummary = { registeredUsers: number; trackingSince: string };
+const RegisteredContext = createContext<RegisteredSummary | null>(null);
 const format = (value: number) => value.toLocaleString('pt-BR');
 
 export function CommunityMetricsProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<number | null>(null);
+  const [registered, setRegistered] = useState<RegisteredSummary | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     let pending = false;
@@ -14,12 +17,21 @@ export function CommunityMetricsProvider({ children }: { children: ReactNode }) 
       if (pending || document.visibilityState !== 'visible') return;
       pending = true;
       try {
-        const response = await fetch('/api/community/activity', { signal: controller.signal, cache: 'no-store' });
-        if (!response.ok) throw Error();
-        const data = await response.json();
-        if (!Number.isSafeInteger(data.activeUsers) || data.activeUsers < 0) throw Error();
-        if (!controller.signal.aborted) setActive(data.activeUsers);
-      } catch { if (!controller.signal.aborted) setActive(null); }
+        await Promise.all([
+          fetch('/api/community/activity', { signal: controller.signal, cache: 'no-store' }).then(async response => {
+            if (!response.ok) throw Error();
+            const data = await response.json();
+            if (!Number.isSafeInteger(data.activeUsers) || data.activeUsers < 0) throw Error();
+            if (!controller.signal.aborted) setActive(data.activeUsers);
+          }).catch(() => { if (!controller.signal.aborted) setActive(null); }),
+          fetch('/api/community/users', { signal: controller.signal, cache: 'no-store' }).then(async response => {
+            if (!response.ok) throw Error();
+            const data = await response.json();
+            if (!Number.isSafeInteger(data.registeredUsers) || data.registeredUsers < 0 || typeof data.trackingSince !== 'string' || !Number.isFinite(Date.parse(data.trackingSince))) throw Error();
+            if (!controller.signal.aborted) setRegistered(data);
+          }).catch(() => { if (!controller.signal.aborted) setRegistered(null); }),
+        ]);
+      }
       finally { pending = false; }
     }
     void refresh();
@@ -28,7 +40,7 @@ export function CommunityMetricsProvider({ children }: { children: ReactNode }) 
     window.addEventListener('focus', refresh);
     return () => { controller.abort(); window.clearInterval(timer); document.removeEventListener('visibilitychange', refresh); window.removeEventListener('focus', refresh); };
   }, []);
-  return <ActivityContext.Provider value={active}>{children}</ActivityContext.Provider>;
+  return <ActivityContext.Provider value={active}><RegisteredContext.Provider value={registered}>{children}</RegisteredContext.Provider></ActivityContext.Provider>;
 }
 
 export function ActiveUsers() {
@@ -41,9 +53,9 @@ export function ActiveUsers() {
 }
 
 export function CommunityMetrics() {
-  const active = useContext(ActivityContext);
+  const registered = useContext(RegisteredContext);
   const metrics = [
-    { value: active === null ? '—' : format(active), label: 'Usuários ativos', detail: 'Na página · últimos 5 minutos' },
+    { value: registered === null ? '—' : format(registered.registeredUsers), label: 'Contas que já entraram', detail: registered ? `Únicas no GitHub · desde ${new Date(registered.trackingSince).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}` : 'Contas únicas com login pelo GitHub' },
     { value: format(resources.filter(resource => !resource.demo).length), label: 'Recursos no guia', detail: 'Indicações reais no catálogo' },
     { value: format(categories.length), label: 'Categorias', detail: 'Para explorar tecnologia' },
     { value: format(community.supporters.length), label: 'Empresas apoiadoras', detail: 'Apoiam a construção do Guia' },
@@ -57,6 +69,6 @@ export function CommunityMetrics() {
         <dd className="order-3 text-xs leading-relaxed text-muted-foreground">{metric.detail}</dd>
       </div>)}
     </dl>
-    {active === null && <p className="text-xs text-muted-foreground">A contagem de usuários ativos está indisponível no momento.</p>}
+    {registered === null && <p className="text-xs text-muted-foreground">O total de contas que já entraram está indisponível no momento.</p>}
   </section>;
 }

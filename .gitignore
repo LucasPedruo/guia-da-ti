@@ -6,3 +6,4 @@ wwwroot/
 .env
 .env.local
 *.user
+App_Data/

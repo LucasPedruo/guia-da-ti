@@ -7,9 +7,14 @@ export async function installDiscussionFixtures(send) {
     window.discussionRequests = [];
     window.fetch = async (input, options) => {
       const url = new URL(String(input), location.origin);
+      if (url.pathname === '/api/community/users') return sessionStorage.getItem('registeredTestMode') === 'error'
+        ? new Response('{}', { status: 503 }) : Response.json({ registeredUsers: 37, trackingSince: '2026-10-06T12:00:00Z' });
       if (url.pathname === '/api/community/activity') return sessionStorage.getItem('activityTestMode') === 'error'
         ? new Response('{}', { status: 503 }) : Response.json({ activeUsers: 12, windowMinutes: 5 });
-      if (url.pathname === '/api/contributors') return Response.json({ items: [{ name: 'ana', url: 'https://github.com/ana', avatarUrl: location.origin + '/favicon.svg', contributions: 5 }] });
+      if (url.pathname === '/api/contributors') return Response.json({ items: Array.from({ length: 10 }, (_, index) => ({ name: index === 0 ? 'ana' : 'person' + index, url: 'https://github.com/' + (index === 0 ? 'ana' : 'person' + index), avatarUrl: location.origin + '/favicon.svg', contributions: 5 })) });
+      if (url.pathname === '/api/creators/profile') return sessionStorage.getItem('creatorTestMode') === 'error'
+        ? Response.json({ error: 'A rede não disponibilizou os dados desse perfil.' }, { status: 503 })
+        : Response.json({ network: 'youtube', url: url.searchParams.get('url'), name: 'Canal da Ana', description: 'Conteúdo de tecnologia e programação para iniciantes.', avatarUrl: location.origin + '/favicon.svg', followers: 1200, followersText: null, checkedAt: '2026-10-06T12:00:00Z' });
       if (url.pathname === '/api/auth/session') return Response.json({ enabled: !!sessionStorage.getItem('participationMode'), login: ['member', 'error'].includes(sessionStorage.getItem('participationMode')) ? 'ana' : null, avatarUrl: location.origin + '/favicon.svg', csrfToken: 'test-csrf' });
       if (url.pathname === '/api/discussions/publish') {
         window.lastPublication = JSON.parse(options.body);
@@ -134,14 +139,14 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await navigate('/');
   await waitFor(`!![...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`);
   await click(`[...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`);
-  await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('O que é o GitHub?')`);
+  await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Primeira vez no GitHub?')`);
   assert.equal(await evaluate(`document.querySelector('[role="dialog"] a[href="https://github.com/signup"]')?.target`), '_blank');
   await click(`[...document.querySelectorAll('[role="dialog"] button')].find(e=>e.textContent.trim()==='Cancelar')`);
   await waitFor(`!document.querySelector('[role="dialog"]')`);
   await waitFor(`!!${button('Novo tópico')}`);
   await click(button('Novo tópico'));
   await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Você está deslogado')`);
-  assert.equal(await evaluate(`!!document.querySelector('[role="dialog"] [aria-label="Sobre o GitHub"]')`), true);
+  assert.equal(await evaluate(`!!document.querySelector('[role="dialog"] [aria-label="Ajuda para entrar com GitHub"]')`), true);
   assert.equal(await evaluate(`!![...document.querySelectorAll('[role="dialog"] button')].find(e=>e.textContent.trim()==='Entrar com GitHub')`), true);
   assert.equal(await evaluate(`document.querySelectorAll('textarea').length`), 0);
   await evaluate(`window.realPopupOpen = window.open; window.popupPageMarker = 'preserved'; window.popupOriginalUrl = location.href; window.open = (url) => { window.popupLoginUrl = url; return window.testLoginPopup = { closed: false, close() { this.closed = true; }, focus() {} }; }`);
@@ -201,11 +206,13 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await navigate('/?conversa=7');
   await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
   assert.equal(await evaluate(`!!${button('Participe da conversa…')} || !!${button('Responder')}`), false);
-  for (const [path, title] of [['/apoiadores', 'Empresas apoiadoras'], ['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
+  for (const [path, title] of [['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
     await navigate(`${path}/`);
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
-    if (path === '/apoiadores') assert.equal(await evaluate(`!!document.querySelector('main a[href="https://www.hostgator.com.br/"]')`), true);
     if (path === '/sobre') { await waitFor(`!!document.querySelector('#mantenedores a[href="https://github.com/ana"] img')`); assert.equal(await evaluate(`document.querySelector('#mantenedores h2').textContent`), 'Mantenedores'); }
-    if (['/sobre', '/apoiadores', '/contribuidores'].includes(path)) assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()==='Projeto')?.getAttribute('data-current')`), 'true');
+    if (path === '/sobre') {
+      assert.equal(await evaluate(`!!document.querySelector('#apoiadores a[href="https://www.hostgator.com.br/"]')`), true);
+      assert.equal(await evaluate(`document.querySelector('[aria-label="Principal"] a[href="/sobre"]').getAttribute('aria-current')`), 'page');
+    }
   }
 }

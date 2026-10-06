@@ -17,6 +17,7 @@ public static class CommunityAuth
     {
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<ServerTickets>();
+        builder.Services.AddSingleton<RegisteredUsers>();
         builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-Token");
         var secure = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
         var auth = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -28,6 +29,7 @@ public static class CommunityAuth
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 options.SlidingExpiration = false;
                 options.Events.OnRedirectToLogin = context => { context.Response.StatusCode = 401; return Task.CompletedTask; };
+                options.Events.OnSignedIn = context => RegisteredUsersEndpoints.RecordLoginAsync(context.HttpContext, context.Principal);
             });
         builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
             .Configure<ServerTickets>((options, tickets) => options.SessionStore = tickets);
@@ -64,8 +66,9 @@ public static class CommunityAuth
 
     public static void MapCommunityAuth(this WebApplication app)
     {
-        app.MapGet("/api/auth/session", (HttpContext context, IAntiforgery csrf, IConfiguration config) => {
+        app.MapGet("/api/auth/session", async (HttpContext context, IAntiforgery csrf, IConfiguration config) => {
             context.Response.Headers.CacheControl = "no-store";
+            if (context.User.Identity?.IsAuthenticated == true) await RegisteredUsersEndpoints.RecordLoginAsync(context, context.User);
             return Results.Ok(new { enabled = Enabled(config), login = context.User.Identity?.IsAuthenticated == true ? context.User.Identity.Name : null,
                 avatarUrl = context.User.Identity?.IsAuthenticated == true && long.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
                     ? $"https://avatars.githubusercontent.com/u/{userId}?s=80" : null,

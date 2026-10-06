@@ -5,7 +5,7 @@ import { Maintainers } from './Maintainers';
 export function Community({ area, preview = false, embedded = false }: { area: 'supporters' | 'contributors'; preview?: boolean; embedded?: boolean }) {
   const supporting = area === 'supporters';
   const title = 'Empresas apoiadoras';
-  const href = '/apoiadores';
+  const href = '/sobre#apoiadores';
   const entries = community.supporters;
   const Heading = preview || embedded ? 'h2' : 'h1';
   if (!supporting) return <Maintainers compact={preview} />;

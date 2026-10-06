@@ -1,5 +1,27 @@
 [
   {
+    "id": "communities",
+    "name": "Comunidade",
+    "categories": [
+      {
+        "id": "communities",
+        "route": "comunidades",
+        "name": "Comunidades"
+      }
+    ]
+  },
+  {
+    "id": "creators",
+    "name": "Criadores",
+    "categories": [
+      {
+        "id": "creators",
+        "route": "criadores",
+        "name": "Criadores"
+      }
+    ]
+  },
+  {
     "id": "learn",
     "name": "Estudar",
     "categories": [
@@ -96,11 +118,6 @@
     "name": "Networking",
     "categories": [
       {
-        "id": "communities",
-        "route": "comunidades",
-        "name": "Comunidades"
-      },
-      {
         "id": "events",
         "route": "eventos",
         "name": "Eventos"
@@ -176,47 +193,6 @@
         "id": "volunteering",
         "route": "voluntariado",
         "name": "Voluntariado"
-      }
-    ]
-  },
-  {
-    "id": "creators",
-    "name": "Criadores",
-    "categories": [
-      {
-        "id": "creators",
-        "route": "criadores",
-        "name": "Todos os criadores"
-      },
-      {
-        "id": "youtube",
-        "route": "youtube",
-        "name": "YouTube",
-        "platform": "youtube"
-      },
-      {
-        "id": "creator-instagram",
-        "route": "criadores",
-        "name": "Instagram",
-        "platform": "instagram"
-      },
-      {
-        "id": "creator-tiktok",
-        "route": "criadores",
-        "name": "TikTok",
-        "platform": "tiktok"
-      },
-      {
-        "id": "creator-linkedin",
-        "route": "criadores",
-        "name": "LinkedIn",
-        "platform": "linkedin"
-      },
-      {
-        "id": "creator-twitter",
-        "route": "criadores",
-        "name": "Twitter",
-        "platform": "twitter"
       }
     ]
   }

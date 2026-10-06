@@ -1,13 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
 import { Community } from './Community';
+import { CreatorTabs, CreatorTabsRoot, CreatorTabPanel, creatorNetworks } from './CreatorTabs';
+import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
 import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
 import { Maintainers, MaintainersProvider } from './Maintainers';
 import { NavigationCard } from './NavigationCard';
 import { BrandMark } from './BrandMark';
 import { Motion } from './Motion';
 import { Participation, ResourceContribution, UserControls } from './Participation';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Award, BookOpen, BriefcaseBusiness, CalendarDays, ChevronDown, Code, ExternalLink, FileText, FlaskConical, Github, Globe2, GraduationCap, Headphones, Instagram, Linkedin, Mail, Map, Menu, Newspaper, Twitter, Users, Wrench, Youtube, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Award, BookOpen, BriefcaseBusiness, CalendarDays, ChevronDown, Code, ExternalLink, FileText, FlaskConical, Github, Globe2, GraduationCap, Headphones, Instagram, Linkedin, Mail, Map, Menu, Newspaper, Twitter, Users, Wrench, Youtube, type LucideIcon } from 'lucide-react';
 import { Accordion } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,11 +47,11 @@ function resourceExtra(resource: Resource) {
 
 function ResourceIcon({ resource, platform }: { resource: Resource; platform: string | null }) {
   const Icon = platformIcons[platform || resource.type] || resourceIcons[resource.type] || Globe2;
-  return <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-lg border bg-muted/50 text-primary"><Icon className="size-5" /></span>;
+  return <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded bg-muted/50 text-primary"><Icon className="size-3.5" /></span>;
 }
 
 function ResourcePreview({ resource, extra }: { resource: Resource; extra: string }) {
-  return <span role="tooltip" className="absolute left-11 top-[calc(100%-4px)] z-30 hidden max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-3rem))] overflow-y-auto rounded-lg border bg-popover p-4 text-popover-foreground shadow-xl group-hover:block group-focus-within:block">
+  return <span role="tooltip" className="absolute left-0 top-full z-30 hidden max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-4rem))] overflow-y-auto rounded-lg border bg-popover p-4 text-popover-foreground shadow-xl group-hover:block group-focus-within:block">
     <span className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground"><Globe2 className="size-4" />{new URL(resource.url).hostname.replace(/^www\./, '')}</span>
     <span className="block text-base font-semibold">{resource.name}</span>
     <span className="mt-1 block text-sm leading-relaxed">{resource.description}</span>
@@ -70,30 +72,57 @@ function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: 
 
 function ResourceRow({ resource, platform }: { resource: Resource; platform: string | null }) {
   const extra = resourceExtra(resource);
-  const content: ReactNode = <>
-    <ResourceIcon resource={resource} platform={platform} />
-    <span className="min-w-0 flex-1 py-0.5">
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="font-semibold leading-snug">{resource.name}</span>{resource.demo && <Badge variant="outline" className="text-[10px]">Exemplo</Badge>}</span>
-      <span className="mt-1 block truncate text-sm text-muted-foreground">{resource.summary}</span>
-      {extra && <span className="mt-1 block truncate text-xs text-muted-foreground">{extra}</span>}
-    </span>
-    <ArrowRight aria-hidden="true" className="mt-3 size-4 shrink-0 text-muted-foreground" />
-  </>;
-  const rowClass = 'group relative flex w-full items-start gap-3 px-3 py-3 text-left outline-none hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring';
-  const preview = <ResourcePreview resource={resource} extra={extra} />;
-  if (profileTypes.has(resource.type)) return <div className="group relative"><a className={`${rowClass} pr-4`} href={resource.url} target="_blank" rel="noopener noreferrer">{content}</a>{preview}</div>;
-  if (dialogTypes.has(resource.type)) return <Dialog.Root><div className="group relative"><Dialog.Trigger asChild><button type="button" className={rowClass}>{content}</button></Dialog.Trigger>{preview}</div><ResourceDetailDialog resource={resource} extra={extra} /></Dialog.Root>;
-  return <div className="group relative"><a className={`${rowClass} pr-4`} href={resourcePath(resource)}>{content}</a>{preview}</div>;
+  const profile = profileTypes.has(resource.type);
+  const { profile: creator } = useCreatorProfile(resource.url, profile && !resource.demo);
+  const displayName = creator?.name || resource.name;
+  const displaySummary = creator?.description || resource.summary;
+  const dialog = dialogTypes.has(resource.type);
+  const href = profile ? resource.url : resourcePath(resource);
+  const category = categories.find(item => item.id === resource.type)?.name || resource.type;
+  const titleClass = 'block max-w-full truncate rounded-sm text-left text-[13px] font-medium leading-5 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring';
+  const title: ReactNode = dialog
+    ? <Dialog.Trigger asChild><button type="button" className={titleClass}>{resource.name}</button></Dialog.Trigger>
+    : <a href={href} target={profile ? '_blank' : undefined} rel={profile ? 'noopener noreferrer' : undefined} className={titleClass}>{displayName}</a>;
+  const action = <Button size="xs" variant="outline" aria-label={`${profile ? 'Ver perfil' : dialog ? 'Ver conteúdo' : 'Ver detalhes'}: ${resource.name}`}>
+    {profile ? 'Ver perfil' : dialog ? 'Ver conteúdo' : 'Ver detalhes'}
+  </Button>;
+  const row = <tr className="border-t transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
+    <td className="px-3 py-2.5 align-middle sm:px-4">
+      <div className="flex min-w-0 items-center gap-3">
+      {profile && <CreatorAvatar profile={creator} name={displayName} />}
+      <div className="group relative min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2"><div className="min-w-0">{title}</div>{resource.demo && <Badge variant="outline" className="shrink-0 text-[10px]">Exemplo</Badge>}</div>
+        <p className="truncate text-[11px] leading-5 text-muted-foreground" title={displaySummary}>{displaySummary}</p>
+        {profile && <p className="text-[11px] text-muted-foreground">{resource.demo ? 'Perfil de exemplo' : followersLabel(creator)}</p>}
+        <p className="truncate text-[11px] text-muted-foreground sm:hidden">{category}</p>
+        <ResourcePreview resource={{ ...resource, name: displayName, description: displaySummary }} extra={extra} />
+      </div>
+      </div>
+    </td>
+    <td className="hidden px-3 py-2.5 align-middle sm:table-cell"><span className="inline-flex max-w-full items-center gap-1.5"><ResourceIcon resource={resource} platform={platform} /><span className="truncate text-xs text-muted-foreground">{category}</span></span></td>
+    <td className="hidden px-3 py-2.5 align-middle font-mono text-[11px] text-muted-foreground lg:table-cell"><time dateTime={resource.updatedAt}>{resource.updatedAt.split('-').reverse().join('/')}</time></td>
+    <td className="px-3 py-2.5 text-right align-middle sm:px-4">{dialog ? <Dialog.Trigger asChild>{action}</Dialog.Trigger> : <Button asChild size="xs" variant="outline"><a href={href} target={profile ? '_blank' : undefined} rel={profile ? 'noopener noreferrer' : undefined} aria-label={`${profile ? 'Ver perfil' : 'Ver detalhes'}: ${resource.name}`}>{profile ? 'Ver perfil' : 'Ver detalhes'}</a></Button>}</td>
+  </tr>;
+  return dialog ? <Dialog.Root>{row}<ResourceDetailDialog resource={resource} extra={extra} /></Dialog.Root> : row;
 }
 
 export function App({ path }: { path: string }) {
   const page = pageInfo(path);
   const home = path === '/';
+  const creatorsPage = path === '/criadores';
   const [dark, setDark] = useState(false);
-  const platform = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('plataforma');
+  const [creatorPlatform, setCreatorPlatform] = useState('youtube');
+  const platform = creatorsPage ? creatorPlatform : null;
 
   useEffect(() => {
     try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Optional preference. */ }
+    function readPlatform() {
+      const requested = new URLSearchParams(window.location.search).get('plataforma');
+      setCreatorPlatform(creatorNetworks.some(network => network.id === requested) ? requested! : 'youtube');
+    }
+    readPlatform();
+    window.addEventListener('popstate', readPlatform);
+    return () => window.removeEventListener('popstate', readPlatform);
   }, []);
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
 
@@ -103,13 +132,15 @@ export function App({ path }: { path: string }) {
     try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* Optional preference. */ }
   }
 
-  const platformDomains: Record<string, string[]> = {
-    youtube: ['youtube.com', 'youtu.be'], instagram: ['instagram.com'], tiktok: ['tiktok.com'],
-    linkedin: ['linkedin.com'], twitter: ['twitter.com', 'x.com'],
-  };
+  function changeCreatorPlatform(value: string) {
+    setCreatorPlatform(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set('plataforma', value);
+    window.history.replaceState(null, '', url);
+  }
   const filtered = resources.filter(r =>
     (!page.category || r.type === page.category.id || (page.category.id === 'creators' && r.type === 'youtube')) &&
-    (!platform || (platformDomains[platform] || []).some(domain => {
+    (!platform || (platform === 'youtube' && r.type === 'youtube') || (creatorNetworks.find(network => network.id === platform)?.domains || []).some(domain => {
       try { const host = new URL(r.url).hostname.toLowerCase(); return host === domain || host.endsWith(`.${domain}`); }
       catch { return false; }
     })) &&
@@ -129,7 +160,9 @@ export function App({ path }: { path: string }) {
           <NavigationMenu viewport={false} aria-label="Principal" className="!static pointer-events-auto min-w-0 flex">
             <NavigationMenuList className="flex-nowrap gap-0.5">
               <NavigationMenuItem><NavigationMenuLink asChild active={home}><a href="/" aria-current={home ? 'page' : undefined}>Início</a></NavigationMenuLink></NavigationMenuItem>
-              {groups.map(group => (
+              {groups.map(group => ['creators', 'communities'].includes(group.id) ? (
+                <NavigationMenuItem key={group.id}><NavigationMenuLink asChild active={page.category?.id === group.id}><a href={'/' + group.categories[0].route} aria-current={page.category?.id === group.id ? 'page' : undefined}>{group.name}</a></NavigationMenuLink></NavigationMenuItem>
+              ) : (
                 <NavigationMenuItem key={group.id} value={group.id} className="!static">
                   <NavigationMenuTrigger
                     className="data-[current=true]:bg-accent data-[current=true]:text-primary"
@@ -148,11 +181,8 @@ export function App({ path }: { path: string }) {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               ))}
-              <NavigationMenuItem value="projeto" className="!static">
-                <NavigationMenuTrigger data-current={['/sobre', '/apoiadores'].includes(path)} className="data-[current=true]:bg-accent data-[current=true]:text-primary">Projeto</NavigationMenuTrigger>
-                <NavigationMenuContent className="mega-panel">
-                  <ul className="grid grid-cols-3 gap-4">{[{ id: 'about', name: 'Sobre', href: '/sobre' }, { id: 'supporters', name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <li key={link.href}><NavigationMenuLink asChild active={path === link.href}><a href={link.href} aria-current={path === link.href ? 'page' : undefined} className="navigation-card"><NavigationCard id={link.id} name={link.name} /></a></NavigationMenuLink></li>)}</ul>
-                </NavigationMenuContent>
+              <NavigationMenuItem value="sobre">
+                <NavigationMenuLink asChild active={path === '/sobre'}><a href="/sobre" aria-current={path === '/sobre' ? 'page' : undefined} className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-primary">Sobre</a></NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -169,7 +199,9 @@ export function App({ path }: { path: string }) {
                 <nav aria-label="Navegação para celular" className="space-y-5 px-4 py-5">
                   <SheetClose asChild><Button asChild variant={home ? 'secondary' : 'ghost'} className="w-full justify-start"><a href="/" aria-current={home ? 'page' : undefined}>Início</a></Button></SheetClose>
                   <Accordion.Root type="single" collapsible className="divide-y" defaultValue={groups.find(group => group.categories.some(category => category.id === page.category?.id))?.id}>
-                    {groups.map(group => (
+                    {groups.map(group => ['creators', 'communities'].includes(group.id) ? (
+                      <SheetClose asChild key={group.id}><Button asChild size="menu" variant={page.category?.id === group.id ? 'secondary' : 'ghost'}><a href={'/' + group.categories[0].route} aria-current={page.category?.id === group.id ? 'page' : undefined}>{group.name}</a></Button></SheetClose>
+                    ) : (
                       <Accordion.Item key={group.id} value={group.id}>
                         <Accordion.Header>
                           <Accordion.Trigger asChild data-current={group.categories.some(category => category.id === page.category?.id)}><Button variant="ghost" size="menu" className="group justify-between data-[current=true]:bg-accent data-[current=true]:text-primary">
@@ -188,7 +220,7 @@ export function App({ path }: { path: string }) {
                   </Accordion.Root>
                   <Separator />
                   <div className="space-y-1">
-                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }, { name: 'Empresas apoiadoras', href: '/apoiadores' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
+                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
                   </div>
                 </nav>
               </SheetContent>
@@ -202,8 +234,6 @@ export function App({ path }: { path: string }) {
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar ao início</a></Button></EmptyContent></Empty>
         ) : home ? (
           <div className="flex flex-1 flex-col gap-8"><Discussions className="w-full flex-1" /><div className="section-divider" aria-hidden="true" /><Community area="supporters" preview /></div>
-        ) : path === '/apoiadores' ? (
-          <Community area="supporters" />
         ) : path === '/sobre' ? (
           <article className="mx-auto max-w-4xl space-y-6 [&>p]:max-w-2xl">
             <h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1>
@@ -222,6 +252,8 @@ export function App({ path }: { path: string }) {
             <Button asChild variant="outline"><a href="/contribuir">Contribuir com o guia<ArrowUpRight /></a></Button>
             <Separator />
             <Maintainers />
+            <Separator />
+            <Community area="supporters" embedded />
           </article>
         ) : path === '/contribuir' ? (
           <article className="mx-auto max-w-2xl space-y-6">
@@ -242,18 +274,32 @@ export function App({ path }: { path: string }) {
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
           </article>
         ) : (
-          <section aria-label="Recursos" className="space-y-5">
+          <CreatorTabsRoot enabled={creatorsPage} value={creatorPlatform} onChange={changeCreatorPlatform}><section aria-label="Recursos" className="space-y-5">
             <div className="flex items-center justify-between gap-3"><div className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><p className="text-sm text-muted-foreground">Indicações organizadas para você explorar no próprio ritmo.</p></div><span className="shrink-0 text-sm text-muted-foreground" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'item' : 'itens'}</span></div>
-            {filtered.length ? <ul aria-label={`Lista: ${page.title}`} className="divide-y border-y">{filtered.map(resource => <li key={`${resource.type}/${resource.slug}`}><ResourceRow resource={resource} platform={platform} /></li>)}</ul> : <Empty className="border"><EmptyHeader><EmptyTitle>Ainda não há recursos aqui</EmptyTitle><EmptyDescription>Você pode sugerir o primeiro item desta categoria.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button></EmptyContent></Empty>}
-          </section>
+            {creatorsPage && <CreatorTabs />}
+            <CreatorTabPanel enabled={creatorsPage} value={creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
+            {filtered.length ? <div className="rounded-lg border bg-card">
+              <div className="px-3 py-3 text-xs text-muted-foreground sm:px-4">{filtered.length} {filtered.length === 1 ? 'item na lista' : 'itens na lista'}</div>
+              <table aria-label={`Lista: ${page.title}`} className="w-full table-fixed border-collapse text-left">
+                <thead className="border-t bg-muted/30 text-[11px] font-medium text-muted-foreground"><tr>
+                  <th scope="col" className="px-3 py-2 font-medium sm:px-4">Item</th>
+                  <th scope="col" className="hidden w-48 px-3 py-2 font-medium sm:table-cell">Categoria</th>
+                  <th scope="col" className="hidden w-32 px-3 py-2 font-medium lg:table-cell">Atualização</th>
+                  <th scope="col" className="w-28 px-3 py-2 text-right font-medium sm:w-32 sm:px-4">Ações</th>
+                </tr></thead>
+                <tbody>{filtered.map(resource => <ResourceRow key={`${resource.type}/${resource.slug}`} resource={resource} platform={platform} />)}</tbody>
+              </table>
+            </div> : <Empty className="border bg-card"><EmptyHeader><EmptyTitle>{creatorsPage ? 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{creatorsPage ? 'Você pode sugerir o primeiro perfil desta rede.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader><EmptyContent><Button asChild variant="outline"><a href="/contribuir">Sugerir recurso</a></Button></EmptyContent></Empty>}
+            </div></CreatorTabPanel>
+          </section></CreatorTabsRoot>
         )}
       </main>
       <footer className="site-footer w-full shrink-0">
         <div className="section-divider" aria-hidden="true" />
-        <div className="site-frame mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-6 text-sm text-muted-foreground sm:px-6">
-          <span>Feito com <span className="text-primary" aria-label="amor">&lt;3</span> por <a href="https://fulldev.com.br" target="_blank" rel="noopener noreferrer" className="rounded-sm font-medium hover:text-primary focus-visible:outline-2 focus-visible:outline-ring">FullDev</a></span>
-          <ActiveUsers />
-          <Maintainers compact />
+        <div className="site-frame mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-y-4 px-4 py-5 text-sm text-muted-foreground sm:px-6">
+          <span className="w-full text-center md:w-auto md:flex-1 md:text-left">Feito com <span className="text-primary" aria-label="amor">&lt;3</span> por <a href="https://fulldev.com.br" target="_blank" rel="noopener noreferrer" className="rounded-sm font-medium hover:text-primary focus-visible:outline-2 focus-visible:outline-ring">FullDev</a></span>
+          <div className="flex w-full justify-center md:w-auto"><ActiveUsers /></div>
+          <div className="flex w-full justify-center md:w-auto md:flex-1 md:justify-end"><Maintainers compact /></div>
         </div>
       </footer>
     </div></MaintainersProvider></CommunityMetricsProvider></Participation></Motion>
