@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
+import { checkYouTubeCuration } from './youtube-curation-ui.mjs';
 import { checkCreatorCategories } from './creator-categories-ui.mjs';
 import { checkRouteFlash } from './navigation-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
@@ -48,6 +49,7 @@ try {
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await installDiscussionFixtures(send);
   await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
+  await checkYouTubeCuration({send, evaluate, waitFor, navigate, click, selectOption});
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
   await checkRouteFlash({send,evaluate,waitFor,navigate});
@@ -197,7 +199,7 @@ try {
   assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('[role="tab"]'), element => element.textContent.trim())`), ['YouTube', 'Instagram', 'TikTok', 'LinkedIn', 'Twitter / X']);
   assert.equal(await evaluate(`Array.from(document.querySelectorAll('[role="tab"]')).every(element => !!element.querySelector('svg'))`), true);
   assert.equal(await evaluate(`document.querySelector('[role="tab"][aria-selected="true"]').textContent`), 'YouTube');
-  assert.equal(await evaluate(`document.querySelectorAll('[role="tabpanel"] table tbody tr').length`), 1);
+  assert.equal(await evaluate(`document.querySelectorAll('[role="tabpanel"] table tbody tr').length`), Math.min(pageSize, catalog.resources.filter(resource => resource.type === 'youtube').length));
   await evaluate(`document.querySelector('[role="tab"][aria-selected="true"]').focus()`);
   await key('ArrowRight');
   await waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').textContent === 'Instagram'`);
