@@ -161,7 +161,7 @@ function DiscussionFeed() {
   </div>;
 }
 
-export function Discussions() {
+export function Discussions({ className = '' }: { className?: string }) {
   // Read the URL after hydration so the pre-rendered homepage remains consistent.
   const [number, setNumber] = useState<number | null | undefined>(undefined);
   useEffect(() => {
@@ -169,7 +169,7 @@ export function Discussions() {
     const parsed = value && /^\d+$/.test(value) ? Number(value) : 0;
     setNumber(Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 2147483647 ? parsed : null);
   }, []);
-  return <section id="comunidade" aria-labelledby="discussions-title" className="mx-auto max-w-4xl space-y-3">
+  return <section id="comunidade" aria-labelledby="discussions-title" className={`mx-auto max-w-4xl space-y-3 ${className}`}>
     <h1 id="discussions-title" className="sr-only">Fórum do Guia da TI</h1>
     {number === undefined ? <DiscussionSkeleton /> : number ? <DiscussionThread number={number} /> : <DiscussionFeed />}
   </section>;

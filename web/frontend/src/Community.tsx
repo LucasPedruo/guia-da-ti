@@ -9,7 +9,7 @@ export function Community({ area, preview = false, embedded = false }: { area: '
   const entries = community.supporters;
   const Heading = preview || embedded ? 'h2' : 'h1';
   if (!supporting) return <Maintainers compact={preview} />;
-  if (supporting) return <section id="apoiadores" aria-label={title} className="mx-auto max-w-4xl space-y-6">
+  if (supporting) return <section id="apoiadores" aria-label={title} className="mx-auto w-full max-w-4xl space-y-6">
     <div className="space-y-3">
       <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">Parceiros do Guia</p>
       <Heading className={preview ? 'sr-only' : 'text-2xl font-semibold uppercase tracking-wide sm:text-3xl'}>{title}</Heading>
