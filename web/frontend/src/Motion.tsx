@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { gsap } from 'gsap';
 
-const selector = '[data-motion], [data-slot="dialog-content"], [data-slot="dialog-overlay"], [data-slot="sheet-content"], [data-slot="sheet-overlay"], [data-slot="dropdown-menu-content"], [data-slot="select-content"], [data-slot="navigation-menu-content"]';
+const selector = '[data-motion], [data-slot="dialog-content"], [data-slot="dialog-overlay"], [data-slot="sheet-content"], [data-slot="sheet-overlay"], [data-slot="dropdown-menu-content"], [data-slot="select-content"]';
 
 export function Motion({ children }: { children: ReactNode }) {
   useEffect(() => {

@@ -51,6 +51,7 @@ export function App({ path }: { path: string }) {
   const [type, setType] = useState(page.category?.id || 'all');
   const [locale, setLocale] = useState('all');
   const [dark, setDark] = useState(false);
+  const platform = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('plataforma');
 
   useEffect(() => {
     try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Optional preference. */ }
@@ -66,8 +67,16 @@ export function App({ path }: { path: string }) {
 
   const tokens = normalize(query).trim().split(/\s+/).filter(Boolean);
   const selectedLocale: { language: string; country?: string } = locale === 'en-US' ? { language: 'en', country: 'US' } : { language: locale };
+  const platformDomains: Record<string, string[]> = {
+    youtube: ['youtube.com', 'youtu.be'], instagram: ['instagram.com'], tiktok: ['tiktok.com'],
+    linkedin: ['linkedin.com'], twitter: ['twitter.com', 'x.com'],
+  };
   const filtered = resources.filter(r =>
-    (type === 'all' || r.type === type) &&
+    (type === 'all' || r.type === type || (type === 'creators' && r.type === 'youtube')) &&
+    (!platform || (platformDomains[platform] || []).some(domain => {
+      try { const host = new URL(r.url).hostname.toLowerCase(); return host === domain || host.endsWith(`.${domain}`); }
+      catch { return false; }
+    })) &&
     (locale === 'all' || (r.languages.includes(selectedLocale.language) && (!selectedLocale.country || Boolean(r.countries?.includes(selectedLocale.country))))) &&
     (!page.area || r.areas.includes(page.area)) &&
     (!page.technology || r.technologies.includes(page.technology)) &&
@@ -81,9 +90,10 @@ export function App({ path }: { path: string }) {
       </Button>
       <header className="site-header relative shrink-0 bg-background">
         <div className="site-frame header-inner mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6">
-            <a href="/" aria-label="Guia da TI — página inicial" className="inline-flex shrink-0 items-center gap-2 rounded-sm text-xl font-bold tracking-tight focus-visible:outline-2 focus-visible:outline-ring"><BrandMark />guiadati<span className="text-primary">.</span></a>
-          <NavigationMenu viewport={false} aria-label="Principal" className="!static hidden min-w-0 flex-1 justify-start xl:flex">
-            <NavigationMenuList className="flex-nowrap justify-start gap-0.5">
+            <a href="/" aria-label="Guia da TI — página inicial" className="inline-flex shrink-0 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-ring"><BrandMark /></a>
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center xl:flex">
+          <NavigationMenu viewport={false} aria-label="Principal" className="!static pointer-events-auto min-w-0 flex">
+            <NavigationMenuList className="flex-nowrap gap-0.5">
               <NavigationMenuItem><NavigationMenuLink asChild active={home}><a href="/" aria-current={home ? 'page' : undefined}>Início</a></NavigationMenuLink></NavigationMenuItem>
               {groups.map(group => (
                 <NavigationMenuItem key={group.id} value={group.id} className="!static">
@@ -96,7 +106,7 @@ export function App({ path }: { path: string }) {
                       {group.categories.map(category => (
                         <li key={category.id}>
                           <NavigationMenuLink asChild active={category.id === page.category?.id}>
-                            <a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined} className="navigation-card"><NavigationCard id={category.id} name={category.name} /></a>
+                            <a href={'platform' in category ? `/criadores?plataforma=${category.platform}` : `/${category.route}`} aria-current={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'page' : undefined} className="navigation-card"><NavigationCard id={category.id.startsWith('creator-') ? 'creators' : category.id} name={category.name} /></a>
                           </NavigationMenuLink>
                         </li>
                       ))}
@@ -112,6 +122,7 @@ export function App({ path }: { path: string }) {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
+          </div>
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <UserControls dark={dark} toggleTheme={toggleTheme} />
             <Sheet>
@@ -134,7 +145,7 @@ export function App({ path }: { path: string }) {
                         <Accordion.Content>
                           <ul className="mb-3 ml-3 space-y-1 border-l pl-2">
                             {group.categories.map(category => (
-                              <li key={category.id}><SheetClose asChild><Button asChild size="menu" variant={category.id === page.category?.id ? 'secondary' : 'ghost'}><a href={`/${category.route}`} aria-current={category.id === page.category?.id ? 'page' : undefined}>{category.name}</a></Button></SheetClose></li>
+                              <li key={category.id}><SheetClose asChild><Button asChild size="menu" variant={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'secondary' : 'ghost'}><a href={'platform' in category ? `/criadores?plataforma=${category.platform}` : `/${category.route}`} aria-current={category.id === page.category?.id && (!('platform' in category) || platform === category.platform) ? 'page' : undefined}>{category.name}</a></Button></SheetClose></li>
                             ))}
                           </ul>
                         </Accordion.Content>

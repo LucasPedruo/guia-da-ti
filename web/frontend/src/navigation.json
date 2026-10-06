@@ -1,7 +1,7 @@
 [
   {
     "id": "learn",
-    "name": "Aprender",
+    "name": "Estudar",
     "categories": [
       {
         "id": "courses",
@@ -42,7 +42,7 @@
   },
   {
     "id": "inform",
-    "name": "Conteúdos",
+    "name": "Se informar",
     "categories": [
       {
         "id": "news",
@@ -64,22 +64,6 @@
         "route": "podcasts",
         "name": "Podcasts"
       },
-      {
-        "id": "youtube",
-        "route": "youtube",
-        "name": "YouTube"
-      },
-      {
-        "id": "creators",
-        "route": "criadores",
-        "name": "Criadores"
-      }
-    ]
-  },
-  {
-    "id": "deepen",
-    "name": "Artigos e estudos",
-    "categories": [
       {
         "id": "articles",
         "route": "artigos",
@@ -109,7 +93,7 @@
   },
   {
     "id": "connect",
-    "name": "Comunidade",
+    "name": "Networking",
     "categories": [
       {
         "id": "communities",
@@ -192,6 +176,47 @@
         "id": "volunteering",
         "route": "voluntariado",
         "name": "Voluntariado"
+      }
+    ]
+  },
+  {
+    "id": "creators",
+    "name": "Criadores",
+    "categories": [
+      {
+        "id": "creators",
+        "route": "criadores",
+        "name": "Todos os criadores"
+      },
+      {
+        "id": "youtube",
+        "route": "youtube",
+        "name": "YouTube",
+        "platform": "youtube"
+      },
+      {
+        "id": "creator-instagram",
+        "route": "criadores",
+        "name": "Instagram",
+        "platform": "instagram"
+      },
+      {
+        "id": "creator-tiktok",
+        "route": "criadores",
+        "name": "TikTok",
+        "platform": "tiktok"
+      },
+      {
+        "id": "creator-linkedin",
+        "route": "criadores",
+        "name": "LinkedIn",
+        "platform": "linkedin"
+      },
+      {
+        "id": "creator-twitter",
+        "route": "criadores",
+        "name": "Twitter",
+        "platform": "twitter"
       }
     ]
   }

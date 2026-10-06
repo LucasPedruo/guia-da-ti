@@ -139,7 +139,7 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
   .site-frame::after { right: 0; }
 }
 
-/* Desktop panels span the viewport and sit flush against the header. */
+/* Desktop dropdowns span the header and align below the navigation container. */
 .site-header [data-slot="navigation-menu"] > div { position: static !important; }
 .site-header [data-slot="navigation-menu-list"] > li > :is(a, button) {
   display: inline-flex;
@@ -162,8 +162,12 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
   position: absolute !important;
   top: 100% !important;
   left: 0 !important;
-  right: 0;
+  right: 0 !important;
   width: auto !important;
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  transform: none !important;
   z-index: 50;
   margin-top: 0 !important;
   padding: 24px !important;
