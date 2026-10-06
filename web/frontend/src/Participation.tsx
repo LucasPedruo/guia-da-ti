@@ -1,3 +1,4 @@
+import { creatorCategories } from './creator-categories';
 import {SelectField} from './SelectField';
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -219,6 +220,7 @@ export function ResourceContribution() {
   const [communityStates, setCommunityStates] = useState<string[]>([]);
   const [communityPlatformIds, setCommunityPlatformIds] = useState<string[]>([]);
   const [communityModality, setCommunityModality] = useState('');
+  const [creatorCategoryIds, setCreatorCategoryIds] = useState<string[]>([]);
   useEffect(() => {
     const requested=new URLSearchParams(window.location.search).get('categoria');
     if(requested && taxonomy.types.includes(requested)) setType(requested);
@@ -244,6 +246,7 @@ export function ResourceContribution() {
     const form = new FormData(formElement);
     const communityLocation = type === 'communities' && communityScope ? { scope: communityScope, ...(communityScope === 'regional' ? { states: communityStates } : {}) } : undefined;
     const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages, communityLocation,
+      ...(creatorCategory ? {creatorCategories: creatorCategoryIds} : {}),
       ...(type === 'communities' ? {communityPlatforms:communityPlatformIds,communityModality} : {}) };
     try {
       const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(proposal) });
@@ -259,13 +262,17 @@ export function ResourceContribution() {
       formElement.reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
       setUrl(''); setName(''); setSummary(''); setDescription('');
       setCommunityScope(''); setCommunityStates([]);
-      setCommunityPlatformIds([]); setCommunityModality('');
+      setCommunityPlatformIds([]); setCommunityModality(''); setCreatorCategoryIds([]);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
     finally { setBusy(false); }
   }
   if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. Criadores e comunidades vão para revisão do catálogo; as demais sugestões abrem uma conversa no fórum.</p><LoginButton /></div>;
   return <form onSubmit={submit} className="space-y-4 rounded-lg border p-5">
     <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
+    {creatorCategory && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Categorias de conteúdo</legend>
+      <p className="text-xs text-muted-foreground">Escolha pelo menos uma categoria. Um perfil pode abordar vários tipos de conteúdo.</p>
+      <div className="grid gap-2 sm:grid-cols-2">{creatorCategories.map(item => <label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="creatorCategories" value={item.id} checked={creatorCategoryIds.includes(item.id)} disabled={busy} onChange={event => setCreatorCategoryIds(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.name}</label>)}</div>
+    </fieldset>}
     {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Localização da comunidade</legend>
       <SelectField label="Área de atuação" name="communityScope" required value={communityScope} onChange={value=>setCommunityScope(value as CommunityLocation['scope'])} placeholder="Escolha o alcance" options={[{id:'regional',name:'Regional'},{id:'national',name:'Nacional'},{id:'international',name:'Internacional'}]} />
       {communityScope === 'regional' && <>
@@ -296,7 +303,7 @@ export function ResourceContribution() {
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>
     <p className="text-xs text-muted-foreground">{catalogOnly ? 'A sugestão vai para revisão dos mantenedores e entra no catálogo após a aprovação. Ela não abre uma conversa no fórum. Para enviar, o GitHub pode preparar uma cópia do catálogo na sua conta.' : 'A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação prepara estes dados no catálogo.'}</p>
-    <Button type="submit" disabled={busy || !type || !area || !languages.length || type === 'communities' && (!communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length)}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
+    <Button type="submit" disabled={busy || !type || !area || !languages.length || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length)}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}
   </form>;
 }

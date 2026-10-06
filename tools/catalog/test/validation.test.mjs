@@ -44,3 +44,12 @@ test('validates community platforms and meeting modalities',()=>{
  assert.throws(()=>validateResource({...sample,communityPlatforms:['discord']},'courses/exemplo.json'));
  assert.throws(()=>validateResource({...sample,communityModality:'online'},'courses/exemplo.json'));
 });
+
+test('validates creator content categories independently of technical areas', () => {
+  for (const type of ['creators', 'youtube']) {
+    const creator = {...sample, type, creatorCategories: ['career', 'humor', 'lifestyle']};
+    assert.doesNotThrow(() => validateResource(creator, type + '/exemplo.json'));
+    for (const creatorCategories of [[], ['unknown'], ['career', 'career'], [null]]) assert.throws(() => validateResource({...creator, creatorCategories}, type + '/exemplo.json'));
+  }
+  assert.throws(() => validateResource({...sample, creatorCategories: ['career']}, 'courses/exemplo.json'));
+});

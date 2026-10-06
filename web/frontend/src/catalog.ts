@@ -3,7 +3,7 @@ import navigation from './navigation.json';
 import type { CommunityLocation } from './community-location';
 export type Resource = {
   slug: string; type: string; name: string; summary: string; description: string;
-  url: string; areas: string[]; technologies: string[]; languages: string[]; countries?: string[]; communityLocation?: CommunityLocation; communityPlatforms?: string[]; communityModality?: string; updatedAt: string; demo?: boolean;
+  url: string; areas: string[]; technologies: string[]; languages: string[]; countries?: string[]; creatorCategories?: string[]; communityLocation?: CommunityLocation; communityPlatforms?: string[]; communityModality?: string; updatedAt: string; demo?: boolean;
 };
 export const resources = snapshot.resources as Resource[];
 export const taxonomy = snapshot.taxonomy;

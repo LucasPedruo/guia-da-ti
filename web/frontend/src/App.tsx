@@ -8,6 +8,12 @@ import { communityPlatforms, communityModalities } from './community-options';
 import { matchesCommunityFilters, readCommunityFilters, emptyCommunityFilters, type CommunityFilters } from './community-location';
 import { CreatorTabs, PlatformTabsRoot, PlatformTabPanel, creatorNetworks } from './CreatorTabs';
 import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
+import { creatorCategories, creatorCategoryLabels, readCreatorCategory } from './creator-categories';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ResourcePagination } from './ResourcePagination';
+import { paginate, readPage } from './pagination';
+import { ResourceSearch } from './ResourceSearch';
+import { matchesResourceSearch, readSearch } from './resource-search';
 import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
 import { Maintainers, MaintainersProvider } from './Maintainers';
 import { NavigationCard } from './NavigationCard';
@@ -88,7 +94,7 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
   const displaySummary = creator?.description || resource.summary;
   const dialog = dialogTypes.has(resource.type);
   const href = profile ? resource.url : resourcePath(resource);
-  const category = categories.find(item => item.id === resource.type)?.name || resource.type;
+  const category = profile ? resource.creatorCategories?.map(id => creatorCategoryLabels[id] || id).join(' · ') || 'Categoria não informada' : categories.find(item => item.id === resource.type)?.name || resource.type;
   const titleClass = 'block max-w-full truncate rounded-sm text-left text-[13px] font-medium leading-5 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring';
   const title: ReactNode = dialog
     ? <Dialog.Trigger asChild><button type="button" className={titleClass}>{resource.name}</button></Dialog.Trigger>
@@ -125,6 +131,9 @@ export function App({ path }: { path: string }) {
   const [communitySelection, setCommunitySelection] = useState<CommunityFilters>(emptyCommunityFilters);
   const [dark, setDark] = useState(false);
   const [creatorPlatform, setCreatorPlatform] = useState('youtube');
+  const [creatorContent, setCreatorContent] = useState('all');
+  const [requestedPage, setRequestedPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const platform = creatorsPage ? creatorPlatform : null;
 
   useEffect(() => {
@@ -132,6 +141,9 @@ export function App({ path }: { path: string }) {
     function readPlatform() {
       const requested = new URLSearchParams(window.location.search).get('plataforma');
       setCreatorPlatform(creatorNetworks.some(network => network.id === requested) ? requested! : 'youtube');
+      setRequestedPage(readPage(window.location.search));
+      setSearchQuery(readSearch(window.location.search));
+      setCreatorContent(readCreatorCategory(window.location.search));
     }
     readPlatform();
     function readLocation() { setCommunitySelection(readCommunityFilters(window.location.search)); }
@@ -151,13 +163,25 @@ export function App({ path }: { path: string }) {
 
   function changeCreatorPlatform(value: string) {
     setCreatorPlatform(value);
+    setRequestedPage(1);
     const url = new URL(window.location.href);
     url.searchParams.set('plataforma', value);
+    url.searchParams.delete('pagina');
+    window.history.replaceState(null, '', url);
+  }
+  function changeCreatorContent(value: string) {
+    setCreatorContent(value);
+    setRequestedPage(1);
+    const url = new URL(window.location.href);
+    if (value === 'all') url.searchParams.delete('conteudo'); else url.searchParams.set('conteudo', value);
+    url.searchParams.delete('pagina');
     window.history.replaceState(null, '', url);
   }
   function changeCommunityLocation(next: CommunityFilters) {
     setCommunitySelection(next);
+    setRequestedPage(1);
     const url = new URL(window.location.href);
+    url.searchParams.delete('pagina');
     url.searchParams.delete('alcance'); url.searchParams.delete('estados');
     url.searchParams.delete('categorias'); url.searchParams.delete('ninhos'); url.searchParams.delete('modalidade');
     if (next.scope) url.searchParams.set('alcance', next.scope);
@@ -166,6 +190,8 @@ export function App({ path }: { path: string }) {
     window.history.replaceState(null, '', url);
   }
   const filtered = resources.filter(r =>
+    matchesResourceSearch(r, searchQuery, {...labels, ...creatorCategoryLabels}) &&
+    (!creatorsPage || creatorContent === 'all' || r.creatorCategories?.includes(creatorContent)) &&
     (!communitiesPage || matchesCommunityFilters(r, communitySelection)) &&
     (!page.category || r.type === page.category.id || (page.category.id === 'creators' && r.type === 'youtube')) &&
     (!platform || (platform === 'youtube' && r.type === 'youtube') || (creatorNetworks.find(network => network.id === platform)?.domains || []).some(domain => {
@@ -175,6 +201,24 @@ export function App({ path }: { path: string }) {
     (!page.area || r.areas.includes(page.area)) &&
     (!page.technology || r.technologies.includes(page.technology))
   ).sort((a,b) => communitiesPage ? a.name.localeCompare(b.name, 'pt-BR', { sensitivity:'base' }) : 0);
+  const listing = paginate(filtered, requestedPage);
+
+  function changeSearch(value: string) {
+    setSearchQuery(value);
+    setRequestedPage(1);
+    const url = new URL(window.location.href);
+    if (value.trim()) url.searchParams.set('q', value.trim()); else url.searchParams.delete('q');
+    url.searchParams.delete('pagina');
+    window.history.replaceState(null, '', url);
+  }
+
+  function changePage(next: number) {
+    setRequestedPage(next);
+    const url = new URL(window.location.href);
+    if (next === 1) url.searchParams.delete('pagina'); else url.searchParams.set('pagina', String(next));
+    window.history.pushState(null, '', url);
+    document.querySelector('[aria-label="Recursos"]')?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }
 
   return (
     <Motion><Participation><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
@@ -302,14 +346,24 @@ export function App({ path }: { path: string }) {
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
           </article>
         ) : (
-          <PlatformTabsRoot enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform} onChange={communitiesPage ? value=>changeCommunityLocation({...communitySelection,platform:value}) : changeCreatorPlatform}><section aria-label="Recursos" className="space-y-5">
+          <PlatformTabsRoot enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform} onChange={communitiesPage ? value=>changeCommunityLocation({...communitySelection,platform:value}) : changeCreatorPlatform}><section aria-label="Recursos" className="scroll-mt-24 space-y-5">
             <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><SuggestResource type={page.category?.id} /></div><div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">{communitiesPage ? 'Encontre pessoas e comunidades de tecnologia perto de você ou ao redor do mundo.' : 'Indicações organizadas para você explorar no próprio ritmo.'}</p></div></div>
             {communitiesPage && <CommunityFiltersDialog value={communitySelection} onChange={next=>changeCommunityLocation({...communitySelection,...next})} />}
             {creatorsPage && <CreatorTabs />}
             {communitiesPage && <CommunityTabs />}
             <PlatformTabPanel enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
-            {filtered.length ? <div className="rounded-lg border bg-card">
-              <div aria-live="polite" className="px-3 py-3 text-xs text-muted-foreground sm:px-4">{filtered.length} {filtered.length === 1 ? 'item na lista' : 'itens na lista'}</div>
+            <div className="rounded-lg border bg-card">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
+                <span aria-live="polite" className="text-xs text-muted-foreground">{listing.pages > 1 ? `${listing.start}–${listing.end} de ${filtered.length} itens` : `${filtered.length} ${filtered.length === 1 ? 'item na lista' : 'itens na lista'}`}</span>
+                <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+                  {creatorsPage && <Select name="creatorContent" value={creatorContent} onValueChange={changeCreatorContent}>
+                    <SelectTrigger size="sm" aria-label="Categoria de conteúdo" className="h-8 w-40 min-w-0 shrink-0 text-xs sm:w-52"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="all">Todas as categorias</SelectItem>{creatorCategories.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+                  </Select>}
+                  <ResourceSearch value={searchQuery} onChange={changeSearch} />
+                </div>
+              </div>
+              {filtered.length ? <>
               <table aria-label={`Lista: ${page.title}`} className="w-full table-fixed border-collapse text-left">
                 <thead className="border-t bg-muted/30 text-[11px] font-medium text-muted-foreground"><tr>
                   <th scope="col" className="px-3 py-2 font-medium sm:px-4">Item</th>
@@ -317,9 +371,11 @@ export function App({ path }: { path: string }) {
                   <th scope="col" className="hidden w-32 px-3 py-2 font-medium lg:table-cell">Atualização</th>
                   <th scope="col" className="w-28 px-3 py-2 text-right font-medium sm:w-32 sm:px-4">Ações</th>
                 </tr></thead>
-                <tbody>{filtered.map(resource => <ResourceRow key={`${resource.type}/${resource.slug}`} resource={resource} platform={platform} locationColumn={communitiesPage} />)}</tbody>
+                <tbody>{listing.items.map(resource => <ResourceRow key={`${resource.type}/${resource.slug}`} resource={resource} platform={platform} locationColumn={communitiesPage} />)}</tbody>
               </table>
-            </div> : <Empty className="border bg-card"><EmptyHeader><EmptyTitle>{communitiesPage ? communitySelection.scope ? 'Ainda não há comunidades nesta localização' : 'Ainda não há comunidades nesta plataforma' : creatorsPage ? 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{communitiesPage ? 'Escolha outra localização ou sugira uma comunidade para esta seleção.' : creatorsPage ? 'Você pode sugerir o primeiro perfil desta rede.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader></Empty>}
+              <ResourcePagination page={listing.page} pages={listing.pages} onChange={changePage} />
+              </> : <Empty className="border-t"><EmptyHeader><EmptyTitle>{searchQuery.trim() ? 'Nenhum resultado para esta pesquisa' : communitiesPage ? communitySelection.scope ? 'Ainda não há comunidades nesta localização' : 'Ainda não há comunidades nesta plataforma' : creatorsPage ? creatorContent !== 'all' ? 'Ainda não há criadores nesta categoria' : 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{searchQuery.trim() ? 'Tente outro termo ou limpe a pesquisa para ver os itens disponíveis.' : communitiesPage ? 'Escolha outra localização ou sugira uma comunidade para esta seleção.' : creatorsPage ? 'Escolha outra categoria ou rede, ou sugira um criador para esta seleção.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader></Empty>}
+            </div>
             </div></PlatformTabPanel>
           </section></PlatformTabsRoot>
         )}

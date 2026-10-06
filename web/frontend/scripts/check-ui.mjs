@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
+import { checkCreatorCategories } from './creator-categories-ui.mjs';
 import { checkRouteFlash } from './navigation-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
 
@@ -11,6 +12,8 @@ const profile = await mkdtemp(join(tmpdir(), 'guia-ui-'));
 const chrome = process.env.CHROME_PATH || (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : 'google-chrome');
 const processHandle = spawn(chrome, ['--headless=new', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
 const base = process.env.TEST_URL || 'http://localhost:5081';
+const catalog = JSON.parse(await readFile(new URL('../src/generated/catalog.json', import.meta.url), 'utf8'));
+const pageSize = 20;
 let socket;
 let launchError;
 processHandle.on('error', error => { launchError = error; });
@@ -44,6 +47,7 @@ try {
   await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await installDiscussionFixtures(send);
+  await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
   await checkRouteFlash({send,evaluate,waitFor,navigate});
@@ -100,7 +104,7 @@ try {
   await waitFor(`!document.querySelector('[data-slot="navigation-menu-content"]') || document.querySelector('[data-slot="navigation-menu-content"]').getAttribute('data-state') === 'closed'`);
   await navigate('/explorar/');
   assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('main table th'), element => element.textContent)`), ['Item', 'Categoria', 'Atualização', 'Ações']);
-  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`), 5);
+  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`), Math.min(pageSize, catalog.resources.length));
   assert.deepEqual(await evaluate(`(()=>{const style=getComputedStyle(document.querySelector('main table').parentElement); return {background:style.backgroundColor,shadow:style.boxShadow}})()`), { background: 'rgb(255, 255, 255)', shadow: 'none' });
   const profileAction = "document.querySelector('main table a[aria-label=\"Ver perfil: Pessoa Criadora — exemplo\"]')";
   assert.equal(await evaluate(`${profileAction}.target`), '_blank');
@@ -109,6 +113,8 @@ try {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, `Catalog overflow at ${width}px`);
   }
+  await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Primeiros passos');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await waitFor(`!!document.querySelector('main table a[aria-label="Ver detalhes: Primeiros passos com C#"]')`);
   await click(`document.querySelector('main table a[aria-label="Ver detalhes: Primeiros passos com C#"]')`);
   await waitFor(`document.querySelector('main h1').textContent === 'Primeiros passos com C#'`);
   assert.equal(await evaluate(`!!document.querySelector('main a[href="https://example.org/curso-exemplo"][target="_blank"]')`), true);
@@ -196,7 +202,7 @@ try {
   await key('ArrowRight');
   await waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').textContent === 'Instagram'`);
   assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`), 'instagram');
-  assert.equal(await evaluate(`document.querySelector('[role="tabpanel"]').textContent.includes('Ainda não há criadores nesta rede')`), true);
+  assert.equal(await evaluate(`document.querySelectorAll('[role="tabpanel"] table tbody tr').length`), Math.min(pageSize, catalog.resources.filter(resource => new URL(resource.url).hostname.endsWith('instagram.com')).length));
   await navigate('/criadores/?plataforma=tiktok');
   await waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').textContent === 'TikTok'`);
   for (const width of [320, 390, 768, 1440]) {
@@ -216,7 +222,7 @@ try {
   await waitFor(`document.querySelector('[role="tooltip"]')?.textContent.includes('ana')`);
   assert.equal(await evaluate(`document.querySelectorAll('[aria-label="O Guia em números"] dt').length`), 4);
   await waitFor(`document.querySelectorAll('[aria-label="O Guia em números"] dd')[0].textContent === '37'`);
-  assert.equal(await evaluate(`document.querySelectorAll('[aria-label="O Guia em números"] dd')[2].textContent`), '0');
+  assert.equal(await evaluate(`document.querySelectorAll('[aria-label="O Guia em números"] dd')[2].textContent`), new Intl.NumberFormat('pt-BR').format(catalog.resources.filter(resource => !resource.demo).length));
   for (const width of [320, 390, 768, 1440]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, `About overflow at ${width}px`);

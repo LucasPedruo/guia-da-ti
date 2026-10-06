@@ -189,6 +189,24 @@
     },
     "communityModality": {
       "enum": ["online", "in-person", "hybrid"]
+    },
+    "creatorCategories": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "education",
+          "career",
+          "humor",
+          "lifestyle",
+          "news",
+          "reviews",
+          "projects",
+          "other"
+        ]
+      }
     }
   },
   "definitions": {
@@ -231,6 +249,18 @@
         "properties": {
           "type": {
             "const": "communities"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["creatorCategories"]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": ["creators", "youtube"]
           }
         }
       }

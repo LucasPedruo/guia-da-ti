@@ -16,6 +16,7 @@ static class CatalogProposalChecks
                 using var handler = new ProposalGitHub { Mode = mode };
                 var service = new ContributionService(new ProposalFactory(handler), settings);
                 var draft = new ContributionDraft(type, "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"],
+                    CreatorCategories: type is "creators" or "youtube" ? ["career", "humor"] : null,
                     CommunityLocation: type == "communities" ? new("national") : null,
                     CommunityPlatforms: type == "communities" ? ["discord"] : null, CommunityModality: type == "communities" ? "online" : null);
                 var result = await service.Submit("user-token", draft, catalog, default);
@@ -25,6 +26,7 @@ static class CatalogProposalChecks
                 Check(handler.Forks == (mode == "new-fork" ? 1 : 0), "Reuse fork or write as maintainer");
                 Check(handler.FileTarget == $"/repos/{(mode == "maintainer" ? "example" : "ana")}/catalog/contents/data/{type}/novo-cadastro.json", "Catalog file target");
                 Check(handler.Resource.GetProperty("type").GetString() == type && handler.Resource.GetProperty("areas")[0].GetString() == "geral", "Preserve validated resource");
+                if (type is "creators" or "youtube") Check(handler.Resource.GetProperty("creatorCategories").EnumerateArray().Select(item => item.GetString()).SequenceEqual(new[] { "career", "humor" }), "Preserve creator categories in GitHub JSON");
                 Check(handler.PullHead.StartsWith(mode == "maintainer" ? "example:contributions/" : "ana:contributions/"), "Open upstream PR from writable branch");
                 if (type == "communities") Check(handler.Resource.GetProperty("communityLocation").GetProperty("scope").GetString() == "national"
                     && handler.Resource.GetProperty("communityPlatforms")[0].GetString() == "discord", "Preserve community metadata");
@@ -33,7 +35,7 @@ static class CatalogProposalChecks
         foreach (var mode in new[] { "wrong-fork", "private" }) {
             using var handler = new ProposalGitHub { Mode = mode };
             var service = new ContributionService(new ProposalFactory(handler), settings);
-            try { await service.Submit("user-token", new("creators", "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"]), catalog, default); throw new Exception("Accepted invalid target"); }
+            try { await service.Submit("user-token", new("creators", "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"], CreatorCategories: ["career"]), catalog, default); throw new Exception("Accepted invalid target"); }
             catch (ContributionRejectedException) { }
             Check(handler.FileTarget == "" && handler.Writes == 0, "No writes to private or unrelated repository");
         }
@@ -42,6 +44,19 @@ static class CatalogProposalChecks
             var result = await service.Submit("user-token", new("courses", "Novo curso", "https://example.org/course", "Um resumo do curso", "Uma descrição do curso", ["geral"], [], ["pt-BR"]), catalog, default);
             Check(result.Kind == "discussion" && result.Number == 8 && handler.FileTarget == "", "Other suggestions keep forum flow");
         }
+        foreach (var type in new[] { "creators", "youtube" }) {
+            foreach (var invalid in new string[]?[] { null, [], ["unknown"], ["career", "career"], ["career", null!] }) {
+                using var handler = new ProposalGitHub();
+                var service = new ContributionService(new ProposalFactory(handler), settings);
+                try { await service.Submit("user-token", new(type, "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"], CreatorCategories: invalid), catalog, default); throw new Exception("Accepted invalid creator categories"); }
+                catch (ContributionRejectedException) { }
+                Check(handler.Writes == 0 && handler.Discussions == 0, "Invalid creator categories rejected before GitHub access");
+            }
+        }
+        try { CreatorCategoryRules.ValidateContribution("courses", ["career"]); throw new Exception("Accepted creator categories on a course"); }
+        catch (ContributionRejectedException) { }
+        var saved = new ContributionResource("perfil", "creators", "Perfil", "Resumo do perfil", "Descrição do perfil", "https://example.org/profile", ["geral"], [], ["pt-BR"], "2026-10-06", CreatorCategories: ["lifestyle", "career"]);
+        Check(saved.ToDraft().CreatorCategories!.SequenceEqual(saved.CreatorCategories!), "Preserve categories on approval round trip");
         Console.WriteLine("Catalog proposals OK: creators, YouTube and communities bypass the forum; visitor credentials, forks, permissions, metadata and other suggestions verified.");
     }
     static void Check(bool condition, string name) { if (!condition) throw new Exception(name); }
