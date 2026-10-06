@@ -12,19 +12,21 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
     private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    public async Task<int> Submit(string token, ContributionDraft proposal, Catalog catalog, CancellationToken cancellation)
+    public async Task<ContributionResult> Submit(string token, ContributionDraft proposal, Catalog catalog, CancellationToken cancellation)
     {
         var slug = Slug(proposal.Name);
         var resource = Validate(proposal, catalog, slug);
         if (catalog.Resources.Any(r => r.Slug == slug && r.Type == proposal.Type || SameUrl(r.Url, resource.Url)))
             throw new ContributionRejectedException("Esse recurso ou link já existe no catálogo.");
+        if (resource.Type is "creators" or "youtube" or "communities")
+            return new("catalog", Url: await new CatalogProposalWriter(clients, configuration).Publish(token, resource, cancellation));
         var serialized = JsonSerializer.Serialize(resource, JsonOptions);
         var location = resource.CommunityLocation is { } coverage ? $"\n\n**Localização:** {coverage.Scope switch { "regional" => "Regional · " + string.Join(", ", coverage.States!), "national" => "Nacional · Brasil inteiro", _ => "Internacional" }}" : "";
         if (resource.Type == "communities") location += $"\n\n**Modalidade:** {resource.CommunityModality switch { "online" => "Online", "in-person" => "Presencial", _ => "Híbrida" }}\n\n**Plataformas:** {string.Join(", ", resource.CommunityPlatforms!)}";
         var body = $"### {resource.Name}\n\n**Categoria do guia:** {resource.Type}\n\n{resource.Summary}\n\n{resource.Description}\n\n**Link:** {resource.Url}\n\n**Assuntos:** {string.Join(", ", resource.Areas)}\n\n**Tecnologias:** {(resource.Technologies.Length == 0 ? "Nenhuma informada" : string.Join(", ", resource.Technologies))}\n\n**Idiomas:** {string.Join(", ", resource.Languages)}{location}\n\n<!-- guia-da-ti:resource:v1:{Convert.ToBase64String(Encoding.UTF8.GetBytes(serialized))} -->";
         var number = await new DiscussionWriter(clients, configuration).PublishAsync(token,
             new DiscussionDraft(body, $"[Sugestão] {resource.Name}", CategoryName: "Ideias"), cancellation);
-        return number;
+        return new("discussion", Number: number);
     }
 
     public async Task<bool> CanApprove(string token, int number, CancellationToken cancellation)
@@ -124,6 +126,8 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
     private static bool SameUrl(string a, string b) { static string Key(string value) { var uri = new Uri(value); return uri.GetLeftPart(UriPartial.Path).TrimEnd('/').ToLowerInvariant(); } return Key(a) == Key(b); }
 }
 
+public record ContributionResult(string Kind, int? Number = null, string? Url = null);
+
 public record ContributionDraft(string Type, string Name, string Url, string Summary, string Description, string[] Areas, string[] Technologies, string[] Languages, CommunityLocation? CommunityLocation = null, string[]? CommunityPlatforms = null, string? CommunityModality = null);
 public record ContributionResource(string Slug, string Type, string Name, string Summary, string Description, string Url, string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CommunityLocation? CommunityLocation = null,
@@ -140,9 +144,9 @@ public static class ContributionEndpoints
             if (context.User.Identity?.IsAuthenticated != true) return Results.Unauthorized();
             try { await csrf.ValidateRequestAsync(context); } catch (AntiforgeryValidationException) { return Results.BadRequest(new { error = "Atualize a página e tente novamente." }); }
             var token = await context.GetTokenAsync("access_token"); if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
-            try { var number = await service.Submit(token, draft, catalog, context.RequestAborted); await reader.InvalidateAsync(context.RequestAborted); return Results.Ok(new { number }); }
+            try { var result = await service.Submit(token, draft, catalog, context.RequestAborted); if (result.Kind == "discussion") await reader.InvalidateAsync(context.RequestAborted); return Results.Ok(result); }
             catch (ContributionRejectedException error) { return Results.BadRequest(new { error = error.Message }); }
-            catch (Exception error) when (error is HttpRequestException or JsonException or DiscussionsUnavailableException or InvalidOperationException or KeyNotFoundException or OperationCanceledException) { return Results.Json(new { error = "Não foi possível enviar a sugestão ao fórum." }, statusCode: 503); }
+            catch (Exception error) when (error is HttpRequestException or JsonException or DiscussionsUnavailableException or InvalidOperationException or KeyNotFoundException or OperationCanceledException) { return Results.Json(new { error = "Não foi possível enviar a sugestão. Os dados continuam no formulário; tente novamente." }, statusCode: 503); }
         }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(65536));
         app.MapPost("/api/discussions/{number:int}/approve", async (int number, HttpContext context, IAntiforgery csrf, ContributionService service, Catalog catalog) => {
             if (context.User.Identity?.IsAuthenticated != true) return Results.Unauthorized();

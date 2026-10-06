@@ -80,6 +80,7 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
+  html { @apply bg-background; }
   body { @apply bg-background text-foreground antialiased; font-family: ui-sans-serif, system-ui, sans-serif; }
 }
 
@@ -208,4 +209,8 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
 
 :where(button, select, input, a, [role]):is(:disabled, [disabled], [aria-disabled="true"], [data-disabled]) {
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.route-enter main[data-motion] { opacity: 0; transform: translateY(10px); }
 }

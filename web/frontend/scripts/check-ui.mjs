@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
+import { checkRouteFlash } from './navigation-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
 
 const profile = await mkdtemp(join(tmpdir(), 'guia-ui-'));
@@ -37,13 +38,15 @@ try {
   async function waitFor(expression) { for (let i = 0; i < 80; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error(`Timed out: ${expression}`); }
   async function navigate(path) { await send('Page.navigate', { url: base + path }); await waitFor(`document.readyState === 'complete' && !!document.querySelector('main h1') && location.pathname === ${JSON.stringify(new URL(path, base).pathname)}`); await sleep(500); }
   async function click(expression) { const point = await evaluate(`(async()=>{const el=${expression}; if(!el)throw Error('Missing element');el.scrollIntoView({block:'center',behavior:'instant'});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`); await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 }); await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 }); }
+  async function selectOption(label,text) { await click('document.querySelector('+JSON.stringify('[role="combobox"][aria-label="'+label+'"]')+')'); await waitFor('!!document.querySelector('+JSON.stringify('[role="listbox"]')+')'); await click('[...document.querySelectorAll('+JSON.stringify('[role="option"]')+')].find(option=>option.textContent.trim()==='+JSON.stringify(text)+')'); }
   async function hover(expression) { const point = await evaluate(`(()=>{const el=${expression}; if(!el)throw Error('Missing element');el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`); await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point }); }
-  async function key(key, code = key) { const windowsVirtualKeyCode = { Enter: 13, Escape: 27, ArrowDown: 40, Tab: 9 }[key]; await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode, ...(key === 'Enter' ? { text: '\r' } : {}) }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode }); }
+  async function key(key, code = key) { const windowsVirtualKeyCode = { Enter: 13, Escape: 27, ArrowDown: 40, ArrowRight: 39, ArrowLeft: 37, Tab: 9 }[key]; await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode, ...(key === 'Enter' ? { text: '\r' } : {}) }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode }); }
   await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await installDiscussionFixtures(send);
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
+  await checkRouteFlash({send,evaluate,waitFor,navigate});
   assert.equal(await evaluate(`!!document.querySelector('main [aria-label="Patrocínio master"]')`), false);
   assert.equal(await evaluate(`!!document.querySelector('main #apoiadores')`), true);
   assert.equal(await evaluate(`document.querySelector('main #apoiadores a[href="/sobre#apoiadores"]').textContent`), 'Conhecer os apoiadores');
@@ -71,7 +74,7 @@ try {
   assert.equal(await evaluate(`document.querySelector('main').textContent.includes('As conversas da comunidade vão aparecer aqui')`), true);
   const groups = JSON.parse(await readFile('src/navigation.json', 'utf8')).filter(group => !['creators', 'communities'].includes(group.id)).map(group => ({ ...group, categories: group.categories.filter(category => category.id !== 'courses') }));
   assert.equal(await evaluate(`!!document.querySelector('[aria-label="Principal"] a[href="/criadores"]')`), true);
-  assert.deepEqual(await evaluate(`[...document.querySelector('[aria-label="Principal"] ul').children].slice(0,3).map(element=>element.textContent.trim())`), ['Início', 'Comunidade', 'Criadores']);
+  assert.deepEqual(await evaluate(`[...document.querySelector('[aria-label="Principal"] ul').children].slice(0,3).map(element=>element.textContent.trim())`), ['Início', 'Comunidades', 'Criadores']);
   assert.equal(await evaluate(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].some(element => element.textContent.trim() === 'Criadores')`), false);
   const categoryHref = category => category.platform ? `/criadores?plataforma=${category.platform}` : '/' + category.route;
   const openPanels = "document.querySelectorAll('[data-slot=\"navigation-menu-content\"][data-state=\"open\"]')";
@@ -113,6 +116,16 @@ try {
   assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
   assert.equal(await evaluate(`!!document.querySelector('main a[href="/contribuir?categoria=communities"]')`),true);
   assert.equal(await evaluate(`document.querySelectorAll('svg [data-uf]').length`),0);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[role="tab"]')].map(tab=>tab.textContent.trim())`),['Geral','WhatsApp','Telegram','Discord','Facebook','LinkedIn','Reddit','GitHub','Outra']);
+  assert.equal(await evaluate(`[...document.querySelectorAll('[role="tab"]')].every(tab=>!!tab.querySelector('svg'))`),true);
+  await evaluate(`document.querySelector('[role="tab"][aria-selected="true"]').focus()`); await key('ArrowRight');
+  await waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').textContent==='WhatsApp'`);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`),'whatsapp');
+  await click(`[...document.querySelectorAll('[role="tab"]')].find(tab=>tab.textContent==='Geral')`);
+  for(const width of [320,390,768,1440]) {
+    await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
+    assert.equal(await evaluate(`document.documentElement.scrollWidth<=innerWidth`),true,'Community tabs overflow at '+width);
+  }
   const filterButton = "[...document.querySelectorAll('main button')].find(button=>button.textContent.includes('Filtrar comunidades'))";
   await click(filterButton);
   await waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Filtrar comunidades')`);
@@ -153,18 +166,21 @@ try {
     await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent.includes('Internacionais'))`);
     assert.deepEqual(await evaluate(`(()=>{const r=document.querySelector('[role="dialog"]').getBoundingClientRect();return {width:r.width,height:r.height}})()`),size,'Dialog size changed at '+width);
   }
-  await evaluate(`(()=>{for(const [name,value] of Object.entries({filterCategory:'networking',filterPlatform:'discord'})){const select=document.querySelector('select[name="'+name+'"]');select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}));}})()`);
+  assert.equal(await evaluate(`document.querySelectorAll('[role="dialog"] [role="combobox"]').length`),0);
   await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Aplicar filtros')`);
   await waitFor(`!document.querySelector('[role="dialog"]')`);
   assert.equal(await evaluate(`new URLSearchParams(location.search).get('alcance')`),'international');
-  assert.equal(await evaluate(`new URLSearchParams(location.search).get('categorias')`),'networking');
-  assert.equal(await evaluate(`new URLSearchParams(location.search).get('ninhos')`),'discord');
+  await click(`[...document.querySelectorAll('[role="tab"]')].find(tab=>tab.textContent==='Discord')`);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('categorias')`),null);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`),'discord');
   assert.equal(await evaluate(`document.querySelector('main').textContent.includes('Ainda não há comunidades nesta localização')`),true);
   await click(filterButton);
   await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Limpar filtros')`);
   await click(`[...document.querySelectorAll('[role="dialog"] button')].find(button=>button.textContent==='Cancelar')`);
-  assert.equal(await evaluate(`new URLSearchParams(location.search).get('ninhos')`),'discord');
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`),'discord');
   await click(`[...document.querySelectorAll('main button')].find(button=>button.textContent==='Limpar filtros')`);
+  assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`),'discord');
+  await click(`[...document.querySelectorAll('[role="tab"]')].find(tab=>tab.textContent==='Geral')`);
   assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
   await navigate('/comunidades/?alcance=regional&estados=SP,RJ,XX');
   await click(filterButton);
@@ -234,7 +250,7 @@ try {
   await waitFor(`document.querySelector('[data-slot="sheet-content"]')?.getAttribute('data-state') === 'open'`);
   const mobileTriggers = "document.querySelectorAll('[aria-label=\"Navegação para celular\"] button[aria-expanded]')";
   assert.equal(await evaluate(`!!document.querySelector('[aria-label="Navegação para celular"] a[href="/criadores"]')`), true);
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[aria-label="Navegação para celular"] a')].slice(0,3).map(element=>element.textContent.trim())`), ['Início', 'Comunidade', 'Criadores']);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[aria-label="Navegação para celular"] a')].slice(0,3).map(element=>element.textContent.trim())`), ['Início', 'Comunidades', 'Criadores']);
   assert.equal(await evaluate(`!!document.querySelector('[aria-label="Navegação para celular"] a[href="/apoiadores"]')`), false);
   assert.equal(await evaluate(`[...${mobileTriggers}].some(element=>element.textContent.trim()==='Criadores')`), false);
   assert.equal(await evaluate(`[...${mobileTriggers}].filter(e=>e.getAttribute('aria-expanded')==='true').length`), 0);
@@ -270,8 +286,8 @@ try {
   assert.equal(await evaluate(`document.querySelector('input[name="name"]').value`), '');
   await evaluate(`sessionStorage.removeItem('creatorTestMode')`);
   await evaluate(`(()=>{const select=document.querySelector('main form select');select.value='communities';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
-  await waitFor(`!!document.querySelector('select[name="communityScope"]')`);
-  await evaluate(`(()=>{const select=document.querySelector('select[name="communityScope"]');select.value='regional';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await waitFor(`!!document.querySelector('[role="combobox"][aria-label="Área de atuação"]')`);
+  await selectOption('Área de atuação','Regional');
   await waitFor(`!!document.querySelector('input[name="communityStates"][value="SP"]')`);
   await click(`document.querySelector('input[name="communityStates"][value="SP"]')`);
   await evaluate(`(()=>{
@@ -279,15 +295,18 @@ try {
       const input=document.querySelector('input[name="'+name+'"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));
     }
     const textarea=document.querySelector('textarea[name="description"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(textarea,'Uma comunidade de tecnologia para pessoas de São Paulo.');textarea.dispatchEvent(new Event('input',{bubbles:true}));
-    const modality=document.querySelector('select[name="communityModality"]');modality.value='online';modality.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('input[name="communityPlatforms"][value="discord"]').click();
-    const area=document.querySelector('select[name="area"]');area.value='networking';area.dispatchEvent(new Event('change',{bubbles:true}));
   })()`);
+  await selectOption('Modalidade','Online');
+  await selectOption('Categoria da comunidade','Networking');
   await click(`document.querySelector('main form button[type="submit"]')`);
   await waitFor(`window.lastContribution?.communityLocation?.states?.includes('SP')`);
   assert.deepEqual(await evaluate(`window.lastContribution.communityLocation`), {scope:'regional',states:['SP']});
   assert.deepEqual(await evaluate(`window.lastContribution.communityPlatforms`), ['discord']);
   assert.equal(await evaluate(`window.lastContribution.communityModality`), 'online');
+  await waitFor(`!!document.querySelector('main a[href="https://github.com/guia-da-ti/guia-da-ti-dados/pull/10"]')`);
+  assert.equal(await evaluate(`document.querySelector('main a[href="https://github.com/guia-da-ti/guia-da-ti-dados/pull/10"]').textContent`),'Acompanhar revisão');
+  assert.equal(await evaluate(`document.querySelector('main').textContent.includes('A conversa #10')`),false);
   await navigate('/contribuir/?categoria=communities');
   await waitFor(`document.querySelector('main form select')?.value==='communities'`);
   assert.equal(await evaluate(`!!document.querySelector('input[name="communityPlatforms"]')`),true);

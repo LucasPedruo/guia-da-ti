@@ -70,6 +70,7 @@ ActivityChecks.Run();
 await RegisteredUserChecks.Run();
 await CreatorProfileChecks.Run();
 CommunityLocationChecks.Run();
+await CatalogProposalChecks.Run();
 Console.WriteLine("Discussions OK: filtering, cursors, cache, thread, replies, moderation, public-only data, errors and configuration.");
 
 static void Check(bool condition, string name) { if (!condition) throw new Exception(name); }

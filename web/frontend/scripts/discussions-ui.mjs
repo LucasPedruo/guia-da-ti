@@ -24,7 +24,8 @@ export async function installDiscussionFixtures(send) {
       }
       if (url.pathname === '/api/contributions') {
         window.lastContribution = JSON.parse(options.body);
-        return Response.json({ number: 10 });
+        if (['creators','youtube','communities'].includes(window.lastContribution.type)) return Response.json({kind:'catalog',url:'https://github.com/guia-da-ti/guia-da-ti-dados/pull/10'});
+        return Response.json({ kind:'discussion', number: 10 });
       }
       if (!url.pathname.startsWith('/api/discussions')) return originalFetch(input, options);
       window.discussionRequests.push(url.pathname + url.search);

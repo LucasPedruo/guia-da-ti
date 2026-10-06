@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
 import { Community } from './Community';
+import { CommunityTabs } from './CommunityTabs';
 import { CommunityFiltersDialog } from './CommunityFiltersDialog';
 import { SuggestResource } from './SuggestResource';
 import { communityPlatforms, communityModalities } from './community-options';
 import { matchesCommunityFilters, readCommunityFilters, emptyCommunityFilters, type CommunityFilters } from './community-location';
-import { CreatorTabs, CreatorTabsRoot, CreatorTabPanel, creatorNetworks } from './CreatorTabs';
+import { CreatorTabs, PlatformTabsRoot, PlatformTabPanel, creatorNetworks } from './CreatorTabs';
 import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
 import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
 import { Maintainers, MaintainersProvider } from './Maintainers';
@@ -22,7 +23,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { Separator } from '@/components/ui/separator';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Dialog } from 'radix-ui';
-import { categories, groups, labels, taxonomy, pageInfo, resourcePath, resources, type Resource } from './catalog';
+import { categories, groups, labels, pageInfo, resourcePath, resources, type Resource } from './catalog';
 
 const repositoryValue = import.meta.env.VITE_DATA_REPOSITORY || 'https://github.com/guia-da-ti/guia-da-ti-dados';
 const repository = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repositoryValue) ? repositoryValue.replace(/\/$/, '') : '';
@@ -127,22 +128,23 @@ export function App({ path }: { path: string }) {
   const platform = creatorsPage ? creatorPlatform : null;
 
   useEffect(() => {
-    try { setDark(localStorage.getItem('theme') === 'dark'); } catch { /* Optional preference. */ }
+    setDark(document.documentElement.classList.contains('dark'));
     function readPlatform() {
       const requested = new URLSearchParams(window.location.search).get('plataforma');
       setCreatorPlatform(creatorNetworks.some(network => network.id === requested) ? requested! : 'youtube');
     }
     readPlatform();
-    function readLocation() { setCommunitySelection(readCommunityFilters(window.location.search, taxonomy.areas)); }
+    function readLocation() { setCommunitySelection(readCommunityFilters(window.location.search)); }
     readLocation();
     window.addEventListener('popstate', readPlatform);
     window.addEventListener('popstate', readLocation);
     return () => { window.removeEventListener('popstate', readPlatform); window.removeEventListener('popstate', readLocation); };
   }, []);
-  useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
 
   function toggleTheme() {
     const next = !dark;
+    document.documentElement.classList.toggle('dark', next);
+    document.documentElement.style.colorScheme = next ? 'dark' : 'light';
     setDark(next);
     try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* Optional preference. */ }
   }
@@ -160,8 +162,7 @@ export function App({ path }: { path: string }) {
     url.searchParams.delete('categorias'); url.searchParams.delete('ninhos'); url.searchParams.delete('modalidade');
     if (next.scope) url.searchParams.set('alcance', next.scope);
     if (next.scope === 'regional') url.searchParams.set('estados', next.states.join(','));
-    if (next.categories.length) url.searchParams.set('categorias', next.categories.join(','));
-    if (next.platforms.length) url.searchParams.set('ninhos', next.platforms.join(','));
+    if (next.platform === 'all') url.searchParams.delete('plataforma'); else url.searchParams.set('plataforma', next.platform);
     window.history.replaceState(null, '', url);
   }
   const filtered = resources.filter(r =>
@@ -285,7 +286,7 @@ export function App({ path }: { path: string }) {
         ) : path === '/contribuir' ? (
           <article className="mx-auto max-w-2xl space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight">Contribuir</h1>
-            <p className="text-muted-foreground">Sugira um recurso uma vez. A conversa, os comentários e a revisão ficam no mesmo tópico do fórum.</p>
+            <p className="text-muted-foreground">Sugira um recurso para o guia. Criadores e comunidades vão direto para revisão do catálogo; os demais recursos abrem uma conversa no fórum.</p>
             <ResourceContribution />
             {repository && <Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button>}
           </article>
@@ -301,11 +302,12 @@ export function App({ path }: { path: string }) {
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
           </article>
         ) : (
-          <CreatorTabsRoot enabled={creatorsPage} value={creatorPlatform} onChange={changeCreatorPlatform}><section aria-label="Recursos" className="space-y-5">
+          <PlatformTabsRoot enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform} onChange={communitiesPage ? value=>changeCommunityLocation({...communitySelection,platform:value}) : changeCreatorPlatform}><section aria-label="Recursos" className="space-y-5">
             <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><SuggestResource type={page.category?.id} /></div><div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">{communitiesPage ? 'Encontre pessoas e comunidades de tecnologia perto de você ou ao redor do mundo.' : 'Indicações organizadas para você explorar no próprio ritmo.'}</p></div></div>
-            {communitiesPage && <CommunityFiltersDialog value={communitySelection} onChange={changeCommunityLocation} />}
+            {communitiesPage && <CommunityFiltersDialog value={communitySelection} onChange={next=>changeCommunityLocation({...communitySelection,...next})} />}
             {creatorsPage && <CreatorTabs />}
-            <CreatorTabPanel enabled={creatorsPage} value={creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
+            {communitiesPage && <CommunityTabs />}
+            <PlatformTabPanel enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
             {filtered.length ? <div className="rounded-lg border bg-card">
               <div aria-live="polite" className="px-3 py-3 text-xs text-muted-foreground sm:px-4">{filtered.length} {filtered.length === 1 ? 'item na lista' : 'itens na lista'}</div>
               <table aria-label={`Lista: ${page.title}`} className="w-full table-fixed border-collapse text-left">
@@ -317,9 +319,9 @@ export function App({ path }: { path: string }) {
                 </tr></thead>
                 <tbody>{filtered.map(resource => <ResourceRow key={`${resource.type}/${resource.slug}`} resource={resource} platform={platform} locationColumn={communitiesPage} />)}</tbody>
               </table>
-            </div> : <Empty className="border bg-card"><EmptyHeader><EmptyTitle>{communitiesPage ? 'Ainda não há comunidades nesta localização' : creatorsPage ? 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{communitiesPage ? 'Escolha outra localização ou sugira uma comunidade para esta seleção.' : creatorsPage ? 'Você pode sugerir o primeiro perfil desta rede.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader></Empty>}
-            </div></CreatorTabPanel>
-          </section></CreatorTabsRoot>
+            </div> : <Empty className="border bg-card"><EmptyHeader><EmptyTitle>{communitiesPage ? communitySelection.scope ? 'Ainda não há comunidades nesta localização' : 'Ainda não há comunidades nesta plataforma' : creatorsPage ? 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{communitiesPage ? 'Escolha outra localização ou sugira uma comunidade para esta seleção.' : creatorsPage ? 'Você pode sugerir o primeiro perfil desta rede.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader></Empty>}
+            </div></PlatformTabPanel>
+          </section></PlatformTabsRoot>
         )}
       </main>
       <footer className="site-footer w-full shrink-0">

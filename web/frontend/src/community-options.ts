@@ -9,3 +9,6 @@ export const communityPlatforms = [
   {id:'discourse',name:'Discourse'}, {id:'circle',name:'Circle'}, {id:'mighty-networks',name:'Mighty Networks'},
   {id:'website',name:'Site próprio'}, {id:'other',name:'Outra plataforma'},
 ];
+
+export const primaryCommunityPlatforms = ['whatsapp','telegram','discord','facebook','linkedin','reddit','github'];
+export const communityTabIds = ['all', ...primaryCommunityPlatforms, 'other'];

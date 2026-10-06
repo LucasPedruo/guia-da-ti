@@ -20,6 +20,10 @@ export function Motion({ children }: { children: ReactNode }) {
           // Tailwind 4 positions dialogs with CSS translate. GSAP transform
           // conversion and matchMedia reversion can apply that translation twice.
           const positioned = anchored || slot === 'dialog-content' || slot === 'sheet-content';
+          if (element instanceof HTMLElement && element.tagName === 'MAIN') {
+            gsap.fromTo(element, {opacity:0,y:10}, {opacity:1,y:0,duration:0.45,ease:'power2.out',clearProps:'opacity,transform'});
+            return;
+          }
           gsap.from(element, { opacity: 0, ...(overlay || positioned ? {} : { y: '+=10' }), duration: overlay ? 0.2 : 0.32, ease: 'power2.out', clearProps: overlay || positioned ? 'opacity' : 'opacity,transform' });
         });
       }
@@ -27,7 +31,12 @@ export function Motion({ children }: { children: ReactNode }) {
         if (node.matches(selector)) enter(node);
         node.querySelectorAll(selector).forEach(enter);
       }
-      scan(document.body);
+      // The head script and CSS prepare the route before its first paint.
+      // Animate the page once; nested server content follows its parent.
+      document.querySelectorAll(selector).forEach(element => {
+        if (element.tagName === 'MAIN' && document.documentElement.classList.contains('route-enter')) enter(element); else animated.add(element);
+      });
+      document.documentElement.classList.remove('route-enter');
       const observer = new MutationObserver(records => {
         for (const record of records) {
           if (record.type === 'attributes') scan(record.target as Element);

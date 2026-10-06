@@ -22,10 +22,10 @@ export function CreatorTabs() {
   </Tabs.List>;
 }
 
-export function CreatorTabsRoot({ enabled, value, onChange, children }: { enabled: boolean; value: string; onChange: (value: string) => void; children: ReactNode }) {
+export function PlatformTabsRoot({ enabled, value, onChange, children }: { enabled: boolean; value: string; onChange: (value: string) => void; children: ReactNode }) {
   return enabled ? <Tabs.Root value={value} onValueChange={onChange} asChild>{children}</Tabs.Root> : <>{children}</>;
 }
 
-export function CreatorTabPanel({ enabled, value, children }: { enabled: boolean; value: string; children: ReactNode }) {
+export function PlatformTabPanel({ enabled, value, children }: { enabled: boolean; value: string; children: ReactNode }) {
   return enabled ? <Tabs.Content value={value} forceMount asChild>{children}</Tabs.Content> : <>{children}</>;
 }

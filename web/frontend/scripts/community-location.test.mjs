@@ -17,13 +17,13 @@ test('national and international communities remain separate and no selection in
     assert.equal(matchesCommunityLocation({scope}, {scope:null,states:[]}),true);
   }
 });
-test('no filters includes legacy communities and categories and platforms combine with location',()=>{
+test('Geral includes legacy communities and platform tabs combine with location',()=>{
   const resource={areas:['networking','carreira'],communityPlatforms:['discord','telegram'],communityModality:'hybrid',communityLocation:{scope:'regional',states:['SP']}};
   assert.equal(matchesCommunityFilters({areas:['frontend']},emptyCommunityFilters()),true);
-  const filters={scope:'regional',states:['SP'],categories:['networking'],platforms:['discord']};
+  const filters={scope:'regional',states:['SP'],platform:'discord'};
   assert.equal(matchesCommunityFilters(resource,filters),true);
-  for(const override of [{platforms:['whatsapp']},{categories:['dados']},{states:['RJ']}]) assert.equal(matchesCommunityFilters(resource,{...filters,...override}),false);
-  assert.deepEqual(readCommunityFilters('?categorias=networking,unknown&ninhos=discord,unknown&modalidade=online',['networking']),{...emptyCommunityFilters(),categories:['networking'],platforms:['discord']});
+  for(const override of [{platform:'whatsapp'},{states:['RJ']}]) assert.equal(matchesCommunityFilters(resource,{...filters,...override}),false);
+  assert.deepEqual(readCommunityFilters('?categorias=networking,unknown&ninhos=discord,unknown&modalidade=online'),{...emptyCommunityFilters(),platform:'discord'});
 });
 test('regions add all UFs, partial selections fill the region and toggling preserves other regions', () => {
   const southeast=brazilRegions.find(region=>region.id==='sudeste').states;
@@ -41,4 +41,14 @@ test('shared filter URLs restore valid states and reject unsupported values', ()
   assert.deepEqual(readLocationSelection('?alcance=regional&estados=SP,RJ,XX,SP'),{scope:'regional',states:['RJ','SP']});
   assert.deepEqual(readLocationSelection('?alcance=international&estados=SP'),{scope:'international',states:[]});
   assert.deepEqual(readLocationSelection('?alcance=invalid&estados=XX'),{scope:null,states:[]});
+});
+
+test('Outra groups the remaining platforms without inventing a platform for legacy records',()=>{
+ const other={...emptyCommunityFilters(),platform:'other'};
+ for(const id of ['slack','meetup','discourse','circle','mighty-networks','website','other']) assert.equal(matchesCommunityFilters({communityPlatforms:[id]},other),true);
+ for(const id of ['whatsapp','telegram','discord','facebook','linkedin','reddit','github']) assert.equal(matchesCommunityFilters({communityPlatforms:[id]},other),false);
+ assert.equal(matchesCommunityFilters({},other),false);
+ assert.deepEqual(readCommunityFilters('?plataforma=slack'),other);
+ assert.deepEqual(readCommunityFilters('?plataforma=unknown'),emptyCommunityFilters());
+ assert.deepEqual(readCommunityFilters('?plataforma=discord&alcance=regional&estados=SP'),{scope:'regional',states:['SP'],platform:'discord'});
 });
