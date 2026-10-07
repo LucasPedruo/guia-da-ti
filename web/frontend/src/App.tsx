@@ -363,7 +363,7 @@ export function App({ path }: { path: string }) {
             {creatorsPage && <CreatorTabs />}
             {communitiesPage && <CommunityTabs />}
             <PlatformTabPanel enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
-            {page.category && studyTypes.has(page.category.id) ? <StudyListing items={filtered} title={page.title} query={searchQuery} onSearch={changeSearch} /> : <div className="rounded-lg border bg-card">
+            {page.category && studyTypes.has(page.category.id) ? <StudyListing category={page.category.id} items={filtered} title={page.title} query={searchQuery} onSearch={changeSearch} /> : <div className="rounded-lg border bg-card">
               <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
                 <span aria-live="polite" className="text-xs text-muted-foreground">{listing.pages > 1 ? `${listing.start}–${listing.end} de ${filtered.length} itens` : `${filtered.length} ${filtered.length === 1 ? 'item na lista' : 'itens na lista'}`}</span>
                 <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">

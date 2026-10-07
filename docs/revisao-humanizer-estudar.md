@@ -122,3 +122,5 @@ Texto revisado na interface.
 Os demais rótulos e textos de apoio novos de Estudar estão limpos. Não receberam alterações. Travessões usados como indicador de dado indisponível e nomes oficiais nas tabelas foram preservados.
 
 Os novos parágrafos sobre imagens em `docs/study.md` também estão limpos. As frases descrevem onde os arquivos ficam, como carregam e como conferir novas imagens. Não exigiram mudanças de estilo.
+
+Os novos rótulos **Tipo de instituição**, **Pública** e **Privada**, as mensagens de validação e a explicação do filtro estão limpos. Não exigiram mudanças de estilo.

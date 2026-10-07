@@ -23,6 +23,7 @@ import { DiscussionThread } from "./Discussions";
 import { ResourceSearch } from "./ResourceSearch";
 import { ResourcePagination } from "./ResourcePagination";
 import imageSources from "./assets/study/sources.json";
+import { universityTypes } from "./university-options";
 import { paginate, readPage } from "./pagination";
 import {
   interactions,
@@ -158,11 +159,13 @@ function StudyCover({
 }
 
 export function StudyListing({
+  category,
   items,
   title,
   query,
   onSearch,
 }: {
+  category: string;
   items: Resource[];
   title: string;
   query: string;
@@ -172,10 +175,18 @@ export function StudyListing({
   const [sort, setSort] = useState<StudySort>("hypes");
   const [view, setView] = useState("cards");
   const [page, setPage] = useState(1);
+  const [institution, setInstitution] = useState("all");
   useEffect(() => {
     const read = () => {
       const params = new URLSearchParams(window.location.search);
       const sort = params.get("ordem");
+      const institution = params.get("instituicao");
+      setInstitution(
+        category === "universities" &&
+          universityTypes.some((t) => t.id === institution)
+          ? institution!
+          : "all",
+      );
       setSort(
         sort && Object.hasOwn(studySorts, sort) ? (sort as StudySort) : "hypes",
       );
@@ -185,20 +196,25 @@ export function StudyListing({
     read();
     window.addEventListener("popstate", read);
     return () => window.removeEventListener("popstate", read);
-  }, []);
+  }, [category]);
   useEffect(() => {
     setPage(readPage(window.location.search));
   }, [query]);
   function update(key: string, value: string, reset = true) {
     const url = new URL(window.location.href);
     url.searchParams.set(key, value);
+    if (key === "instituicao" && value === "all") url.searchParams.delete(key);
     if (reset) {
       url.searchParams.delete("pagina");
       setPage(1);
     }
     window.history.replaceState(null, "", url);
   }
-  const listing = paginate(rankStudy(items, activity, sort), page);
+  const filteredItems =
+    category === "universities" && institution !== "all"
+      ? items.filter((r) => r.universityType === institution)
+      : items;
+  const listing = paginate(rankStudy(filteredItems, activity, sort), page);
   const changePage = (next: number) => {
     setPage(next);
     update("pagina", String(next), false);
@@ -213,6 +229,11 @@ export function StudyListing({
           {r.name}
         </a>
         {r.demo && <Badge variant="outline">Exemplo</Badge>}
+        {r.universityType && (
+          <Badge variant="outline">
+            {universityTypes.find((t) => t.id === r.universityType)?.name}
+          </Badge>
+        )}
       </div>
       <p className="my-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
         {r.summary}
@@ -225,8 +246,8 @@ export function StudyListing({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
         <span aria-live="polite" className="text-xs text-muted-foreground">
           {listing.pages > 1
-            ? `${listing.start}–${listing.end} de ${items.length} itens`
-            : `${items.length} ${items.length === 1 ? "item na lista" : "itens na lista"}`}
+            ? `${listing.start}–${listing.end} de ${filteredItems.length} itens`
+            : `${filteredItems.length} ${filteredItems.length === 1 ? "item na lista" : "itens na lista"}`}
         </span>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <Select
@@ -251,6 +272,31 @@ export function StudyListing({
               ))}
             </SelectContent>
           </Select>
+          {category === "universities" && (
+            <Select
+              value={institution}
+              onValueChange={(value) => {
+                setInstitution(value);
+                update("instituicao", value);
+              }}
+            >
+              <SelectTrigger
+                aria-label="Tipo de instituição"
+                size="sm"
+                className="h-8 w-40 text-xs"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as instituições</SelectItem>
+                {universityTypes.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <ResourceSearch value={query} onChange={onSearch} />
           <div
             role="group"
@@ -297,9 +343,9 @@ export function StudyListing({
           </Button>
         </div>
       )}
-      {items.length === 0 ? (
+      {filteredItems.length === 0 ? (
         <p className="rounded-lg border p-6 text-sm text-muted-foreground">
-          {query
+          {query || institution !== "all"
             ? "Nenhum resultado para esta pesquisa."
             : "Ainda não há itens nesta categoria. Sugira o primeiro."}
         </p>

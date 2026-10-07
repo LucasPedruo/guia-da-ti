@@ -265,6 +265,10 @@
           "format": "date"
         }
       }
+    },
+    "universityType": {
+      "type": "string",
+      "enum": ["public", "private"]
     }
   },
   "definitions": {
@@ -338,6 +342,18 @@
       },
       "then": {
         "required": ["communityPlatforms"]
+      }
+    },
+    {
+      "if": {
+        "required": ["universityType"]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "const": "universities"
+          }
+        }
       }
     }
   ]

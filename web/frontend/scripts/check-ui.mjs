@@ -12,6 +12,7 @@ import { checkRouteFlash } from './navigation-ui.mjs';
 import { checkScrollbarLayout } from './scrollbar-ui.mjs';
 import { installStudyFixtures, checkStudy } from './study-ui.mjs';
 import { checkStudyCuration } from './study-curation-ui.mjs';
+import { checkUniversityFilter } from './university-filter-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
 
 const profile = await mkdtemp(join(tmpdir(), 'guia-ui-'));
@@ -43,7 +44,7 @@ try {
     if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') errors.push(message.params.entry.text);
   };
   function send(method, params = {}) { return new Promise((resolve, reject) => { const id = ++sequence; pending.set(id, { resolve, reject }); socket.send(JSON.stringify({ id, method, params })); }); }
-  async function evaluate(expression) { const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.text); return result.result.value; }
+  async function evaluate(expression) { const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text); return result.result.value; }
   async function waitFor(expression) { for (let i = 0; i < 80; i++) { if (await evaluate(expression)) return; await sleep(100); } throw new Error(`Timed out: ${expression}`); }
   async function navigate(path) { await send('Page.navigate', { url: base + path }); await waitFor(`document.readyState === 'complete' && !!document.querySelector('main h1') && location.pathname === ${JSON.stringify(new URL(path, base).pathname)}`); await sleep(500); }
   async function click(expression) { const point = await evaluate(`(async()=>{const el=${expression}; if(!el)throw Error('Missing element');el.scrollIntoView({block:'center',behavior:'instant'});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`); await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 }); await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 }); }
@@ -56,6 +57,7 @@ try {
   await installStudyFixtures(send,catalog);
   await checkStudy({send,evaluate,waitFor,navigate,click,selectOption});
   await checkStudyCuration({catalog,send,evaluate,waitFor,navigate,click});
+  await checkUniversityFilter({catalog,send,evaluate,waitFor,navigate,click,selectOption});
   await checkScrollbarLayout({send,evaluate,waitFor,navigate,click,key});
   await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
   await checkYouTubeCuration({send, evaluate, waitFor, navigate, click, selectOption});

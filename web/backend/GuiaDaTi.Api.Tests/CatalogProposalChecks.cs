@@ -7,7 +7,7 @@ static class CatalogProposalChecks
 {
     public static async Task Run()
     {
-        var catalog = new Catalog(1, new(["geral"], [], ["pt-BR"], ["creators", "youtube", "communities", "courses"]), []);
+        var catalog = new Catalog(1, new(["geral"], [], ["pt-BR"], ["creators", "youtube", "communities", "courses", "universities"]), []);
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
             ["DISCUSSIONS_REPOSITORY"] = "example/catalog", ["DISCUSSIONS_TOKEN"] = "read-only-token"
         }).Build();
@@ -61,6 +61,22 @@ static class CatalogProposalChecks
         try { CreatorCategoryRules.ValidateContribution("courses", ["career"]); throw new Exception("Accepted creator categories on a course"); }
         catch (ContributionRejectedException) { }
         var saved = new ContributionResource("perfil", "creators", "Perfil", "Resumo do perfil", "Descrição do perfil", "https://example.org/profile", ["geral"], [], ["pt-BR"], "2026-10-06", CreatorCategories: ["lifestyle", "career"]);
+        foreach (var institution in new[] { "public", "private" }) {
+            using var handler = new ProposalGitHub();
+            var service = new ContributionService(new ProposalFactory(handler), settings);
+            await service.Submit("user-token", new("universities", "Nova faculdade", "https://example.org/university", "Um resumo da faculdade", "Uma descrição da faculdade", ["geral"], [], ["pt-BR"], UniversityType: institution), catalog, default);
+            var match = System.Text.RegularExpressions.Regex.Match(handler.DiscussionBody, @"<!-- guia-da-ti:resource:v1:([A-Za-z0-9+/=]+) -->");
+            var resource = JsonSerializer.Deserialize<ContributionResource>(Encoding.UTF8.GetString(Convert.FromBase64String(match.Groups[1].Value)), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+            Check(resource.UniversityType == institution && resource.ToDraft().UniversityType == institution, "Institution type survives suggestion and approval round trip");
+            Check(handler.DiscussionBody.Contains(institution == "public" ? "Pública" : "Privada"), "Show institution type to reviewers");
+        }
+        foreach (var invalid in new (string Type, string? Institution)[] { ("universities", null), ("universities", ""), ("universities", "unknown"), ("courses", "public") }) {
+            using var handler = new ProposalGitHub();
+            var service = new ContributionService(new ProposalFactory(handler), settings);
+            try { await service.Submit("user-token", new(invalid.Type, "Nova faculdade", "https://example.org/university", "Um resumo da faculdade", "Uma descrição da faculdade", ["geral"], [], ["pt-BR"], UniversityType: invalid.Institution), catalog, default); throw new Exception("Accepted invalid institution type"); }
+            catch (ContributionRejectedException) { }
+            Check(handler.Writes == 0 && handler.Discussions == 0, "Reject invalid institution type before GitHub access");
+        }
         Check(saved.ToDraft().CreatorCategories!.SequenceEqual(saved.CreatorCategories!), "Preserve categories on approval round trip");
         Console.WriteLine("Catalog proposals OK: creators, YouTube and communities bypass the forum; visitor credentials, forks, permissions, metadata and other suggestions verified.");
     }
@@ -75,6 +91,7 @@ sealed class ProposalGitHub : HttpMessageHandler
     public int Forks, Discussions, Writes;
     public bool UserTokenOnly = true;
     public JsonElement Resource;
+    public string DiscussionBody = "";
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
     {
         UserTokenOnly &= request.Headers.Authorization?.Parameter == "user-token";
@@ -83,6 +100,7 @@ sealed class ProposalGitHub : HttpMessageHandler
         if (path == "/graphql") {
             Discussions++;
             using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellation));
+            if (body.RootElement.GetProperty("query").GetString()!.Contains("mutation")) DiscussionBody = body.RootElement.GetProperty("variables").GetProperty("input").GetProperty("body").GetString()!;
             return Response(body.RootElement.GetProperty("query").GetString()!.Contains("mutation")
                 ? new { data = new { createDiscussion = new { discussion = new { number = 8 } } } }
                 : (object)new { data = new { repository = new { id = "repo", isPrivate = false, hasDiscussionsEnabled = true, discussionCategories = new { nodes = new[] { new { id = "ideas", name = "Ideias" } } } } } });

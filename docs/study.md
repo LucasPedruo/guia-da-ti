@@ -4,6 +4,8 @@ As categorias de cursos, plataformas, faculdades, bootcamps, roadmaps, livros e 
 
 Cards e linhas usam o mesmo destaque ao passar o mouse que a listagem de criadores. Clique em qualquer área do item para abrir os detalhes. Os links também funcionam pelo teclado e permitem abrir uma nova aba.
 
+Em **Faculdades**, o filtro **Tipo de instituição** oferece **Todas as instituições**, **Pública** e **Privada**, ao lado da pesquisa. Ele funciona com a pesquisa e a ordenação, aparece no endereço da página e volta à primeira página quando você muda a seleção. A sugestão de faculdade exige essa informação. O catálogo guarda a classificação em `universityType`, com os valores `public` e `private`.
+
 O padrão é **Mais hypado**. Você também pode ordenar por comentários, interações ou nota média. Empates ficam em ordem alfabética. No empate de notas, a quantidade de avaliações vem primeiro. Interações são a soma de avaliações, hypes e mensagens. Não há contagens simuladas. Uma falha de leitura aparece como indisponibilidade, não como zero.
 
 Cada conta autenticada do GitHub pode alterar uma avaliação de 1 a 5 e ativar/remover um hype. O identificador numérico da conta impede votos duplicados mesmo depois de uma troca de nome. Escritas exigem sessão e CSRF. Itens fictícios não recebem participação.
