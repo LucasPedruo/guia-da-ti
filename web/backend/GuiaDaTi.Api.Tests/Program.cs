@@ -68,6 +68,7 @@ await ParticipationChecks.Run();
 await ContributorChecks.Run();
 ActivityChecks.Run();
 await RegisteredUserChecks.Run();
+await StudyChecks.Run();
 await CreatorProfileChecks.Run();
 CommunityLocationChecks.Run();
 await CatalogProposalChecks.Run();

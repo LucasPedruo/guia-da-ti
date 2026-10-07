@@ -10,6 +10,8 @@ import { checkCommunityCuration } from './community-curation-ui.mjs';
 import { checkCreatorCategories } from './creator-categories-ui.mjs';
 import { checkRouteFlash } from './navigation-ui.mjs';
 import { checkScrollbarLayout } from './scrollbar-ui.mjs';
+import { installStudyFixtures, checkStudy } from './study-ui.mjs';
+import { checkStudyCuration } from './study-curation-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
 
 const profile = await mkdtemp(join(tmpdir(), 'guia-ui-'));
@@ -51,6 +53,9 @@ try {
   await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await installDiscussionFixtures(send);
+  await installStudyFixtures(send,catalog);
+  await checkStudy({send,evaluate,waitFor,navigate,click,selectOption});
+  await checkStudyCuration({catalog,send,evaluate,waitFor,navigate,click});
   await checkScrollbarLayout({send,evaluate,waitFor,navigate,click,key});
   await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
   await checkYouTubeCuration({send, evaluate, waitFor, navigate, click, selectOption});

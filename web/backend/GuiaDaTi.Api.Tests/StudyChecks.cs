@@ -1,0 +1,120 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+static class StudyChecks
+{
+    public static async Task Run()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "guia-study-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try {
+            var path = Path.Combine(folder,"activity.json");
+            var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> {
+                ["STUDY_ACTIVITY_PATH"]=path,["COMMUNITY_USERS_PATH"]=Path.Combine(folder,"users.json"),["DISCUSSIONS_TOKEN"]="read-only-test",["DISCUSSIONS_REPOSITORY"]="example/community"
+            }).Build();
+            var resource = new Resource("book","books","Livro","Resumo","Descrição","https://example.com/book",[],[],["pt-BR"],"2026-10-07",false);
+            var catalog = new Catalog(1,new([],[],[],["books"]),[resource,resource with {Slug="demo",Demo=true}]);
+            var environment = new StudyEnvironment { ContentRootPath=folder };
+            var handler=new StudyGitHub(resource);var factory=new StudyFactory(handler);
+            using var reader=new DiscussionsClient(factory,config);var writer=new DiscussionWriter(factory,config);
+            var activity=new StudyEngagement(config,environment,catalog,reader,writer);
+            Assert((await activity.ListAsync(null,default))[0] is {Ratings:0,Hypes:0,Average:null,Comments:0},"Empty data is not seeded with fictional votes");
+            await activity.VoteAsync(resource,"1",new(Rating:5),default);
+            await activity.VoteAsync(resource,"1",new(Rating:3,Hype:true),default);
+            await activity.VoteAsync(resource,"2",new(Rating:5),default);
+            var summary=(await activity.ListAsync("1",default))[0];
+            Assert(summary is {Ratings:2,Average:4,Hypes:1,MyRating:3,MyHype:true},"One mutable vote per stable GitHub account");
+            await Task.WhenAll(Enumerable.Range(3,20).Select(id=>activity.VoteAsync(resource,id.ToString(),new(Hype:true),default)));
+            var restarted=new StudyEngagement(config,environment,catalog,reader,writer);
+            Assert((await restarted.ListAsync("1",default))[0].Hypes==21,"Concurrent votes persist across restarts");
+            await restarted.VoteAsync(resource,"1",new(Hype:false),default);
+            Assert((await restarted.ListAsync("1",default))[0] is {Hypes:20,MyRating:3},"Removing hype preserves the rating");
+            foreach(var vote in new[]{new StudyVote(Rating:0),new StudyVote(Rating:6),new StudyVote()}) {
+                try {await restarted.VoteAsync(resource,"1",vote,default);throw new Exception("Invalid vote accepted");}catch(ArgumentException){}
+            }
+            var first=await activity.CommentAsync(resource,"visitor-token","Primeira experiência",default);
+            var second=await restarted.CommentAsync(resource,"visitor-token","Outra experiência",default);
+            Assert(first==7 && second==7 && handler.Topics==1 && handler.Comments==1 && handler.VisitorOnly,"Comments reuse one resource topic and visitor credentials");
+            Assert((await activity.ListAsync("1",default))[0].Comments==2,"First topic message and subsequent comments count");
+            handler.Unavailable=true;
+            await reader.InvalidateAsync(default);
+            Assert((await activity.ListAsync("1",default))[0] is {Comments:null,Hypes:20},"GitHub outages keep real votes and unknown comment counts");
+            handler.Unavailable=false;
+            // Lose only the mapping to reproduce a persistence failure after GitHub accepted a topic.
+            await File.WriteAllTextAsync(path,"{\"version\":1,\"items\":{}}");
+            await activity.CommentAsync(resource,"visitor-token","Recuperada",default);
+            Assert(handler.Topics==1 && handler.Comments==2,"Recovery uses direct repository reads rather than delayed search indexing");
+            var valid=await File.ReadAllTextAsync(path);
+            Assert(!valid.Contains("visitor-token") && !valid.Contains("Primeira experiência"),"Local activity excludes credentials and comment content");
+            await File.WriteAllTextAsync(path,"broken");
+            try {await activity.VoteAsync(resource,"3",new(Rating:4),default);throw new Exception("Corrupt store accepted");}catch(JsonException){}
+            Assert(await File.ReadAllTextAsync(path)=="broken","Corrupt activity is never reset silently");
+            await File.WriteAllTextAsync(path,valid);
+            await EndpointChecks(config,catalog,activity,folder);
+            Console.WriteLine("Study OK: persistent votes, deduplication, concurrency, topic reuse/recovery, visitor credentials, corruption, authentication and CSRF.");
+        }
+        finally {
+            if(!Path.GetFullPath(folder).StartsWith(Path.GetFullPath(Path.GetTempPath()),StringComparison.OrdinalIgnoreCase))throw new Exception("Invalid test folder");
+            Directory.Delete(folder,true);
+        }
+    }
+    private static async Task EndpointChecks(IConfiguration configuration,Catalog catalog,StudyEngagement activity,string folder)
+    {
+        var builder=WebApplication.CreateBuilder(new WebApplicationOptions {EnvironmentName=Environments.Development});
+        builder.Configuration.Sources.Clear();builder.Configuration.AddConfiguration(configuration);builder.Logging.ClearProviders();
+        builder.Services.AddSingleton(TimeProvider.System);builder.Services.AddSingleton(catalog);builder.Services.AddSingleton(activity);
+        builder.AddCommunityAuth();builder.WebHost.UseSetting("urls","http://127.0.0.1:0");
+        await using var app=builder.Build();app.UseAuthentication();app.MapCommunityAuth();app.MapStudyEngagement();
+        app.MapGet("/test/login",async (Microsoft.AspNetCore.Http.HttpContext context)=>await context.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier,"123"),new Claim(ClaimTypes.Name,"test")],CookieAuthenticationDefaults.AuthenticationScheme))));
+        await app.StartAsync();
+        try {
+            using var http=new HttpClient {BaseAddress=new Uri(app.Urls.Single())};
+            Assert((await http.PostAsJsonAsync("/api/study/books/book/vote",new {rating=5})).StatusCode==HttpStatusCode.Unauthorized,"Anonymous writes rejected");
+            (await http.GetAsync("/test/login")).EnsureSuccessStatusCode();
+            Assert((await http.PostAsJsonAsync("/api/study/books/book/vote",new {rating=5})).StatusCode==HttpStatusCode.BadRequest,"Missing CSRF rejected");
+            using var session=JsonDocument.Parse(await http.GetStringAsync("/api/auth/session"));
+            http.DefaultRequestHeaders.Add("X-CSRF-Token",session.RootElement.GetProperty("csrfToken").GetString());
+            (await http.PostAsJsonAsync("/api/study/books/book/vote",new {rating=5})).EnsureSuccessStatusCode();
+            Assert((await http.PostAsJsonAsync("/api/study/creators/book/vote",new {rating=5})).StatusCode==HttpStatusCode.NotFound,"Study endpoints exclude creators and communities");
+            Assert((await http.PostAsJsonAsync("/api/study/books/demo/vote",new {rating=5})).StatusCode==HttpStatusCode.BadRequest,"Fictional catalog items reject real votes");
+            Assert((await http.PostAsJsonAsync("/api/study/books/book/comments",new {body="Texto"})).StatusCode==HttpStatusCode.Unauthorized,"Comments require visitor OAuth credential");
+            var response=await http.GetAsync("/api/study/activity");Assert(response.Headers.CacheControl?.NoStore==true,"User-specific ratings are not cached");
+            var text=await response.Content.ReadAsStringAsync();Assert(!text.Contains("votes")&&!text.Contains("123"),"Public response excludes account IDs and vote registry");
+        }finally{await app.StopAsync();}
+    }
+    private static void Assert(bool ok,string message){if(!ok)throw new Exception(message);}
+    private sealed class StudyEnvironment:IHostEnvironment {
+        public string EnvironmentName {get;set;}=Environments.Development;public string ApplicationName {get;set;}="StudyChecks";public string ContentRootPath {get;set;}="";
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider {get;set;}=new Microsoft.Extensions.FileProviders.NullFileProvider();
+    }
+}
+sealed class StudyFactory(StudyGitHub handler):IHttpClientFactory {public HttpClient CreateClient(string name)=>new(handler,false);}
+sealed class StudyGitHub(Resource resource):HttpMessageHandler
+{
+    public int Topics;public int Comments;public bool VisitorOnly=true;public bool Unavailable;
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken cancellation)
+    {
+        if(Unavailable)return new(HttpStatusCode.ServiceUnavailable){Content=JsonContent.Create(new {})};
+        using var payload=JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellation));var query=payload.RootElement.GetProperty("query").GetString()!;
+        object data;
+        if(query.Contains("mutation")) {
+            VisitorOnly&=request.Headers.Authorization?.Parameter=="visitor-token";
+            if(query.Contains("createDiscussion")){Topics++;data=new {createDiscussion=new {discussion=new {number=7}}};}
+            else{Comments++;data=new {addDiscussionComment=new {comment=new {id="comment"}}};}
+        }else{
+            var category=new {id="general",name="Geral"};var pageInfo=new {hasNextPage=false,endCursor=(string?)null};
+            var thread=new {number=7,id="topic-7",title=StudyEngagement.TopicTitle(resource),bodyText="Primeira experiência",category,author=new {login="visitor"},updatedAt="2026-10-07T12:00:00Z",isAnswered=false,locked=false,closed=false,comments=new {totalCount=Comments,pageInfo,nodes=Array.Empty<object>()}};
+            data=new {repository=new {id="repo",isPrivate=false,hasDiscussionsEnabled=true,discussionCategories=new {nodes=new[]{category}},discussions=new {pageInfo,nodes=Topics==0?[]:new[]{thread}},discussion=thread}};
+        }
+        return new(HttpStatusCode.OK){Content=JsonContent.Create(new {data})};
+    }
+}

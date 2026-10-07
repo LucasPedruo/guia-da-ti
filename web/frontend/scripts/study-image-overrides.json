@@ -1,0 +1,258 @@
+{
+  "books/automate-boring-stuff-python": {
+    "url": "https://automatetheboringstuff.com/images/cover-automate3.webp",
+    "kind": "cover"
+  },
+  "books/computer-networking-principles": {
+    "url": "https://www.computer-networking.info/_static/cnp3.png",
+    "kind": "logo"
+  },
+  "books/crafting-interpreters": {
+    "url": "https://craftinginterpreters.com/image/header.png",
+    "kind": "cover"
+  },
+  "books/deep-learning-book": {
+    "url": "https://mit-press-new-us.imgix.net/covers/9780262035613.jpg?w=480",
+    "kind": "cover"
+  },
+  "books/eloquent-javascript": {
+    "url": "https://eloquentjavascript.net/img/cover.jpg",
+    "kind": "cover"
+  },
+  "books/game-programming-patterns": {
+    "url": "https://gameprogrammingpatterns.com/images/splash.jpg",
+    "kind": "cover"
+  },
+  "books/introduction-statistical-learning": {
+    "url": "https://images.squarespace-cdn.com/content/v1/5ff2adbe3fe4fe33db902812/8b373fbe-d1b4-4351-b803-0d3cd5bba1b0/ISLP_cover.png",
+    "kind": "cover"
+  },
+  "books/operating-systems-three-easy-pieces": {
+    "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/book-cover-two.jpg",
+    "kind": "cover"
+  },
+  "books/pense-em-python": {
+    "url": "https://raw.githubusercontent.com/PenseAllen/PensePython2e/master/img/Capa_PenseEmPython167x232.png",
+    "kind": "cover"
+  },
+  "books/pro-git": {
+    "url": "https://git-scm.com/images/progit2.png",
+    "kind": "cover"
+  },
+  "books/think-python": {
+    "url": "https://greenteapress.com/wp/wp-content/uploads/2024/09/think_python_3e.jpg",
+    "kind": "cover"
+  },
+  "books/you-dont-know-js": {
+    "url": "https://raw.githubusercontent.com/getify/You-Dont-Know-JS/2nd-ed/get-started/images/cover.png",
+    "kind": "cover"
+  },
+  "bootcamps/42-sao-paulo": {
+    "url": "https://pages.greatpages.com.br/www.42sp.org.br/1786115749/imagens/desktop/7460-21bafd09f601ddf9f439226a8b6ece63.jpg",
+    "kind": "social"
+  },
+  "bootcamps/bootcamps-dio": {
+    "url": "https://hermes.dio.me/assets/diome/logo.png",
+    "kind": "social"
+  },
+  "bootcamps/codesmith-immersive": {
+    "url": "https://codesmith.io/assets/generated/codesmith-logo.svg",
+    "kind": "logo"
+  },
+  "bootcamps/generation-brasil": {
+    "url": "https://brazil.generation.org/wp-content/uploads/2025/07/Generation_BRASIL_logo_NEW-BLUE.png",
+    "kind": "logo"
+  },
+  "bootcamps/ironhack": {
+    "url": "https://www.datocms-assets.com/14946/1670257568-ironhack-primary-logo-transparencia-edited.png?w=480",
+    "kind": "logo"
+  },
+  "bootcamps/le-wagon": {
+    "url": "https://www.lewagon.com/assets/v4/logo-lewagon-9c19fb39a748cd3b1f49059ce0dc6c0dfc4cc2447d5a9a3e01bd2d5a214faf3c.svg",
+    "kind": "logo"
+  },
+  "bootcamps/reprograma": {
+    "url": "https://reprograma.com.br/wp-content/uploads/2023/02/Logo-reprograma.svg",
+    "kind": "logo"
+  },
+  "bootcamps/tripleten-brasil": {
+    "url": "https://tripleten.com.br/wp-content/themes/tripleten/assets-new/Imagens/Cabe%C3%A7alho/logo_triple_ten.svg",
+    "kind": "logo"
+  },
+  "certifications/aws-cloud-practitioner": {
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/certification/approved/images/certification-badges/clf-badge-resized.af6428258905cc1838aa186fb6c543c3a026694c.png",
+    "kind": "badge"
+  },
+  "certifications/aws-developer-associate": {
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/certification/approved/images/certification-badges/dva-badge-resized.394ea371e1961974071ff26aee8b0edade59f194.png",
+    "kind": "badge"
+  },
+  "certifications/aws-solutions-architect-associate": {
+    "url": "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/certification/approved/images/certification-badges/saa-badge-resized.81aa49f64034b69db1ee58c09661659d0a1edab4.png",
+    "kind": "badge"
+  },
+  "certifications/azure-data-fundamentals": {
+    "url": "https://learn.microsoft.com/en-us/media/open-graph-image.png",
+    "kind": "social"
+  },
+  "certifications/azure-fundamentals": {
+    "url": "https://learn.microsoft.com/en-us/media/open-graph-image.png",
+    "kind": "social"
+  },
+  "certifications/cisco-ccna": {
+    "url": "https://www.cisco.com/content/dam/cisco-cdc/site/images/photography/learn/544/ccna-logo-544x306.png",
+    "kind": "logo"
+  },
+  "certifications/google-associate-cloud-engineer": {
+    "url": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/cloud/images/cloud-logo.svg",
+    "kind": "logo"
+  },
+  "certifications/google-cloud-digital-leader": {
+    "url": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/cloud/images/cloud-logo.svg",
+    "kind": "logo"
+  },
+  "certifications/google-professional-cloud-architect": {
+    "url": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/cloud/images/cloud-logo.svg",
+    "kind": "logo"
+  },
+  "certifications/isc2-certified-cybersecurity": {
+    "url": "https://edge.sitecorecloud.io/internationf173-xmc4e73-prodbc0f-9660/media/Project/ISC2/Main/Media/logos/logo.svg?iar=0",
+    "kind": "logo"
+  },
+  "certifications/kubernetes-cka": {
+    "url": "https://training.linuxfoundation.org/wp-content/uploads/2022/09/lf-horizontal-white.svg",
+    "kind": "logo"
+  },
+  "certifications/linux-foundation-lfcs": {
+    "url": "https://training.linuxfoundation.org/wp-content/uploads/2022/09/lf-horizontal-white.svg",
+    "kind": "logo"
+  },
+  "platforms/alura": {
+    "url": "https://www.alura.com.br/assets/img/home/alura-logo.1787572030.svg",
+    "kind": "logo"
+  },
+  "platforms/codecademy": {
+    "url": "https://www.codecademy.com/apple-touch-icon.png",
+    "kind": "icon"
+  },
+  "platforms/coursera": {
+    "url": "https://coursera.s3.amazonaws.com/media/coursera-rebrand-logo-square.png",
+    "kind": "logo"
+  },
+  "platforms/curso-em-video": {
+    "url": "https://www.cursoemvideo.com/wp-content/uploads/2019/08/cursoemvideo-logo-branca.png",
+    "kind": "logo"
+  },
+  "platforms/dio": {
+    "url": "https://hermes.digitalinnovation.one/assets/diome/logo.png",
+    "kind": "social"
+  },
+  "platforms/edx": {
+    "url": "https://www.edx.org/trademark-logos/edx-logo-elm.svg",
+    "kind": "logo"
+  },
+  "platforms/escola-virtual-bradesco": {
+    "url": "https://www.ev.org.br/dist/static/cursos-disponiveis.jpg",
+    "kind": "social"
+  },
+  "platforms/freecodecamp": {
+    "url": "https://design-style-guide.freecodecamp.org/downloads/fcc_primary_large.svg",
+    "kind": "logo"
+  },
+  "platforms/ibm-skillsbuild": {
+    "url": "https://skillsbuild.org/api/social-image/2026/07/Home_Linkedin_and_Facebook.jpg",
+    "kind": "social"
+  },
+  "platforms/kaggle-learn": {
+    "url": "https://www.kaggle.com/static/images/logos/kaggle-logo-opengraph.png",
+    "kind": "social"
+  },
+  "platforms/microsoft-learn": {
+    "url": "https://learn.microsoft.com/pt-br/training/media/topics/cards/icon-card_learningpath_light.png",
+    "kind": "logo"
+  },
+  "platforms/mit-opencourseware": {
+    "url": "https://ocw.mit.edu/static_shared/images/ocw_logo_white.cabdc9a745b03db3dad4.svg",
+    "kind": "logo"
+  },
+  "platforms/origamid": {
+    "url": "https://www.origamid.com/projetos/og-origamid.png",
+    "kind": "social"
+  },
+  "platforms/pluralsight": {
+    "url": "https://www.pluralsight.com/content/dam/rebrand2025/resource-center/2026-tech-forecast/featured-2026-tech-forecast.png",
+    "kind": "logo"
+  },
+  "platforms/rocketseat": {
+    "url": "https://cdn.sanity.io/images/dgnn1kqw/production/fcc856f05af1cf45e649784b4f363e2c59674bbb-1200x630.jpg",
+    "kind": "social"
+  },
+  "platforms/udemy": {
+    "url": "https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg",
+    "kind": "logo"
+  },
+  "roadmaps/odin-project": {
+    "url": "https://www.theodinproject.com/assets/icons/odin-icon-22b41941.svg",
+    "kind": "logo"
+  },
+  "roadmaps/ossu-computer-science": {
+    "url": "https://raw.githubusercontent.com/ossu/computer-science/master/images/ossu-logo.webp",
+    "kind": "logo"
+  },
+  "roadmaps/roadmap-sh": {
+    "url": "https://roadmap.sh/img/og-img.png",
+    "kind": "social"
+  },
+  "roadmaps/teach-yourself-cs": {
+    "url": "https://teachyourselfcs.com/favicon.ico",
+    "kind": "icon"
+  },
+  "universities/fiap": {
+    "url": "https://www.fiap.com.br/graduacao/svg/logo-graduacao.svg",
+    "kind": "logo"
+  },
+  "universities/ifsp-ads-campinas": {
+    "url": "https://portal.cmp.ifsp.edu.br/templates/padraogoverno01/favicon.ico",
+    "kind": "icon"
+  },
+  "universities/puc-minas-icei": {
+    "url": "https://icei.pucminas.br/assets/IconPUCMG-DPimOOIh.ico",
+    "kind": "icon"
+  },
+  "universities/senac-sp": {
+    "url": "https://www.sp.senac.br/o/senac-theme/images/logo_senac_default.png",
+    "kind": "logo"
+  },
+  "universities/ufc-graduacao": {
+    "url": "https://www.ufc.br/favicon.ico",
+    "kind": "icon"
+  },
+  "universities/ufmg-dcc": {
+    "url": "https://dcc.ufmg.br/wp-content/uploads/2020/12/logos_institucionais_dcc_fundo_escuro-220x132.png",
+    "kind": "logo"
+  },
+  "universities/ufpe-cin": {
+    "url": "https://portal.cin.ufpe.br/wp-content/uploads/2025/08/HC.png",
+    "kind": "logo"
+  },
+  "universities/ufpr-computacao": {
+    "url": "https://web.inf.ufpr.br/bcc/wp-content/uploads/sites/4/2017/05/cropped-UFPR_TranspQuadrado-192x192.png",
+    "kind": "logo"
+  },
+  "universities/unicamp-ic": {
+    "url": "https://ic.unicamp.br/wp-content/uploads/2019/09/graduacao.jpg",
+    "kind": "social"
+  },
+  "universities/univesp": {
+    "url": "https://univesp.br/wp-content/uploads/2025/01/Univesp_logo_png_rgb-768x452.png",
+    "kind": "logo"
+  },
+  "universities/usp-ime": {
+    "url": "https://www.ime.usp.br/media/Logo-USP-1-1024x415.png",
+    "kind": "logo"
+  },
+  "universities/utfpr": {
+    "url": "https://www.utfpr.edu.br/banners/geral/logo-utfpr.png/@@images/image",
+    "kind": "logo"
+  }
+}

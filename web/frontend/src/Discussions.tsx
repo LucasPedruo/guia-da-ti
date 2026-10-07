@@ -75,17 +75,18 @@ function CommentCard({ comment, url, number, onPublished, rootId }: { comment: C
   </article>;
 }
 
-function DiscussionThread({ number }: { number: number }) {
+export function DiscussionThread({ number, embedded = false, onPublished }: { number: number; embedded?: boolean; onPublished?: () => void }) {
   const [cursors, setCursors] = useState<string[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const { result, error, retry } = useDiscussions<Thread>(`/api/discussions/${number}?${new URLSearchParams(cursors.length ? { after: cursors[cursors.length - 1] } : {})}`);
   const ready = result?.status === 'ready' ? result : null;
+  function published() { retry(); onPublished?.(); }
   const returnParameters = new URLSearchParams(window.location.search);
   returnParameters.delete('conversa');
   const returnUrl = returnParameters.size ? `/?${returnParameters}` : '/';
-  useEffect(() => { if (ready) heading.current?.focus(); }, [ready]);
+  useEffect(() => { if (ready && !embedded) heading.current?.focus(); }, [ready, embedded]);
   return <section className="space-y-5" aria-label="Conversa">
-    <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button><SuggestResource /></div>
+    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button><SuggestResource /></div>}
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
       <article data-motion className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /></div>
@@ -96,10 +97,10 @@ function DiscussionThread({ number }: { number: number }) {
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><MessageSquareText className="size-3.5" />{ready.discussion.commentCount} comentários</span><Button asChild variant="ghost" size="xs"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">Ver no GitHub<ArrowUpRight /></a></Button></div>
       </article>
       <Advertisement />
-      {!ready.discussion.locked && <Composer prompt number={number} githubUrl={ready.discussion.url} onPublished={() => { setCursors([]); retry(); }} />}
+      {!ready.discussion.locked && <Composer prompt number={number} githubUrl={ready.discussion.url} onPublished={() => { setCursors([]); published(); }} />}
       <section aria-label="Comentários" className="space-y-4">
         <h3 className="text-lg font-semibold">Comentários ({ready.discussion.commentCount})</h3>
-        {ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={retry} />) : <p className="text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}
+        {ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={published} />) : <p className="text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}
       </section>
       <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
     </>}

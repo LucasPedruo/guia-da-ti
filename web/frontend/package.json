@@ -11,7 +11,8 @@
     "test:ui": "node scripts/check-ui.mjs",
     "test:location": "node --test scripts/community-location.test.mjs",
     "test:pagination": "node --test scripts/pagination.test.mjs",
-    "test:search": "node --test scripts/resource-search.test.mjs"
+    "test:search": "node --test scripts/resource-search.test.mjs",
+    "test:study": "node --test scripts/study-ranking.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

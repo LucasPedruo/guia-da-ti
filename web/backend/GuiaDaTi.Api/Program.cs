@@ -21,6 +21,7 @@ builder.Services.AddHttpClient("creator-profiles", client => client.Timeout = Ti
 builder.Services.AddSingleton<CreatorProfiles>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CommunityActivity>();
+builder.Services.AddSingleton<StudyEngagement>();
 builder.AddCommunityAuth();
 var app = builder.Build();
 app.Use(async (context, next) => {
@@ -42,6 +43,7 @@ app.MapContributors();
 app.MapCreatorProfiles();
 app.MapCommunityActivity();
 app.MapRegisteredUsers();
+app.MapStudyEngagement();
 app.MapGet("/apoiadores", () => Results.Redirect("/sobre#apoiadores", permanent: true));
 app.MapGet("/contribuidores", () => Results.Redirect("/sobre#mantenedores", permanent: true));
 app.MapGet("/mantenedores", () => Results.Redirect("/sobre#mantenedores", permanent: true));

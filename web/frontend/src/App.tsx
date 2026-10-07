@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
+import { StudyDetail, StudyListing } from './Study';
+import { studyTypes } from './study-ranking';
 import { Community } from './Community';
 import { CommunityTabs } from './CommunityTabs';
 import { CommunityFiltersDialog } from './CommunityFiltersDialog';
@@ -352,6 +354,7 @@ export function App({ path }: { path: string }) {
             <div className="space-y-2 text-sm text-muted-foreground"><p>Idiomas: {page.resource.languages.join(', ')}</p><p>Última atualização: {page.resource.updatedAt.split('-').reverse().join('/')}</p></div>
             <p className="text-sm text-muted-foreground">O conteúdo fica no site de origem. O link abre em uma nova aba.</p>
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
+            {studyTypes.has(page.resource.type) && <StudyDetail resource={page.resource} />}
           </article>
         ) : (
           <PlatformTabsRoot enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform} onChange={communitiesPage ? value=>changeCommunityLocation({...communitySelection,platform:value}) : changeCreatorPlatform}><section aria-label="Recursos" className="scroll-mt-24 space-y-5">
@@ -360,7 +363,7 @@ export function App({ path }: { path: string }) {
             {creatorsPage && <CreatorTabs />}
             {communitiesPage && <CommunityTabs />}
             <PlatformTabPanel enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform}><div className="outline-none focus-visible:outline-2 focus-visible:outline-ring">
-            <div className="rounded-lg border bg-card">
+            {page.category && studyTypes.has(page.category.id) ? <StudyListing items={filtered} title={page.title} query={searchQuery} onSearch={changeSearch} /> : <div className="rounded-lg border bg-card">
               <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
                 <span aria-live="polite" className="text-xs text-muted-foreground">{listing.pages > 1 ? `${listing.start}–${listing.end} de ${filtered.length} itens` : `${filtered.length} ${filtered.length === 1 ? 'item na lista' : 'itens na lista'}`}</span>
                 <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
@@ -387,7 +390,7 @@ export function App({ path }: { path: string }) {
               </table>
               <ResourcePagination page={listing.page} pages={listing.pages} onChange={changePage} />
               </> : <Empty className="border-t"><EmptyHeader><EmptyTitle>{searchQuery.trim() ? 'Nenhum resultado para esta pesquisa' : communitiesPage ? communitySelection.scope ? 'Ainda não há comunidades nesta localização' : 'Ainda não há comunidades nesta plataforma' : creatorsPage ? creatorContent !== 'all' ? 'Ainda não há criadores nesta categoria' : 'Ainda não há criadores nesta rede' : 'Ainda não há recursos aqui'}</EmptyTitle><EmptyDescription>{searchQuery.trim() ? 'Tente outro termo ou limpe a pesquisa para ver os itens disponíveis.' : communitiesPage ? 'Escolha outra localização ou sugira uma comunidade para esta seleção.' : creatorsPage ? 'Escolha outra categoria ou rede, ou sugira um criador para esta seleção.' : 'Você pode sugerir o primeiro item desta categoria.'}</EmptyDescription></EmptyHeader></Empty>}
-            </div>
+            </div>}
             </div></PlatformTabPanel>
           </section></PlatformTabsRoot>
         )}

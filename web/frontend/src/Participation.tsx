@@ -15,7 +15,7 @@ import brazilMap from './data/brazil-states.json';
 import { communityAudiences, communityCategoryOrder, communityModalities, communityPlatforms } from './community-options';
 
 type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
-const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
+export const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
 export function Participation({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState('');
