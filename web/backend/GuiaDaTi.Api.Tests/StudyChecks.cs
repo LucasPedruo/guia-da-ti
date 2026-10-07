@@ -42,9 +42,10 @@ static class StudyChecks
                 try {await restarted.VoteAsync(resource,"1",vote,default);throw new Exception("Invalid vote accepted");}catch(ArgumentException){}
             }
             var first=await activity.CommentAsync(resource,"visitor-token","Primeira experiência",default);
+            Assert(handler.TopicBody.Contains(resource.Url) && handler.TopicBody.Contains(resource.Description) && !handler.TopicBody.Contains("Primeira experiência"),"Resource opens the topic and first visitor message stays a comment");
             var second=await restarted.CommentAsync(resource,"visitor-token","Outra experiência",default);
-            Assert(first==7 && second==7 && handler.Topics==1 && handler.Comments==1 && handler.VisitorOnly,"Comments reuse one resource topic and visitor credentials");
-            Assert((await activity.ListAsync("1",default))[0].Comments==2,"First topic message and subsequent comments count");
+            Assert(first==7 && second==7 && handler.Topics==1 && handler.Comments==2 && handler.VisitorOnly,"Comments reuse one resource topic and visitor credentials");
+            Assert((await activity.ListAsync("1",default))[0].Comments==2,"Only visitor comments count, not the resource presentation");
             handler.Unavailable=true;
             await reader.InvalidateAsync(default);
             Assert((await activity.ListAsync("1",default))[0] is {Comments:null,Hypes:20},"GitHub outages keep real votes and unknown comment counts");
@@ -52,7 +53,7 @@ static class StudyChecks
             // Lose only the mapping to reproduce a persistence failure after GitHub accepted a topic.
             await File.WriteAllTextAsync(path,"{\"version\":1,\"items\":{}}");
             await activity.CommentAsync(resource,"visitor-token","Recuperada",default);
-            Assert(handler.Topics==1 && handler.Comments==2,"Recovery uses direct repository reads rather than delayed search indexing");
+            Assert(handler.Topics==1 && handler.Comments==3,"Recovery uses direct repository reads rather than delayed search indexing");
             await activity.VoteAsync(resource,"1",new(Rating:4,Hype:true),default);
             handler.Missing=true;
             await reader.InvalidateAsync(default);
@@ -65,6 +66,15 @@ static class StudyChecks
             try {await activity.VoteAsync(resource,"3",new(Rating:4),default);throw new Exception("Corrupt store accepted");}catch(JsonException){}
             Assert(await File.ReadAllTextAsync(path)=="broken","Corrupt activity is never reset silently");
             await File.WriteAllTextAsync(path,valid);
+            var linkedResource = resource with {Slug="approved-book", DiscussionNumber=7};
+            var linkedCatalog = catalog with {Resources=[linkedResource]};
+            var linkedHandler = new StudyGitHub(linkedResource) {Topics=1,OriginalSuggestion=true};
+            var linkedFactory = new StudyFactory(linkedHandler);
+            using var linkedReader = new DiscussionsClient(linkedFactory,config);
+            var linkedActivity = new StudyEngagement(config,environment,linkedCatalog,linkedReader,new DiscussionWriter(linkedFactory,config));
+            Assert((await linkedActivity.ListAsync(null,default))[0].Discussion==7,"Approved resource exposes original suggestion topic before comments");
+            await linkedActivity.CommentAsync(linkedResource,"visitor-token","Comentário na sugestão",default);
+            Assert(linkedHandler.Topics==1 && linkedHandler.Comments==1,"Approved resource comments use suggestion thread without creating another topic");
             await EndpointChecks(config,catalog,activity,folder);
             Console.WriteLine("Study OK: persistent votes, deduplication, concurrency, topic reuse/recovery, visitor credentials, corruption, authentication and CSRF.");
         }
@@ -107,6 +117,8 @@ sealed class StudyFactory(StudyGitHub handler):IHttpClientFactory {public HttpCl
 sealed class StudyGitHub(Resource resource):HttpMessageHandler
 {
     public int Topics;public int Comments;public bool VisitorOnly=true;public bool Unavailable;public bool Missing;
+    public string TopicBody = "";
+    public bool OriginalSuggestion;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken cancellation)
     {
         if(Unavailable)return new(HttpStatusCode.ServiceUnavailable){Content=JsonContent.Create(new {})};
@@ -114,11 +126,11 @@ sealed class StudyGitHub(Resource resource):HttpMessageHandler
         object data;
         if(query.Contains("mutation")) {
             VisitorOnly&=request.Headers.Authorization?.Parameter=="visitor-token";
-            if(query.Contains("createDiscussion")){Topics++;Missing=false;data=new {createDiscussion=new {discussion=new {number=7}}};}
+            if(query.Contains("createDiscussion")){Topics++;Missing=false;TopicBody=payload.RootElement.GetProperty("variables").GetProperty("input").GetProperty("body").GetString()!;data=new {createDiscussion=new {discussion=new {number=7}}};}
             else{Comments++;data=new {addDiscussionComment=new {comment=new {id="comment"}}};}
         }else{
             var category=new {id="general",name="Geral"};var pageInfo=new {hasNextPage=false,endCursor=(string?)null};
-            var thread=new {number=7,id="topic-7",title=StudyEngagement.TopicTitle(resource),bodyText="Primeira experiência",category,author=new {login="visitor"},updatedAt="2026-10-07T12:00:00Z",isAnswered=false,locked=false,closed=false,comments=new {totalCount=Comments,pageInfo,nodes=Array.Empty<object>()}};
+            var thread=new {number=7,id="topic-7",title=OriginalSuggestion?$"[Sugestão] {resource.Name}":StudyEngagement.TopicTitle(resource),bodyText=TopicBody,category,author=new {login="visitor"},updatedAt="2026-10-07T12:00:00Z",isAnswered=false,locked=false,closed=false,comments=new {totalCount=Comments,pageInfo,nodes=Array.Empty<object>()}};
             data=new {repository=new {id="repo",isPrivate=false,hasDiscussionsEnabled=true,discussionCategories=new {nodes=new[]{category}},discussions=new {pageInfo,nodes=Topics==0||Missing?[]:new[]{thread}},discussion=Missing?(object?)null:thread}};
         }
         return new(HttpStatusCode.OK){Content=JsonContent.Create(new {data})};

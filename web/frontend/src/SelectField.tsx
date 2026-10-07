@@ -1,4 +1,5 @@
 import {useId} from 'react';
+import {Label} from '@/components/ui/label';
 import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from '@/components/ui/select';
 
 export function SelectField({label,name,value,onChange,options,placeholder,required=false}:{
@@ -7,7 +8,7 @@ export function SelectField({label,name,value,onChange,options,placeholder,requi
 }) {
   const id=useId();
   return <div className="space-y-1 text-sm font-medium">
-    <label htmlFor={id}>{label}</label>
+    <Label htmlFor={id}>{label}</Label>
     <Select name={name} value={value} onValueChange={onChange} required={required}>
       <SelectTrigger id={id} aria-label={label} className="w-full font-normal"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>{options.map(option=><SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>)}</SelectContent>

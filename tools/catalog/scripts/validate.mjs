@@ -19,6 +19,10 @@ export function validateResource(resource, file, seen = new Set()) {
     if (resource[field].some(id => !taxonomy[field].includes(id))) throw new Error(`${file}: ${field} fora da taxonomia`);
   }
   const url = new URL(resource.url);
+  if (resource.imageUrl) {
+    const image = new URL(resource.imageUrl);
+    if (image.protocol !== 'https:' || image.username || image.password || image.port || !image.hostname.includes('.') || /(^localhost$|\.local$|\.localhost$|\.internal$|^[\d.]+$|:)/i.test(image.hostname)) throw new Error(`${file}: imagem deve usar uma URL pública HTTPS`);
+  }
   if (url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.') || /(^localhost$|\.local$|\.localhost$|\.internal$|^[\d.]+$|:)/i.test(url.hostname)) throw new Error(`${file}: URL pública HTTPS obrigatória`);
   if (resource.communityLinks) {
     const platforms=resource.communityLinks.map(link=>link.platform);

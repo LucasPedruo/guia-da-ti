@@ -7,7 +7,7 @@ export async function checkYouTubeCuration({send, evaluate, waitFor, navigate, c
   const pageSize = 20;
   await navigate('/criadores/?plataforma=youtube');
   await waitFor(`document.querySelectorAll('main tbody tr').length === ${Math.min(pageSize, channels.length)}`);
-  assert.equal(await evaluate(`document.querySelector('main a[href="/contribuir?categoria=youtube"]').textContent.trim()`), 'Sugerir canal');
+  assert.equal(await evaluate(`[...document.querySelectorAll('main button')].find(b=>b.textContent.trim()==='Sugerir canal').textContent.trim()`), 'Sugerir canal');
   const links = [];
   for (let page = 1; page <= Math.ceil(channels.length / pageSize); page++) {
     if (page > 1) {
@@ -32,19 +32,19 @@ export async function checkYouTubeCuration({send, evaluate, waitFor, navigate, c
   }
   await evaluate(`sessionStorage.setItem('participationMode', 'member')`);
   await navigate('/contribuir/?categoria=youtube');
-  await waitFor(`document.querySelector('main form select').value === 'youtube'`);
+  await waitFor(`document.querySelector('[role="combobox"][aria-label="Categoria do guia"]')?.textContent.includes('YouTube')`);
   await evaluate(`(()=>{
     const input=document.querySelector('input[name="url"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'https://www.youtube.com/@newcreator');input.dispatchEvent(new Event('input',{bubbles:true}));
-    const area=document.querySelector('select[name="area"]');area.value='geral';area.dispatchEvent(new Event('change',{bubbles:true}));
   })()`);
   await waitFor(`document.querySelector('input[name="name"]').value === 'Canal da Ana'`);
-  assert.equal(await evaluate(`document.querySelector('main form button[type="submit"]').disabled`), true);
-  await click(`document.querySelector('input[name="creatorCategories"][value="career"]')`);
-  await click(`document.querySelector('input[name="creatorCategories"][value="reviews"]')`);
-  await click(`document.querySelector('main form button[type="submit"]')`);
+  assert.equal(await evaluate(`document.querySelector('[data-contribution-form] button[type="submit"]').disabled`), true);
+  await click(`document.querySelector('button[data-field="creatorCategories"][data-value="career"]')`);
+  await click(`document.querySelector('button[data-field="creatorCategories"][data-value="reviews"]')`);
+  await selectOption('Assunto principal','Geral');
+  await click(`document.querySelector('[data-contribution-form] button[type="submit"]')`);
   await waitFor(`window.lastContribution?.type === 'youtube'`);
   assert.deepEqual(await evaluate(`window.lastContribution.creatorCategories`), ['career','reviews']);
-  await waitFor(`document.querySelector('main').textContent.includes('Sugestão enviada para revisão')`);
+  await waitFor(`document.querySelector('[data-contribution-form]').textContent.includes('Sugestão enviada para revisão')`);
   await evaluate(`sessionStorage.removeItem('participationMode')`);
   console.log('YouTube OK: real channels, pagination without duplicates, category/search combination, channel suggestion and mobile layout.');
 }

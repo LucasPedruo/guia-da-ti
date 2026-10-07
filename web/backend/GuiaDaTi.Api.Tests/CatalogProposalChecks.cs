@@ -16,6 +16,7 @@ static class CatalogProposalChecks
                 using var handler = new ProposalGitHub { Mode = mode };
                 var service = new ContributionService(new ProposalFactory(handler), settings);
                 var draft = new ContributionDraft(type, "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"],
+                    ImageUrl: "https://example.org/profile.png",
                     CreatorCategories: type is "creators" or "youtube" ? ["career", "humor"] : null,
                     CommunityLocation: type == "communities" ? new("national") : null,
                     CommunityPlatforms: type == "communities" ? ["discord","website"] : null, CommunityModality: type == "communities" ? "online" : null,
@@ -27,6 +28,7 @@ static class CatalogProposalChecks
                 Check(handler.Forks == (mode == "new-fork" ? 1 : 0), "Reuse fork or write as maintainer");
                 Check(handler.FileTarget == $"/repos/{(mode == "maintainer" ? "example" : "ana")}/catalog/contents/data/{type}/novo-cadastro.json", "Catalog file target");
                 Check(handler.Resource.GetProperty("type").GetString() == type && handler.Resource.GetProperty("areas")[0].GetString() == "geral", "Preserve validated resource");
+                Check(handler.Resource.GetProperty("imageUrl").GetString() == draft.ImageUrl, "Preserve image URL in catalog proposals");
                 if (type is "creators" or "youtube") Check(handler.Resource.GetProperty("creatorCategories").EnumerateArray().Select(item => item.GetString()).SequenceEqual(new[] { "career", "humor" }), "Preserve creator categories in GitHub JSON");
                 Check(handler.PullHead.StartsWith(mode == "maintainer" ? "example:contributions/" : "ana:contributions/"), "Open upstream PR from writable branch");
                 if (type == "communities") Check(handler.Resource.GetProperty("communityLocation").GetProperty("scope").GetString() == "national"
@@ -78,6 +80,38 @@ static class CatalogProposalChecks
             Check(handler.Writes == 0 && handler.Discussions == 0, "Reject invalid institution type before GitHub access");
         }
         Check(saved.ToDraft().CreatorCategories!.SequenceEqual(saved.CreatorCategories!), "Preserve categories on approval round trip");
+        var folder = Path.Combine(Path.GetTempPath(), "guia-images-" + Guid.NewGuid().ToString("N"));
+        try {
+            var images = new ContributionImages(new ImageEnvironment {ContentRootPath=folder});
+            var png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAvsAAAAASUVORK5CYII=");
+            var id = await images.Save(png, default);
+            Check(File.ReadAllBytes(images.PathFor(id)).SequenceEqual(png), "Uploaded image persists on disk");
+            foreach (var mode in new[] {"existing-fork", "maintainer"}) {
+                using var handler = new ProposalGitHub {Mode=mode};
+                var service = new ContributionService(new ProposalFactory(handler), settings, images);
+                await service.Submit("user-token", new("creators", "Perfil com imagem", "https://example.org/profile", "Resumo do perfil com imagem", "Descrição do perfil com imagem", ["geral"], [], ["pt-BR"], CreatorCategories:["career"], ImageUploadId:id), catalog, default);
+                Check(handler.ImageBytes!.SequenceEqual(png) && handler.ImageBranch == handler.ResourceBranch, "Image and resource published in same review branch");
+                Check(handler.UserTokenOnly && handler.Resource.GetProperty("imageUrl").GetString() == $"https://raw.githubusercontent.com/example/catalog/main/assets/images/perfil-com-imagem-{id}", "Image uses visitor credential and canonical public URL");
+                Check(!handler.Resource.TryGetProperty("imageUploadId", out _), "Pending image ID stays out of public catalog");
+            }
+            using (var handler = new ProposalGitHub()) {
+                var service = new ContributionService(new ProposalFactory(handler), settings, images);
+                await service.Submit("user-token", new("courses", "Curso com imagem", "https://example.org/course", "Resumo do curso com imagem", "Descrição do curso com imagem", ["geral"], [], ["pt-BR"], ImageUploadId:id), catalog, default);
+                var match = System.Text.RegularExpressions.Regex.Match(handler.DiscussionBody, @"<!-- guia-da-ti:resource:v1:([A-Za-z0-9+/=]+) -->");
+                var resource = JsonSerializer.Deserialize<ContributionResource>(Encoding.UTF8.GetString(Convert.FromBase64String(match.Groups[1].Value)), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+                Check(resource.ToDraft().ImageUploadId == id, "Uploaded image survives forum approval round trip");
+            }
+            foreach (var bytes in new[] {Array.Empty<byte>(), new byte[ContributionImages.MaximumBytes + 1], System.Text.Encoding.UTF8.GetBytes("<svg>image</svg>")}) {
+                try { await images.Save(bytes, default); throw new Exception("Accepted invalid image"); } catch (ContributionRejectedException) { }
+            }
+            try { images.Require("../../secrets.png"); throw new Exception("Accepted traversal"); } catch (ContributionRejectedException) { }
+        } finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+        foreach (var imageUrl in new[] {"http://example.org/image.png", "https://127.0.0.1/image.png", "https://host.internal/image.png", "https://user:password@example.org/image.png"}) {
+            using var handler = new ProposalGitHub();
+            var service = new ContributionService(new ProposalFactory(handler), settings);
+            try { await service.Submit("user-token", saved.ToDraft() with {ImageUrl=imageUrl}, catalog, default); throw new Exception("Accepted unsafe image URL"); } catch (ContributionRejectedException) { }
+            Check(handler.Writes == 0, "Reject invalid image before GitHub access");
+        }
         Console.WriteLine("Catalog proposals OK: creators, YouTube and communities bypass the forum; visitor credentials, forks, permissions, metadata and other suggestions verified.");
     }
     static void Check(bool condition, string name) { if (!condition) throw new Exception(name); }
@@ -87,6 +121,8 @@ sealed class ProposalFactory(ProposalGitHub handler) : IHttpClientFactory
 { public HttpClient CreateClient(string name) => new(handler, false); }
 sealed class ProposalGitHub : HttpMessageHandler
 {
+    public byte[]? ImageBytes;
+    public string ImageBranch = "", ResourceBranch = "";
     public string Mode = "existing-fork", FileTarget = "", PullHead = "";
     public int Forks, Discussions, Writes;
     public bool UserTokenOnly = true;
@@ -119,9 +155,16 @@ sealed class ProposalGitHub : HttpMessageHandler
             if (payload.RootElement.GetProperty("sha").GetString() != "upstream-sha") throw new Exception("Fork branch does not start from current upstream");
             return Response(new { }, HttpStatusCode.Created);
         }
+        if (path.Contains("/contents/assets/images/")) {
+            using var payload = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellation));
+            ImageBytes = Convert.FromBase64String(payload.RootElement.GetProperty("content").GetString()!);
+            ImageBranch = payload.RootElement.GetProperty("branch").GetString()!;
+            return Response(new { }, HttpStatusCode.Created);
+        }
         if (path.Contains("/contents/data/")) {
             FileTarget = path;
             using var payload = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellation));
+            ResourceBranch = payload.RootElement.GetProperty("branch").GetString()!;
             using var content = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload.RootElement.GetProperty("content").GetString()!)));
             Resource = content.RootElement.Clone();
             return Response(new { }, HttpStatusCode.Created);
@@ -135,4 +178,14 @@ sealed class ProposalGitHub : HttpMessageHandler
     }
     static HttpResponseMessage Response(object body, HttpStatusCode status = HttpStatusCode.OK)
         => new(status) { Content = new StringContent(JsonSerializer.Serialize(body)) };
+}
+
+sealed class ImageEnvironment : Microsoft.AspNetCore.Hosting.IWebHostEnvironment
+{
+    public string ContentRootPath {get;set;} = "";
+    public string WebRootPath {get;set;} = "";
+    public string EnvironmentName {get;set;} = "Development";
+    public string ApplicationName {get;set;} = "Test";
+    public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider {get;set;} = new Microsoft.Extensions.FileProviders.NullFileProvider();
+    public Microsoft.Extensions.FileProviders.IFileProvider WebRootFileProvider {get;set;} = new Microsoft.Extensions.FileProviders.NullFileProvider();
 }

@@ -1,6 +1,7 @@
 import { Children, cloneElement, isValidElement, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 function stepTitle(node: ReactNode): string {
   if (!isValidElement<{ children?: ReactNode; label?: string; 'data-step-title'?: string }>(node)) return '';
@@ -14,9 +15,9 @@ function stepContent(node: ReactNode): ReactNode {
   return cloneElement(node, {}, Children.toArray(node.props.children).map((child, index) => typeof child === 'string' ? <span key={index} className="sr-only">{child}</span> : child));
 }
 
-export function ContributionWizard({ children, category, rules, onSubmit, footer, busy }: {
+export function ContributionWizard({ children, category, rules, onSubmit, footer, busy, preview }: {
   children: ReactNode; category: string; rules: Record<string, boolean>; onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  footer: ReactNode; busy: boolean;
+  footer: ReactNode; busy: boolean; preview?: ReactNode;
 }) {
   const steps = Children.toArray(children);
   const [step, setStep] = useState(0);
@@ -48,10 +49,10 @@ export function ContributionWizard({ children, category, rules, onSubmit, footer
     }
     onSubmit(event);
   }
-  return <form ref={form} noValidate onSubmit={submit} className="overflow-hidden rounded-lg border bg-card">
+  return <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_280px]"><form data-contribution-form ref={form} noValidate onSubmit={submit} className="min-w-0 overflow-hidden rounded-lg border bg-card">
     <div className="space-y-3 border-b px-5 py-4 sm:px-8">
       <p aria-live="polite" className="text-xs text-muted-foreground">Etapa {step + 1} de {steps.length}</p>
-      <div role="progressbar" aria-label="Progresso da sugestão" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={step + 1} className="h-1 overflow-hidden rounded bg-muted"><div style={{ width: `${(step + 1) / steps.length * 100}%` }} className="h-full bg-primary transition-[width] motion-reduce:transition-none" /></div>
+      <Progress aria-label="Progresso da sugestão" value={(step + 1) / steps.length * 100} className="h-1" />
     </div>
     <div className="min-h-72 space-y-6 p-5 sm:p-8">
       <h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{stepTitle(steps[step])}</h2>
@@ -63,5 +64,5 @@ export function ContributionWizard({ children, category, rules, onSubmit, footer
       {step < steps.length - 1 && <Button type="button" disabled={busy} onClick={next}>Continuar<ArrowRight /></Button>}
     </div>
     {footer && <div className="px-5 pb-5 sm:px-8">{footer}</div>}
-  </form>;
+  </form>{preview}</div>;
 }

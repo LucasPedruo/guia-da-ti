@@ -11,7 +11,8 @@ public record CreatorProfile(string Network, string Url, string Name, string Des
 public sealed class CreatorProfiles(IHttpClientFactory clients, IConfiguration configuration, TimeProvider clock)
 {
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 512 });
-    private readonly SemaphoreSlim gate = new(1);
+    private readonly SemaphoreSlim gate = new(6);
+    private readonly SemaphoreSlim[] profileGates = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1)).ToArray();
     public static CreatorLink? ParseLink(string? value)
     {
         if (value?.Length > 500 || !Uri.TryCreate(value, UriKind.Absolute, out var uri)
@@ -58,6 +59,10 @@ public sealed class CreatorProfiles(IHttpClientFactory clients, IConfiguration c
     public async Task<CreatorProfile> ResolveAsync(CreatorLink link, CancellationToken cancellation)
     {
         if (cache.TryGetValue(link.Url, out CreatorProfile? saved)) return saved!;
+        var profileGate = profileGates[(uint)StringComparer.Ordinal.GetHashCode(link.Url) % profileGates.Length];
+        await profileGate.WaitAsync(cancellation);
+        try {
+        if (cache.TryGetValue(link.Url, out saved)) return saved!;
         await gate.WaitAsync(cancellation);
         try {
             if (cache.TryGetValue(link.Url, out saved)) return saved!;
@@ -86,6 +91,7 @@ public sealed class CreatorProfiles(IHttpClientFactory clients, IConfiguration c
             cache.Set(link.Url, profile, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) });
             return profile;
         } finally { gate.Release(); }
+        } finally { profileGate.Release(); }
     }
 
     private async Task<string> GetAsync(string url, CancellationToken cancellation, string? token = null)

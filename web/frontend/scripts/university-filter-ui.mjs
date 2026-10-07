@@ -74,23 +74,21 @@ export async function checkUniversityFilter({
   await waitFor(`!!${trigger}`);
   await evaluate(`(()=>{
     for(const [name,value] of Object.entries({name:'Faculdade de teste',url:'https://example.org/new-university',summary:'Uma faculdade para teste',description:'Uma descrição para testar o cadastro'})){
-      const el=document.querySelector('main form input[name="'+name+'"], main form textarea[name="'+name+'"]');
+      const el=document.querySelector('[data-contribution-form] input[name="'+name+'"], [data-contribution-form] textarea[name="'+name+'"]');
       Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,value);
       el.dispatchEvent(new Event('input',{bubbles:true}));
     }
-    const area=document.querySelector('select[name="area"]');area.value='educacao';area.dispatchEvent(new Event('change',{bubbles:true}));
   })()`);
   assert.equal(
     await evaluate(
-      `document.querySelector('main form button[type="submit"]').disabled`,
+      `document.querySelector('[data-contribution-form] button[type="submit"]').disabled`,
     ),
     true,
   );
   await selectOption("Tipo de instituição", "Pública");
-  await waitFor(
-    `!document.querySelector('main form button[type="submit"]').disabled`,
-  );
-  await click(`document.querySelector('main form button[type="submit"]')`);
+
+  await selectOption('Assunto principal','Educação');
+  await click(`document.querySelector('[data-contribution-form] button[type="submit"]')`);
   await waitFor(`window.lastContribution?.universityType === 'public'`);
   assert.equal(await evaluate(`window.lastContribution.type`), "universities");
   await waitFor(`document.querySelector('[aria-label="Avisos de sugestões"]').textContent.includes('ana adicionou Faculdade de teste em Faculdades')`);

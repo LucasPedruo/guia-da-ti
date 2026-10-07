@@ -14,6 +14,7 @@ builder.Services.AddHttpClient("discussions", client => client.Timeout = TimeSpa
 builder.Services.AddSingleton<DiscussionsClient>();
 builder.Services.AddSingleton<DiscussionWriter>();
 builder.Services.AddSingleton<ContributionService>();
+builder.Services.AddSingleton<ContributionImages>();
 builder.Services.AddSingleton<ContributionNotifications>();
 builder.Services.AddSingleton<ContributorsClient>();
 builder.Logging.AddFilter("System.Net.Http.HttpClient.creator-profiles", LogLevel.None);
@@ -26,10 +27,14 @@ builder.Services.AddSingleton<StudyEngagement>();
 builder.AddCommunityAuth();
 var app = builder.Build();
 app.Use(async (context, next) => {
+    if (context.Request.Path.Value?.TrimEnd('/') == "/contribuir") {
+        context.Response.Redirect("/?sugerir=" + Uri.EscapeDataString(context.Request.Query["categoria"].ToString()));
+        return;
+    }
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     // Radix menus/selects use inline positioning and scroll-lock styles. Scripts remain self-only.
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com https://*.googleusercontent.com https://*.ggpht.com https://*.cdninstagram.com https://*.fbcdn.net https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.licdn.com https://*.twimg.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
     await next();
 });
 app.UseDefaultFiles();
@@ -40,6 +45,7 @@ app.MapCommunityAuth();
 app.MapDiscussionWrites();
 app.MapDiscussions();
 app.MapContributions();
+app.MapContributionImages();
 app.MapContributionNotifications();
 app.MapContributors();
 app.MapCreatorProfiles();
@@ -75,4 +81,4 @@ static string Normalize(string value) => string.Concat(value.Normalize(Normaliza
 public record Catalog(int Version, Taxonomy Taxonomy, Resource[] Resources);
 public record Taxonomy(string[] Areas, string[] Technologies, string[] Languages, string[] Types);
 public record Resource(string Slug, string Type, string Name, string Summary, string Description, string Url,
-    string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo, string[]? Countries = null, CommunityLocation? CommunityLocation = null, string[]? CommunityPlatforms = null, string? CommunityModality = null, string[]? CreatorCategories = null, string? CommunityAudience = null, CommunityLink[]? CommunityLinks = null, CommunityMembers? CommunityMembers = null, string? UniversityType = null);
+    string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo, string[]? Countries = null, CommunityLocation? CommunityLocation = null, string[]? CommunityPlatforms = null, string? CommunityModality = null, string[]? CreatorCategories = null, string? CommunityAudience = null, CommunityLink[]? CommunityLinks = null, CommunityMembers? CommunityMembers = null, string? UniversityType = null, string? ImageUrl = null, int? DiscussionNumber = null);

@@ -33,6 +33,11 @@ export async function installDiscussionFixtures(send) {
         window.noticeItems.push(notice);
         return Response.json({...result,notice});
       }
+      if (url.pathname === '/api/contributions/images') {
+        const file=options.body.get('image');
+        window.lastImageUpload={name:file.name,size:file.size,csrf:options.headers['X-CSRF-Token']};
+        return Response.json({id:'11111111111111111111111111111111.png'});
+      }
       if (!url.pathname.startsWith('/api/discussions')) return originalFetch(input, options);
       window.discussionRequests.push(url.pathname + url.search);
       const mode = sessionStorage.getItem('discussionTestMode') || 'unconfigured';
@@ -217,7 +222,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await navigate('/?conversa=7');
   await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
   assert.equal(await evaluate(`!!${button('Participe da conversa…')} || !!${button('Responder')}`), false);
-  for (const [path, title] of [['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI'], ['/contribuir', 'Contribuir']]) {
+  for (const [path, title] of [['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI']]) {
     await navigate(`${path}/`);
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
     if (path === '/sobre') { await waitFor(`!!document.querySelector('#mantenedores a[href="https://github.com/ana"] img')`); assert.equal(await evaluate(`document.querySelector('#mantenedores h2').textContent`), 'Mantenedores'); }

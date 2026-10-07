@@ -1,3 +1,4 @@
+import {openContribution} from './contribution-actions';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Tooltip } from 'radix-ui';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,6 @@ export function Maintainers({ compact = false }: { compact?: boolean }) {
         </Tooltip.Content></Tooltip.Portal></Tooltip.Root></li>)}
       </ul></Tooltip.Provider>}
     {compact && people && people.length > limit && <a href="/sobre#mantenedores" className="shrink-0 font-mono text-xs uppercase tracking-widest hover:text-primary">+{people.length - limit} mais</a>}
-    {!compact && <><p className="text-xs text-muted-foreground">Autores de contribuições nos repositórios públicos do Guia, reconhecidos pelo GitHub.</p><Button asChild variant="outline"><a href="/contribuir">Quero contribuir</a></Button></>}
+    {!compact && <><p className="text-xs text-muted-foreground">Autores de contribuições nos repositórios públicos do Guia, reconhecidos pelo GitHub.</p><Button variant="outline" onClick={() => openContribution()}>Quero contribuir</Button></>}
   </section>;
 }

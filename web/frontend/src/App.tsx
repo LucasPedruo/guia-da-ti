@@ -1,3 +1,5 @@
+import {ContributionDialog} from './ContributionDialog';
+import {openContribution} from './contribution-actions';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
 import { StudyCover, StudyDetail, StudyListing } from './Study';
@@ -22,7 +24,7 @@ import { ContributionToasts } from './ContributionToasts';
 import { NavigationCard } from './NavigationCard';
 import { BrandMark } from './BrandMark';
 import { Motion } from './Motion';
-import { Participation, ResourceContribution, UserControls } from './Participation';
+import { Participation, UserControls } from './Participation';
 import { ArrowLeft, ArrowUpRight, Award, BookOpen, BriefcaseBusiness, CalendarDays, ChevronDown, Code, ExternalLink, FileText, FlaskConical, Github, Globe2, GraduationCap, Headphones, Instagram, Linkedin, Mail, Map, Menu, Newspaper, Twitter, Users, Wrench, Youtube, type LucideIcon } from 'lucide-react';
 import { Accordion } from 'radix-ui';
 import { Button } from '@/components/ui/button';
@@ -82,6 +84,7 @@ function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: 
   return <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/55" /><Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 space-y-4 overflow-y-auto rounded-xl border bg-popover p-6 text-popover-foreground shadow-xl">
     <Dialog.Title className="text-xl font-semibold">{resource.name}</Dialog.Title>
     <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">{resource.summary}</Dialog.Description>
+    {resource.imageUrl && <StudyCover resource={resource} priority />}
     <p className="whitespace-pre-wrap text-sm leading-relaxed">{resource.description}</p>
     {extra && <p className="text-sm text-muted-foreground">{extra}</p>}
     {resource.type==='communities' && <p className="text-sm text-muted-foreground">{[resource.communityAudience && `Público: ${communityAudiences.find(item=>item.id===resource.communityAudience)?.name}`,communityModalities.find(item=>item.id===resource.communityModality)?.name].filter(Boolean).join(' · ')}</p>}
@@ -95,7 +98,7 @@ function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: 
 function ResourceRow({ resource, platform, locationColumn = false }: { resource: Resource; platform: string | null; locationColumn?: boolean }) {
   const extra = resourceExtra(resource);
   const profile = profileTypes.has(resource.type);
-  const { profile: creator } = useCreatorProfile(resource.url, profile && !resource.demo);
+  const { profile: creator, loading: profileLoading } = useCreatorProfile(resource.url, profile && !resource.demo, 0);
   const displayName = creator?.name || resource.name;
   const displaySummary = creator?.description || resource.summary;
   const dialog = dialogTypes.has(resource.type);
@@ -112,7 +115,7 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
   const row = <tr className="border-t transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
     <td className="px-3 py-2.5 align-middle sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
-      {profile && <CreatorAvatar profile={creator} name={displayName} />}
+      {(profile || resource.imageUrl) && <CreatorAvatar profile={creator} name={displayName} imageUrl={resource.imageUrl} loading={profileLoading} />}
       <div className="group relative min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2"><div className="min-w-0">{title}</div>{resource.demo && <Badge variant="outline" className="shrink-0 text-[10px]">Exemplo</Badge>}</div>
         <p className="truncate text-[11px] leading-5 text-muted-foreground" title={displaySummary}>{displaySummary}</p>
@@ -231,7 +234,7 @@ export function App({ path }: { path: string }) {
   }
 
   return (
-    <Motion><ContributionToasts><Participation><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
+    <Motion><ContributionToasts><Participation><ContributionDialog /><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
       <Button asChild className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
         <a href="#conteudo">Pular para o conteúdo</a>
       </Button>
@@ -302,7 +305,8 @@ export function App({ path }: { path: string }) {
                   </Accordion.Root>
                   <Separator />
                   <div className="space-y-1">
-                    {[{ name: 'Sobre', href: '/sobre' }, { name: 'Contribuir', href: '/contribuir' }].map(link => <SheetClose asChild key={link.href}><Button asChild variant={path === link.href ? 'secondary' : 'ghost'} className="w-full justify-start"><a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.name}</a></Button></SheetClose>)}
+                    <SheetClose asChild><Button asChild variant={path === '/sobre' ? 'secondary' : 'ghost'} className="w-full justify-start"><a href="/sobre" aria-current={path === '/sobre' ? 'page' : undefined}>Sobre</a></Button></SheetClose>
+                    <SheetClose asChild><Button variant="ghost" className="w-full justify-start" onClick={() => setTimeout(() => openContribution(), 0)}>Contribuir</Button></SheetClose>
                   </div>
                 </nav>
               </SheetContent>
@@ -331,18 +335,11 @@ export function App({ path }: { path: string }) {
             <h2 className="text-xl font-semibold">Aberto e colaborativo</h2>
             <p className="leading-relaxed text-muted-foreground">O catálogo é público e seu histórico pode ser consultado no GitHub. Não é necessário criar uma conta para explorar o guia.</p>
             <p className="text-sm text-muted-foreground">Estamos começando. Os cadastros marcados como “Exemplo fictício” demonstram a navegação e não são recomendações de recursos reais.</p>
-            <Button asChild variant="outline"><a href="/contribuir">Contribuir com o guia<ArrowUpRight /></a></Button>
+            <Button variant="outline" onClick={() => openContribution()}>Contribuir com o guia<ArrowUpRight /></Button>
             <Separator />
             <Maintainers />
             <Separator />
             <Community area="supporters" embedded />
-          </article>
-        ) : path === '/contribuir' ? (
-          <article className="mx-auto w-full max-w-4xl space-y-6">
-            <h1 className="text-3xl font-semibold tracking-tight">Contribuir</h1>
-            <p className="text-muted-foreground">Sugira um recurso para o guia. Criadores e comunidades vão direto para revisão do catálogo; os demais recursos abrem uma conversa no fórum.</p>
-            <ResourceContribution />
-            {repository && <Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button>}
           </article>
         ) : page.resource ? (
           <article className="mx-auto w-full max-w-4xl space-y-6">
@@ -350,7 +347,7 @@ export function App({ path }: { path: string }) {
             <section aria-label="Apresentação do recurso" className="overflow-hidden rounded-lg border bg-card">
             <header className="flex flex-col gap-5 border-b p-4 sm:flex-row sm:items-center sm:p-6">
               <div className="min-w-0 flex-1 space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<Badge variant="secondary">{page.category!.name}</Badge><h1 className="text-3xl font-semibold tracking-tight">{page.resource.name}</h1><p className="text-sm leading-relaxed text-muted-foreground">{page.resource.summary}</p></div>
-              {studyTypes.has(page.resource.type) && <div className="w-full shrink-0 overflow-hidden rounded-lg border sm:w-48"><StudyCover resource={page.resource} priority /></div>}
+              {(studyTypes.has(page.resource.type) || page.resource.imageUrl) && <div className="w-full shrink-0 overflow-hidden rounded-lg border sm:w-48"><StudyCover resource={page.resource} priority /></div>}
             </header>
             <div className="space-y-4 p-4 sm:p-6">
             <p className="whitespace-pre-wrap leading-relaxed">{page.resource.description}</p>

@@ -3,7 +3,7 @@ import navigation from './navigation.json';
 import type { CommunityLocation } from './community-location';
 export type Resource = {
   slug: string; type: string; name: string; summary: string; description: string;
-  url: string; areas: string[]; technologies: string[]; languages: string[]; universityType?: "public" | "private"; countries?: string[]; creatorCategories?: string[]; communityLocation?: CommunityLocation; communityPlatforms?: string[]; communityModality?: string; communityAudience?: string; communityLinks?: {platform:string;url:string}[]; communityMembers?:{count:number;moreThan?:boolean;checkedAt:string}; updatedAt: string; demo?: boolean;
+  url: string; imageUrl?: string; discussionNumber?: number; areas: string[]; technologies: string[]; languages: string[]; universityType?: "public" | "private"; countries?: string[]; creatorCategories?: string[]; communityLocation?: CommunityLocation; communityPlatforms?: string[]; communityModality?: string; communityAudience?: string; communityLinks?: {platform:string;url:string}[]; communityMembers?:{count:number;moreThan?:boolean;checkedAt:string}; updatedAt: string; demo?: boolean;
 };
 export const resources = snapshot.resources as Resource[];
 export const taxonomy = snapshot.taxonomy;
@@ -18,8 +18,8 @@ export function pageInfo(path: string) {
   const resource = parts.length === 2 && category ? resources.find(r => r.type === category.id && r.slug === parts[1]) : undefined;
   const area = parts.length === 2 && parts[0] === 'areas' && taxonomy.areas.includes(parts[1]) ? parts[1] : undefined;
   const technology = parts.length === 2 && parts[0] === 'tecnologias' && taxonomy.technologies.includes(parts[1]) ? parts[1] : undefined;
-  const valid = ['/', '/explorar', '/contribuir', '/sobre'].includes(path) || (parts.length === 1 && !!category) || !!resource || !!area || !!technology;
-  const title = !valid ? 'Página não encontrada' : resource?.name ?? (area ? labels[area] : technology ? labels[technology] : undefined) ?? category?.name ?? (path === '/' ? 'Conversas da comunidade' : path === '/sobre' ? 'Sobre o Guia da TI' : path === '/contribuir' ? 'Contribuir' : 'Explore tecnologia');
+  const valid = ['/', '/explorar', '/sobre'].includes(path) || (parts.length === 1 && !!category) || !!resource || !!area || !!technology;
+  const title = !valid ? 'Página não encontrada' : resource?.name ?? (area ? labels[area] : technology ? labels[technology] : undefined) ?? category?.name ?? (path === '/' ? 'Conversas da comunidade' : path === '/sobre' ? 'Sobre o Guia da TI' : 'Explore tecnologia');
   return { category, resource, area, technology, valid, title, description: resource ? `Indicação de ${resource.name}. ${resource.summary} Acesse o conteúdo no site de origem.` : (path === '/' ? 'Conversas, dúvidas e ideias de quem vive tecnologia.' : path === '/sobre' ? 'Conheça o Guia da TI, um catálogo de links para sites de tecnologia e um fórum para trocar conhecimento com a comunidade.' : 'Encontre links para cursos, artigos, ferramentas, comunidades e oportunidades de tecnologia em outros sites.') };
 }
-export const routes = ['/', '/explorar', '/contribuir', '/sobre', ...categories.map(c => `/${c.route}`), ...resources.map(resourcePath), ...taxonomy.areas.map(a => `/areas/${a}`), ...taxonomy.technologies.map(t => `/tecnologias/${t}`)];
+export const routes = ['/', '/explorar', '/sobre', ...categories.map(c => `/${c.route}`), ...resources.map(resourcePath), ...taxonomy.areas.map(a => `/areas/${a}`), ...taxonomy.technologies.map(t => `/tecnologias/${t}`)];

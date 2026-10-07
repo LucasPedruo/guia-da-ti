@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { buildCatalog, validateResource, taxonomy } from '../scripts/validate.mjs';
 const sample = { slug: 'exemplo', type: 'courses', name: 'Exemplo', summary: 'Um curso de demonstração.', description: 'Descrição de demonstração.', url: 'https://example.org/curso', areas: ['backend'], technologies: ['csharp'], languages: ['pt-BR'], updatedAt: '2026-01-01' };
 
+test('images and discussion links survive catalog validation without unsafe URLs or pending upload IDs', () => {
+  assert.doesNotThrow(() => validateResource({...sample,imageUrl:'https://raw.githubusercontent.com/example/catalog/main/assets/images/cover.png',discussionNumber:7},'courses/exemplo.json'));
+  for (const change of [{imageUrl:'http://example.org/image.png'},{imageUrl:'https://127.0.0.1/image.png'},{imageUrl:'https://person:secret@example.org/image.png'},{imageUrl:'https://host.internal/image.png'},{imageUploadId:'pending.png'},{discussionNumber:0},{discussionNumber:1.5}]) assert.throws(() => validateResource({...sample,...change},'courses/exemplo.json'));
+});
+
 test('university ownership is restricted to public/private and universities', () => {
   for (const universityType of ['public', 'private']) {
     assert.doesNotThrow(() => validateResource({...sample, type:'universities', universityType}, 'universities/exemplo.json'));

@@ -14,7 +14,8 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
     public Resource? Find(string type, string slug) => Types.Contains(type) ? catalog.Resources.FirstOrDefault(r => r.Type == type && r.Slug == slug) : null;
     public static string Key(Resource r) => r.Type + "/" + r.Slug;
-    public static string TopicTitle(Resource r) => $"[Estudar: {Key(r)}] {r.Name}";
+    public static string TopicTitle(Resource r) => r.Name;
+    public static string TopicBody(Resource r) => $"### {r.Name}\n\n{r.Summary}\n\n{r.Description}\n\n**Link:** {r.Url}\n\n**Idiomas:** {string.Join(", ", r.Languages)}";
 
     public async Task<StudySummary[]> ListAsync(string? userId, CancellationToken cancellation)
     {
@@ -23,7 +24,8 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         try { store = await ReadAsync(cancellation); }
         finally { gate.Release(); }
         var commentCounts = new Dictionary<int, int>();
-        var needed = store.Items.Values.Where(e => e.Discussion is not null).Select(e => e.Discussion!.Value).ToHashSet();
+        var needed = store.Items.Values.Where(e => e.Discussion is not null).Select(e => e.Discussion!.Value)
+            .Concat(catalog.Resources.Where(r => Types.Contains(r.Type) && r.DiscussionNumber is not null).Select(r => r.DiscussionNumber!.Value)).ToHashSet();
         var verified = false;
         if (needed.Count > 0 && reader.Configured) {
             try {
@@ -31,7 +33,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
                 do {
                     var page = await reader.ListAsync(null, cursor, cancellation);
                     foreach (var topic in page.Items.Where(d => needed.Contains(d.Number))) {
-                        commentCounts[topic.Number] = topic.CommentCount + 1;
+                        commentCounts[topic.Number] = topic.CommentCount;
                         needed.Remove(topic.Number);
                     }
                     cursor = page.PageInfo.HasNextPage ? page.PageInfo.EndCursor : null;
@@ -45,6 +47,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         var result = new List<StudySummary>();
         foreach (var resource in catalog.Resources.Where(r => Types.Contains(r.Type))) {
             var entry = store.Items.GetValueOrDefault(Key(resource)) ?? new Entry();
+            entry.Discussion = resource.DiscussionNumber ?? entry.Discussion;
             var discussion = verified && entry.Discussion is int missing && needed.Contains(missing) ? null : entry.Discussion;
             int? comments = discussion is null ? 0 : null;
             if (discussion is int number && commentCounts.TryGetValue(number, out var count)) comments = count;
@@ -72,7 +75,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         finally { gate.Release(); }
     }
 
-    // The first message creates the resource's topic. Later messages reuse it.
+    // Approved resources keep the suggestion's topic. Legacy topics start with the resource, never a visitor's comment.
     // Search recovers a successful GitHub write if saving the local mapping failed.
     public async Task<int> CommentAsync(Resource resource, string token, string body, CancellationToken cancellation)
     {
@@ -83,6 +86,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         try {
             var store = await ReadAsync(cancellation);
             var entry = store.Items.GetValueOrDefault(Key(resource)) ?? new Entry();
+            entry.Discussion = resource.DiscussionNumber ?? entry.Discussion;
             if (entry.Discussion is int linked && await reader.ThreadAsync(linked, null, cancellation) is null)
                 entry.Discussion = null;
             if (entry.Discussion is null) {
@@ -91,13 +95,23 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
                 do {
                     // Read the repository directly: GitHub search indexing can lag behind a write.
                     var found = await reader.ListAsync(null, cursor, cancellation);
-                    entry.Discussion = found.Items.FirstOrDefault(d => d.Title == TopicTitle(resource))?.Number;
+                    entry.Discussion = found.Items.FirstOrDefault(d => d.Title == $"[Estudar: {Key(resource)}] {resource.Name}")?.Number;
+                    if (entry.Discussion is null) {
+                        foreach (var candidate in found.Items.Where(d => d.Title == TopicTitle(resource) || d.Title == $"[Sugestão] {resource.Name}")) {
+                            var topic = await reader.ThreadAsync(candidate.Number, null, cancellation);
+                            if (topic?.Body.Contains(resource.Url, StringComparison.OrdinalIgnoreCase) == true) { entry.Discussion = candidate.Number; break; }
+                        }
+                    }
                     cursor = found.PageInfo.HasNextPage ? found.PageInfo.EndCursor : null;
                 } while (entry.Discussion is null && cursor is not null);
             }
-            var number = await writer.PublishAsync(token, entry.Discussion is int existing
-                ? new(body, Number: existing)
-                : new($"Recurso do guia: {Key(resource)}\nSite: {resource.Url}\n\n{body.Trim()}", Title: TopicTitle(resource), CategoryName: configuration["STUDY_DISCUSSION_CATEGORY"] ?? "Geral"), cancellation);
+            if (entry.Discussion is null) {
+                entry.Discussion = await writer.PublishAsync(token, new(TopicBody(resource), Title: TopicTitle(resource), CategoryName: configuration["STUDY_DISCUSSION_CATEGORY"] ?? "Geral"), cancellation);
+                store.Items[Key(resource)] = entry;
+                await WriteAsync(store, CancellationToken.None);
+                await reader.InvalidateAsync(CancellationToken.None);
+            }
+            var number = await writer.PublishAsync(token, new(body, Number: entry.Discussion), cancellation);
             entry.Discussion = number;
             store.Items[Key(resource)] = entry;
             // Complete persistence even if the browser disconnects after GitHub accepted the write.

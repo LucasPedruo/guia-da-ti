@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 // Prepare a reviewed catalog change with the visitor's credential, never the read token.
-public sealed class CatalogProposalWriter(IHttpClientFactory clients, IConfiguration configuration)
+public sealed class CatalogProposalWriter(IHttpClientFactory clients, IConfiguration configuration, ContributionImages? images = null)
 {
     private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
@@ -64,6 +64,7 @@ public sealed class CatalogProposalWriter(IHttpClientFactory clients, IConfigura
             if (writable || attempt >= 5 || created.StatusCode is not (HttpStatusCode.NotFound or HttpStatusCode.UnprocessableEntity)) created.EnsureSuccessStatusCode();
             await Task.Delay(1000, cancellation);
         }
+        if (images is not null) resource = await images.Publish(client, target, repository, branch, baseBranch, resource, cancellation);
         var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(resource, JsonOptions)));
         using var file = await client.PutAsJsonAsync($"repos/{target}/contents/data/{resource.Type}/{resource.Slug}.json",
             new { message = $"catalog: add {resource.Slug}", content, branch }, cancellation);

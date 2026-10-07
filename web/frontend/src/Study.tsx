@@ -121,7 +121,7 @@ export function StudyCover({
   small?: boolean;
   priority?: boolean;
 }) {
-  const cover = Object.entries(covers).find(([path]) =>
+  const cover = resource.imageUrl || Object.entries(covers).find(([path]) =>
     path.replace(/\.[^.]+$/, "").endsWith(`/${studyKey(resource)}`),
   )?.[1];
   const imageSource = imageSources.find(
@@ -583,8 +583,7 @@ export function StudyDetail({ resource }: { resource: Resource }) {
               />
               <p className="text-xs text-muted-foreground">
                 Seu comentário será público no Guia e no GitHub, em nome de{" "}
-                {auth?.session?.login}. A primeira mensagem abre o tópico deste
-                item no fórum.
+                {auth?.session?.login}, na discussão deste recurso.
               </p>
               <Button
                 type="submit"
