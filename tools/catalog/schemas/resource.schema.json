@@ -207,6 +207,64 @@
           "other"
         ]
       }
+    },
+    "communityAudience": {
+      "enum": ["general", "male", "female", "lgbt"]
+    },
+    "communityLinks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["platform", "url"],
+        "properties": {
+          "platform": {
+            "enum": [
+              "whatsapp",
+              "telegram",
+              "discord",
+              "slack",
+              "facebook",
+              "linkedin",
+              "meetup",
+              "reddit",
+              "github",
+              "discourse",
+              "circle",
+              "mighty-networks",
+              "website",
+              "other"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "pattern": "^https://"
+          }
+        }
+      }
+    },
+    "communityMembers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "checkedAt"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "moreThan": {
+          "type": "boolean"
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date"
+        }
+      }
     }
   },
   "definitions": {
@@ -242,6 +300,15 @@
           },
           {
             "required": ["communityModality"]
+          },
+          {
+            "required": ["communityAudience"]
+          },
+          {
+            "required": ["communityLinks"]
+          },
+          {
+            "required": ["communityMembers"]
           }
         ]
       },
@@ -263,6 +330,14 @@
             "enum": ["creators", "youtube"]
           }
         }
+      }
+    },
+    {
+      "if": {
+        "required": ["communityLinks"]
+      },
+      "then": {
+        "required": ["communityPlatforms"]
       }
     }
   ]

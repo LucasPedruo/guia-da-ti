@@ -20,6 +20,15 @@ export function validateResource(resource, file, seen = new Set()) {
   }
   const url = new URL(resource.url);
   if (url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.') || /(^localhost$|\.local$|\.localhost$|\.internal$|^[\d.]+$|:)/i.test(url.hostname)) throw new Error(`${file}: URL pública HTTPS obrigatória`);
+  if (resource.communityLinks) {
+    const platforms=resource.communityLinks.map(link=>link.platform);
+    if (new Set(platforms).size!==platforms.length || platforms.length!==resource.communityPlatforms.length || platforms.some(id=>!resource.communityPlatforms.includes(id))) throw new Error(`${file}: informe um link para cada plataforma selecionada`);
+    for (const link of resource.communityLinks) {
+      const target=new URL(link.url);
+      if (target.protocol!=='https:' || target.username || target.password || target.port || !target.hostname.includes('.') || /(^localhost$|\.local$|\.localhost$|\.internal$|^[\d.]+$|:)/i.test(target.hostname)) throw new Error(`${file}: link de plataforma deve ser uma URL pública HTTPS`);
+    }
+  }
+  if (resource.communityMembers?.checkedAt > new Date().toISOString().slice(0,10)) throw new Error(`${file}: data da contagem de membros no futuro`);
   if (resource.updatedAt > new Date().toISOString().slice(0, 10)) throw new Error(`${file}: data futura`);
   url.hash = '';
   const key = url.href.replace(/\/$/, '');

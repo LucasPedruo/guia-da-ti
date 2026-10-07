@@ -80,7 +80,7 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  html { @apply bg-background; }
+  html { @apply bg-background; scrollbar-gutter: stable; }
   body { @apply bg-background text-foreground antialiased; font-family: ui-sans-serif, system-ui, sans-serif; }
 }
 
@@ -213,4 +213,9 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
 
 @media (prefers-reduced-motion: no-preference) {
   html.route-enter main[data-motion] { opacity: 0; transform: translateY(10px); }
+}
+
+/* The root keeps the scrollbar gap even while Radix locks body scrolling. */
+@supports (scrollbar-gutter: stable) {
+  html body[data-scroll-locked] { margin-right: 0 !important; }
 }

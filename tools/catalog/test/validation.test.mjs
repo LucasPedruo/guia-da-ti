@@ -53,3 +53,19 @@ test('validates creator content categories independently of technical areas', ()
   }
   assert.throws(() => validateResource({...sample, creatorCategories: ['career']}, 'courses/exemplo.json'));
 });
+
+test('validates audience and one safe public link for each community platform',()=>{
+ const community={...sample,type:'communities',communityPlatforms:['discord','website'],communityAudience:'general',communityLinks:[{platform:'discord',url:'https://discord.gg/example'},{platform:'website',url:'https://example.org/community'}]};
+ for(const communityAudience of ['general','male','female','lgbt']) assert.doesNotThrow(()=>validateResource({...community,communityAudience},'communities/exemplo.json'));
+ for(const changes of [{communityAudience:'unknown'},{communityPlatforms:['discord']},{communityLinks:[]},{communityLinks:[{platform:'discord',url:'https://example.org/one'},{platform:'discord',url:'https://example.org/two'}]},{communityLinks:[{platform:'discord',url:'https://127.0.0.1/test'},{platform:'website',url:'https://example.org'}]},{communityLinks:[{platform:'discord',url:'https://private.internal/test'},{platform:'website',url:'https://example.org'}]},{communityLinks:[{platform:'discord',url:'http://example.org'},{platform:'website',url:'https://example.org'}]}]) assert.throws(()=>validateResource({...community,...changes},'communities/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityAudience:'female'},'courses/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityLinks:community.communityLinks,communityPlatforms:community.communityPlatforms},'courses/exemplo.json'));
+});
+
+test('community member counts distinguish exact and more-than totals and reject invalid data',()=>{
+ const r={...sample,type:'communities',communityMembers:{count:4000,moreThan:true,checkedAt:'2026-10-07'}};
+ assert.doesNotThrow(()=>validateResource(r,'communities/exemplo.json'));
+ for(const change of [{count:-1},{count:1.5},{count:2147483648},{moreThan:'yes'},{checkedAt:'2099-01-01'},{checkedAt:'invalid'},{checkedAt:'2026-02-30'}])assert.throws(()=>validateResource({...r,communityMembers:{...r.communityMembers,...change}},'communities/exemplo.json'));
+ assert.throws(()=>validateResource({...sample,communityMembers:r.communityMembers},'courses/exemplo.json'));
+ assert.doesNotThrow(()=>validateResource({...r,communityMembers:{count:0,checkedAt:'2026-10-07'}},'communities/exemplo.json'));
+});

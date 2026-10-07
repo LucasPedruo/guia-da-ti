@@ -18,7 +18,8 @@ static class CatalogProposalChecks
                 var draft = new ContributionDraft(type, "Novo cadastro", "https://example.org/new", "Um resumo do cadastro", "Uma descrição do cadastro", ["geral"], [], ["pt-BR"],
                     CreatorCategories: type is "creators" or "youtube" ? ["career", "humor"] : null,
                     CommunityLocation: type == "communities" ? new("national") : null,
-                    CommunityPlatforms: type == "communities" ? ["discord"] : null, CommunityModality: type == "communities" ? "online" : null);
+                    CommunityPlatforms: type == "communities" ? ["discord","website"] : null, CommunityModality: type == "communities" ? "online" : null,
+                    CommunityAudience:type=="communities"?"general":null,CommunityLinks:type=="communities"?[new("discord","https://discord.gg/example"),new("website","https://example.org/new")]:null,CommunityMembers:type=="communities"?new(4000,"2026-10-07",true):null);
                 var result = await service.Submit("user-token", draft, catalog, default);
                 Check(result.Kind == "catalog" && result.Number is null && result.Url == "https://github.com/example/catalog/pull/10", "Catalog review result");
                 Check(handler.Discussions == 0, "No forum operation for creator/community");
@@ -29,7 +30,11 @@ static class CatalogProposalChecks
                 if (type is "creators" or "youtube") Check(handler.Resource.GetProperty("creatorCategories").EnumerateArray().Select(item => item.GetString()).SequenceEqual(new[] { "career", "humor" }), "Preserve creator categories in GitHub JSON");
                 Check(handler.PullHead.StartsWith(mode == "maintainer" ? "example:contributions/" : "ana:contributions/"), "Open upstream PR from writable branch");
                 if (type == "communities") Check(handler.Resource.GetProperty("communityLocation").GetProperty("scope").GetString() == "national"
-                    && handler.Resource.GetProperty("communityPlatforms")[0].GetString() == "discord", "Preserve community metadata");
+                    && handler.Resource.GetProperty("communityPlatforms")[0].GetString() == "discord"
+                    && handler.Resource.GetProperty("communityAudience").GetString()=="general"
+                    && handler.Resource.GetProperty("communityMembers").GetProperty("count").GetInt32()==4000
+                    && handler.Resource.GetProperty("communityMembers").GetProperty("moreThan").GetBoolean()
+                    && handler.Resource.GetProperty("communityLinks")[1].GetProperty("url").GetString()=="https://example.org/new", "Preserve community metadata");
             }
         }
         foreach (var mode in new[] { "wrong-fork", "private" }) {

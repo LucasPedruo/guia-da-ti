@@ -1,4 +1,4 @@
-import { communityPlatforms, communityTabIds, primaryCommunityPlatforms } from './community-options.ts';
+import { communityAudiences, communityPlatforms, communityTabIds, primaryCommunityPlatforms } from './community-options.ts';
 export type CommunityLocation = { scope: 'regional' | 'national' | 'international'; states?: string[] };
 export type LocationSelection = { scope: CommunityLocation['scope'] | null; states: string[] };
 export const brazilRegions = [
@@ -14,18 +14,24 @@ export function matchesCommunityLocation(location: CommunityLocation | undefined
   if (!location || location.scope !== selection.scope) return false;
   return location.scope !== 'regional' || !!location.states?.some(uf => selection.states.includes(uf));
 }
-export type CommunityFilters = LocationSelection & { platform: string };
+export type CommunityFilters = LocationSelection & { platform: string; audience?: string };
 export const emptyLocationSelection = (): LocationSelection => ({scope:null,states:[]});
-export const emptyCommunityFilters = (): CommunityFilters => ({...emptyLocationSelection(),platform:'all'});
+export const emptyCommunityFilters = (): CommunityFilters => ({...emptyLocationSelection(),platform:'all',audience:'all'});
 export function readCommunityFilters(search: string): CommunityFilters {
   const params=new URLSearchParams(search);
   const requested=params.get('plataforma') || (params.get('ninhos')||'').split(',')[0];
   const platform=communityTabIds.includes(requested)?requested:communityPlatforms.some(item=>item.id===requested)?'other':'all';
-  return {...readLocationSelection(search),platform};
+  const requestedAudience=params.get('publico');
+  const audience=communityAudiences.some(item=>item.id===requestedAudience)?requestedAudience!:'all';
+  return {...readLocationSelection(search),platform,audience};
 }
-export function matchesCommunityFilters(resource: {communityLocation?:CommunityLocation;communityPlatforms?:string[]}, filters:CommunityFilters) {
+export function matchesCommunityFilters(resource: {communityLocation?:CommunityLocation;communityPlatforms?:string[];communityAudience?:string}, filters:CommunityFilters) {
   return matchesCommunityLocation(resource.communityLocation,filters)
+    && (!filters.audience || filters.audience==='all' || resource.communityAudience===filters.audience)
     && (filters.platform==='all'||!!resource.communityPlatforms?.some(id=>filters.platform==='other'?!primaryCommunityPlatforms.includes(id):id===filters.platform));
+}
+export function compareCommunities(a:{slug:string;name:string},b:{slug:string;name:string}) {
+  return Number(b.slug==='fulldev')-Number(a.slug==='fulldev') || a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base'});
 }
 export function toggleStates(selection: LocationSelection, states: string[]): LocationSelection {
   const selected = selection.scope === 'regional' ? selection.states : [];

@@ -6,8 +6,10 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { checkYouTubeCuration } from './youtube-curation-ui.mjs';
 import { checkSocialCuration } from './social-curation-ui.mjs';
+import { checkCommunityCuration } from './community-curation-ui.mjs';
 import { checkCreatorCategories } from './creator-categories-ui.mjs';
 import { checkRouteFlash } from './navigation-ui.mjs';
+import { checkScrollbarLayout } from './scrollbar-ui.mjs';
 import { installDiscussionFixtures, checkDiscussions } from './discussions-ui.mjs';
 
 const profile = await mkdtemp(join(tmpdir(), 'guia-ui-'));
@@ -49,9 +51,11 @@ try {
   await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await installDiscussionFixtures(send);
+  await checkScrollbarLayout({send,evaluate,waitFor,navigate,click,key});
   await checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption});
   await checkYouTubeCuration({send, evaluate, waitFor, navigate, click, selectOption});
   await checkSocialCuration({send, evaluate, waitFor, navigate, click, selectOption});
+  await checkCommunityCuration({send, evaluate, waitFor, navigate, click, selectOption});
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate('/');
   await checkRouteFlash({send,evaluate,waitFor,navigate});
@@ -72,7 +76,7 @@ try {
   assert.equal(await evaluate(`document.querySelector('footer a[href="/sobre#mantenedores"]').textContent.trim()`), '+2 mais');
   const footerCenters = await evaluate(`[...document.querySelector('footer .site-frame').children].map(element => {const rect=element.getBoundingClientRect();return rect.y+rect.height/2})`);
   assert.ok(Math.max(...footerCenters) - Math.min(...footerCenters) < 2, JSON.stringify(footerCenters));
-  assert.ok(await evaluate(`(()=>{const frame=document.querySelector('footer .site-frame'), online=frame.children[1].getBoundingClientRect();return Math.abs(online.x+online.width/2-innerWidth/2)<2})()`));
+  assert.ok(await evaluate(`(()=>{const frame=document.querySelector('footer .site-frame'), bounds=frame.getBoundingClientRect(), online=frame.children[1].getBoundingClientRect();return Math.abs(online.x+online.width/2-(bounds.x+bounds.width/2))<2})()`));
   await hover(`document.querySelector('footer [aria-label="Mantenedores"] a')`);
   await waitFor(`document.querySelector('[role="tooltip"]')?.textContent.includes('5 contribuições no Guia')`);
   assert.equal(await evaluate(`document.querySelector('main h1').textContent`), 'Fórum do Guia da TI');
@@ -92,7 +96,7 @@ try {
     await hover(`[...document.querySelectorAll('[data-slot="navigation-menu-trigger"]')].find(e=>e.textContent.trim()===${JSON.stringify(group.name)})`);
     await waitFor(`${openPanels}.length === 1 && !!${openPanels}[0].querySelector('a[href="/${group.categories[0].route}"]')`);
     assert.deepEqual(await evaluate(`[...${openPanels}[0].querySelectorAll('a')].map(a=>a.getAttribute('href'))`), group.categories.map(categoryHref));
-    const bounds = await evaluate(`(()=>{const r=${openPanels}[0].getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:document.documentElement.clientWidth,top:r.top,headerBottom:document.querySelector('header').getBoundingClientRect().bottom}})()`);
+    const bounds = await evaluate(`(()=>{const r=${openPanels}[0].getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:document.documentElement.getBoundingClientRect().width,top:r.top,headerBottom:document.querySelector('header').getBoundingClientRect().bottom}})()`);
     assert.ok(Math.abs(bounds.width - bounds.viewport) <= 1 && bounds.left === 0 && Math.abs(bounds.top - bounds.headerBottom) <= 1, JSON.stringify(bounds));
   }
   await hover(`${openPanels}[0].querySelector('a')`);
@@ -127,10 +131,10 @@ try {
   await waitFor(`document.querySelector('main h1').textContent === 'Primeiros passos com C#'`);
   assert.equal(await evaluate(`!!document.querySelector('main a[href="https://example.org/curso-exemplo"][target="_blank"]')`), true);
   await navigate('/comunidades/');
-  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
+  await waitFor(`document.querySelectorAll('main table tbody tr').length === ${Math.min(pageSize,catalog.resources.filter(resource=>resource.type==='communities').length)}`);
   assert.equal(await evaluate(`!!document.querySelector('main a[href="/contribuir?categoria=communities"]')`),true);
   assert.equal(await evaluate(`document.querySelectorAll('svg [data-uf]').length`),0);
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[role="tab"]')].map(tab=>tab.textContent.trim())`),['Geral','WhatsApp','Telegram','Discord','Facebook','LinkedIn','Reddit','GitHub','Outra']);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[role="tab"]')].map(tab=>tab.textContent.trim())`),['Geral','WhatsApp','Telegram','Discord','Facebook','LinkedIn','Reddit','GitHub','Site próprio','Outra']);
   assert.equal(await evaluate(`[...document.querySelectorAll('[role="tab"]')].every(tab=>!!tab.querySelector('svg'))`),true);
   await evaluate(`document.querySelector('[role="tab"][aria-selected="true"]').focus()`); await key('ArrowRight');
   await waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').textContent==='WhatsApp'`);
@@ -195,7 +199,7 @@ try {
   await click(`[...document.querySelectorAll('main button')].find(button=>button.textContent==='Limpar filtros')`);
   assert.equal(await evaluate(`new URLSearchParams(location.search).get('plataforma')`),'discord');
   await click(`[...document.querySelectorAll('[role="tab"]')].find(tab=>tab.textContent==='Geral')`);
-  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`),1);
+  await waitFor(`document.querySelectorAll('main table tbody tr').length === ${Math.min(pageSize,catalog.resources.filter(resource=>resource.type==='communities').length)}`);
   await navigate('/comunidades/?alcance=regional&estados=SP,RJ,XX');
   await click(filterButton);
   await waitFor(`document.querySelectorAll('svg path[aria-pressed="true"]').length===2`);
@@ -219,7 +223,7 @@ try {
   }
   await navigate('/eventos/');
   await waitFor(`document.body.textContent.includes('Ainda não há recursos aqui')`);
-  const footerBounds = await evaluate(`(()=>{const r=document.querySelector('footer').getBoundingClientRect();return {bottom:r.bottom,left:r.left,right:r.right,viewport:document.documentElement.clientWidth,height:innerHeight}})()`);
+  const footerBounds = await evaluate(`(()=>{const r=document.querySelector('footer').getBoundingClientRect();return {bottom:r.bottom,left:r.left,right:r.right,viewport:document.documentElement.getBoundingClientRect().width,height:innerHeight}})()`);
   assert.ok(Math.abs(footerBounds.bottom - footerBounds.height) <= 1 && footerBounds.left === 0 && Math.abs(footerBounds.right - footerBounds.viewport) <= 1, JSON.stringify(footerBounds));
   assert.equal(await evaluate(`!!document.querySelector('footer a[href="https://fulldev.com.br"]')`), true);
   await navigate('/sobre/');
@@ -311,12 +315,20 @@ try {
     const textarea=document.querySelector('textarea[name="description"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(textarea,'Uma comunidade de tecnologia para pessoas de São Paulo.');textarea.dispatchEvent(new Event('input',{bubbles:true}));
     document.querySelector('input[name="communityPlatforms"][value="discord"]').click();
   })()`);
+  await selectOption('Público da comunidade','Geral');
+  await evaluate(`(()=>{const input=document.querySelector('input[name="communityMemberCount"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'4000');input.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('input[name="communityMembersMoreThan"]').click();})()`);
+  await click(`document.querySelector('input[name="communityPlatforms"][value="website"]')`);
+  await evaluate(`(()=>{const input=document.querySelector('input[name="communityLink-website"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'https://example.org/new-community');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await evaluate(`(()=>{const input=document.querySelector('input[name="communityLink-discord"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'https://discord.gg/example');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await selectOption('Modalidade','Online');
   await selectOption('Categoria da comunidade','Networking');
   await click(`document.querySelector('main form button[type="submit"]')`);
   await waitFor(`window.lastContribution?.communityLocation?.states?.includes('SP')`);
   assert.deepEqual(await evaluate(`window.lastContribution.communityLocation`), {scope:'regional',states:['SP']});
-  assert.deepEqual(await evaluate(`window.lastContribution.communityPlatforms`), ['discord']);
+  assert.deepEqual(await evaluate(`window.lastContribution.communityPlatforms`), ['discord','website']);
+  assert.equal(await evaluate(`window.lastContribution.communityAudience`),'general');
+  assert.deepEqual(await evaluate(`window.lastContribution.communityMembers`),{count:4000,moreThan:true,checkedAt:new Date().toISOString().slice(0,10)});
+  assert.deepEqual(await evaluate(`window.lastContribution.communityLinks`),[{platform:'discord',url:'https://discord.gg/example'},{platform:'website',url:'https://example.org/new-community'}]);
   assert.equal(await evaluate(`window.lastContribution.communityModality`), 'online');
   await waitFor(`!!document.querySelector('main a[href="https://github.com/guia-da-ti/guia-da-ti-dados/pull/10"]')`);
   assert.equal(await evaluate(`document.querySelector('main a[href="https://github.com/guia-da-ti/guia-da-ti-dados/pull/10"]').textContent`),'Acompanhar revisão');

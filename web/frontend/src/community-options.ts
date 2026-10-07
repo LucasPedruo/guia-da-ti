@@ -10,5 +10,14 @@ export const communityPlatforms = [
   {id:'website',name:'Site próprio'}, {id:'other',name:'Outra plataforma'},
 ];
 
-export const primaryCommunityPlatforms = ['whatsapp','telegram','discord','facebook','linkedin','reddit','github'];
+export const communityAudiences = [
+  {id:'general',name:'Geral'}, {id:'male',name:'Masculina'},
+  {id:'female',name:'Feminina'}, {id:'lgbt',name:'LGBT+'},
+];
+export const primaryCommunityPlatforms = ['whatsapp','telegram','discord','facebook','linkedin','reddit','github','website'];
 export const communityTabIds = ['all', ...primaryCommunityPlatforms, 'other'];
+
+export type CommunityMembers = {count:number;moreThan?:boolean;checkedAt:string};
+export function communityMembersLabel(members:CommunityMembers) {
+  return `${members.moreThan?'Mais de ':''}${new Intl.NumberFormat('pt-BR').format(members.count)} ${members.count===1?'membro':'membros'}`;
+}

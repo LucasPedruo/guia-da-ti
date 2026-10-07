@@ -12,7 +12,7 @@ import { categories, labels, taxonomy } from './catalog';
 import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
 import { brazilRegions, type CommunityLocation } from './community-location';
 import brazilMap from './data/brazil-states.json';
-import { communityCategoryOrder, communityModalities, communityPlatforms } from './community-options';
+import { communityAudiences, communityCategoryOrder, communityModalities, communityPlatforms } from './community-options';
 
 type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
 const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
@@ -220,6 +220,8 @@ export function ResourceContribution() {
   const [communityStates, setCommunityStates] = useState<string[]>([]);
   const [communityPlatformIds, setCommunityPlatformIds] = useState<string[]>([]);
   const [communityModality, setCommunityModality] = useState('');
+  const [communityAudience, setCommunityAudience] = useState('');
+  const [communityUrls, setCommunityUrls] = useState<Record<string,string>>({});
   const [creatorCategoryIds, setCreatorCategoryIds] = useState<string[]>([]);
   useEffect(() => {
     const requested=new URLSearchParams(window.location.search).get('categoria');
@@ -247,9 +249,11 @@ export function ResourceContribution() {
     const communityLocation = type === 'communities' && communityScope ? { scope: communityScope, ...(communityScope === 'regional' ? { states: communityStates } : {}) } : undefined;
     const proposal = { type, name: String(form.get('name') || '').trim(), url: String(form.get('url') || '').trim(), summary: String(form.get('summary') || '').trim(), description: String(form.get('description') || '').trim(), areas: area ? [area] : [], technologies, languages, communityLocation,
       ...(creatorCategory ? {creatorCategories: creatorCategoryIds} : {}),
-      ...(type === 'communities' ? {communityPlatforms:communityPlatformIds,communityModality} : {}) };
+      ...(type === 'communities' ? {communityPlatforms:communityPlatformIds,communityModality,communityAudience,communityLinks:communityPlatformIds.map(platform=>({platform,url:(communityUrls[platform]||'').trim()}))} : {}) };
+    const memberCount=String(form.get('communityMemberCount')||'').trim();
+    const submission={...proposal,...(type==='communities' && memberCount ? {communityMembers:{count:Number(memberCount),moreThan:form.get('communityMembersMoreThan')==='on',checkedAt:new Date().toISOString().slice(0,10)}} : {})};
     try {
-      const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(proposal) });
+      const response = await fetch('/api/contributions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': session.csrfToken }, body: JSON.stringify(submission) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw Error(result.error || 'Não foi possível enviar a contribuição.');
       if (result.kind === 'catalog' && result.url) {
@@ -263,6 +267,7 @@ export function ResourceContribution() {
       setUrl(''); setName(''); setSummary(''); setDescription('');
       setCommunityScope(''); setCommunityStates([]);
       setCommunityPlatformIds([]); setCommunityModality(''); setCreatorCategoryIds([]);
+      setCommunityAudience(''); setCommunityUrls({});
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
     finally { setBusy(false); }
   }
@@ -282,9 +287,14 @@ export function ResourceContribution() {
       </>}
     </fieldset>}
     {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Como a comunidade se reúne</legend>
+      <SelectField label="Público da comunidade" name="communityAudience" required value={communityAudience} onChange={setCommunityAudience} placeholder="Escolha o público" options={communityAudiences} />
+      <label className="block space-y-2 text-sm font-medium">Quantidade de membros (opcional)<Input name="communityMemberCount" type="number" min={0} max={2147483647} step={1} placeholder="Ex.: 4000" disabled={busy} /></label>
+      <label className="flex items-center gap-2 text-sm"><input name="communityMembersMoreThan" type="checkbox" disabled={busy} />A comunidade tem mais membros que esse número</label>
+      <p className="text-xs text-muted-foreground">Informe uma contagem confirmada. Evite somar a mesma pessoa em plataformas diferentes.</p>
       <SelectField label="Modalidade" name="communityModality" required value={communityModality} onChange={setCommunityModality} placeholder="Escolha a modalidade" options={communityModalities} />
-      <p className="text-sm font-medium">Plataforma</p><p className="text-xs text-muted-foreground">Marque pelo menos uma plataforma onde as pessoas se encontram.</p>
+      <p className="text-sm font-medium">Plataformas</p><p className="text-xs text-muted-foreground">Marque todas as plataformas onde a comunidade está e informe o link de cada uma.</p>
       <div className="grid gap-2 sm:grid-cols-2">{communityPlatforms.map(item=><label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="communityPlatforms" value={item.id} checked={communityPlatformIds.includes(item.id)} onChange={event=>setCommunityPlatformIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} />{item.name}</label>)}</div>
+      {communityPlatforms.filter(item=>communityPlatformIds.includes(item.id)).map(item=><label key={item.id} className="block space-y-2 text-sm font-medium">Link no {item.name}<Input name={`communityLink-${item.id}`} type="url" required maxLength={500} placeholder="https://" value={communityUrls[item.id]||''} disabled={busy} onChange={event=>setCommunityUrls(current=>({...current,[item.id]:event.target.value}))} /></label>)}
     </fieldset>}
     <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
       setUrl(event.target.value);
@@ -303,7 +313,7 @@ export function ResourceContribution() {
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>
     <p className="text-xs text-muted-foreground">{catalogOnly ? 'A sugestão vai para revisão dos mantenedores e entra no catálogo após a aprovação. Ela não abre uma conversa no fórum. Para enviar, o GitHub pode preparar uma cópia do catálogo na sua conta.' : 'A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação prepara estes dados no catálogo.'}</p>
-    <Button type="submit" disabled={busy || !type || !area || !languages.length || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length)}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
+    <Button type="submit" disabled={busy || !type || !area || !languages.length || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityAudience || !communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length || communityPlatformIds.some(id=>!communityUrls[id]?.trim()))}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}
   </form>;
 }

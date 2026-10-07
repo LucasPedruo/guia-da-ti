@@ -4,8 +4,8 @@ import { Community } from './Community';
 import { CommunityTabs } from './CommunityTabs';
 import { CommunityFiltersDialog } from './CommunityFiltersDialog';
 import { SuggestResource } from './SuggestResource';
-import { communityPlatforms, communityModalities } from './community-options';
-import { matchesCommunityFilters, readCommunityFilters, emptyCommunityFilters, type CommunityFilters } from './community-location';
+import { communityAudiences, communityMembersLabel, communityPlatforms, communityModalities } from './community-options';
+import { compareCommunities, matchesCommunityFilters, readCommunityFilters, emptyCommunityFilters, type CommunityFilters } from './community-location';
 import { CreatorTabs, PlatformTabsRoot, PlatformTabPanel, creatorNetworks } from './CreatorTabs';
 import { CreatorAvatar, useCreatorProfile, followersLabel } from './CreatorProfile';
 import { creatorCategories, creatorCategoryLabels, readCreatorCategory } from './creator-categories';
@@ -42,7 +42,7 @@ const resourceIcons: Record<string, LucideIcon> = {
   internships: GraduationCap, scholarships: BookOpen, mentoring: Users, volunteering: Users,
 };
 const platformIcons: Record<string, LucideIcon> = { youtube: Youtube, instagram: Instagram, linkedin: Linkedin, twitter: Twitter, tiktok: Globe2 };
-const dialogTypes = new Set(['articles', 'tutorials', 'studies', 'case-studies', 'reports', 'news', 'blogs', 'newsletters', 'podcasts']);
+const dialogTypes = new Set(['articles', 'tutorials', 'studies', 'case-studies', 'reports', 'news', 'blogs', 'newsletters', 'podcasts', 'communities']);
 const profileTypes = new Set(['creators', 'youtube']);
 
 function resourceExtra(resource: Resource) {
@@ -81,8 +81,11 @@ function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: 
     <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">{resource.summary}</Dialog.Description>
     <p className="whitespace-pre-wrap text-sm leading-relaxed">{resource.description}</p>
     {extra && <p className="text-sm text-muted-foreground">{extra}</p>}
+    {resource.type==='communities' && <p className="text-sm text-muted-foreground">{[resource.communityAudience && `Público: ${communityAudiences.find(item=>item.id===resource.communityAudience)?.name}`,communityModalities.find(item=>item.id===resource.communityModality)?.name].filter(Boolean).join(' · ')}</p>}
+    {resource.communityMembers && <p className="text-sm"><span className="font-medium">{communityMembersLabel(resource.communityMembers)}</span><span className="ml-2 text-xs text-muted-foreground">Informado em {resource.communityMembers.checkedAt.split('-').reverse().join('/')}</span></p>}
     <div className="flex flex-wrap gap-2">{resource.areas.map(area => <Badge variant="outline" key={area}>{labels[area] || area}</Badge>)}{resource.languages.map(language => <Badge variant="secondary" key={language}>{language}</Badge>)}</div>
-    <div className="flex gap-2"><Button asChild><a href={resource.url} target="_blank" rel="noopener noreferrer">Abrir conteúdo<ExternalLink /></a></Button><Dialog.Close asChild><Button variant="outline">Fechar</Button></Dialog.Close></div>
+    {resource.type==='communities' && !!resource.communityLinks?.length && <div className="space-y-2"><p className="text-sm font-medium">Onde encontrar a comunidade</p><div className="flex flex-wrap gap-2">{resource.communityLinks.map(link=><Button asChild variant="outline" key={link.platform}><a href={link.url} target="_blank" rel="noopener noreferrer">{communityPlatforms.find(item=>item.id===link.platform)?.name}<ArrowUpRight /></a></Button>)}</div></div>}
+    <div className="flex flex-wrap gap-2">{(resource.type!=='communities' || !resource.communityLinks?.length) && <Button asChild><a href={resource.url} target="_blank" rel="noopener noreferrer">{resource.type==='communities'?'Abrir site':'Abrir conteúdo'}<ExternalLink /></a></Button>}<Dialog.Close asChild><Button variant="outline">Fechar</Button></Dialog.Close></div>
   </Dialog.Content></Dialog.Portal>;
 }
 
@@ -93,14 +96,15 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
   const displayName = creator?.name || resource.name;
   const displaySummary = creator?.description || resource.summary;
   const dialog = dialogTypes.has(resource.type);
+  const actionLabel = profile ? 'Ver perfil' : resource.type==='communities' ? 'Ver detalhes' : dialog ? 'Ver conteúdo' : 'Ver detalhes';
   const href = profile ? resource.url : resourcePath(resource);
   const category = profile ? resource.creatorCategories?.map(id => creatorCategoryLabels[id] || id).join(' · ') || 'Categoria não informada' : categories.find(item => item.id === resource.type)?.name || resource.type;
   const titleClass = 'block max-w-full truncate rounded-sm text-left text-[13px] font-medium leading-5 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring';
   const title: ReactNode = dialog
     ? <Dialog.Trigger asChild><button type="button" className={titleClass}>{resource.name}</button></Dialog.Trigger>
     : <a href={href} target={profile ? '_blank' : undefined} rel={profile ? 'noopener noreferrer' : undefined} className={titleClass}>{displayName}</a>;
-  const action = <Button size="xs" variant="outline" aria-label={`${profile ? 'Ver perfil' : dialog ? 'Ver conteúdo' : 'Ver detalhes'}: ${resource.name}`}>
-    {profile ? 'Ver perfil' : dialog ? 'Ver conteúdo' : 'Ver detalhes'}
+  const action = <Button size="xs" variant="outline" aria-label={`${actionLabel}: ${resource.name}`}>
+    {actionLabel}
   </Button>;
   const row = <tr className="border-t transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
     <td className="px-3 py-2.5 align-middle sm:px-4">
@@ -110,6 +114,8 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
         <div className="flex min-w-0 items-center gap-2"><div className="min-w-0">{title}</div>{resource.demo && <Badge variant="outline" className="shrink-0 text-[10px]">Exemplo</Badge>}</div>
         <p className="truncate text-[11px] leading-5 text-muted-foreground" title={displaySummary}>{displaySummary}</p>
         {resource.type === 'communities' && (resource.communityPlatforms?.length || resource.communityModality) && <p className="truncate text-[11px] text-muted-foreground">{[communityModalities.find(item=>item.id===resource.communityModality)?.name, ...(resource.communityPlatforms||[]).map(id=>communityPlatforms.find(item=>item.id===id)?.name)].filter(Boolean).join(' · ')}</p>}
+        {resource.type === 'communities' && resource.communityAudience && <p className="text-[11px] text-muted-foreground">Público: {communityAudiences.find(item=>item.id===resource.communityAudience)?.name}</p>}
+        {resource.communityMembers && <p className="text-[11px] font-medium text-muted-foreground">{communityMembersLabel(resource.communityMembers)}</p>}
         {profile && <p className="text-[11px] text-muted-foreground">{resource.demo ? 'Perfil de exemplo' : followersLabel(creator)}</p>}
         <p className="truncate text-[11px] text-muted-foreground sm:hidden">{category}</p>
         <ResourcePreview resource={{ ...resource, name: displayName, description: displaySummary }} extra={extra} />
@@ -187,6 +193,7 @@ export function App({ path }: { path: string }) {
     if (next.scope) url.searchParams.set('alcance', next.scope);
     if (next.scope === 'regional') url.searchParams.set('estados', next.states.join(','));
     if (next.platform === 'all') url.searchParams.delete('plataforma'); else url.searchParams.set('plataforma', next.platform);
+    if (!next.audience || next.audience==='all') url.searchParams.delete('publico'); else url.searchParams.set('publico',next.audience);
     window.history.replaceState(null, '', url);
   }
   const filtered = resources.filter(r =>
@@ -200,7 +207,7 @@ export function App({ path }: { path: string }) {
     })) &&
     (!page.area || r.areas.includes(page.area)) &&
     (!page.technology || r.technologies.includes(page.technology))
-  ).sort((a,b) => communitiesPage ? a.name.localeCompare(b.name, 'pt-BR', { sensitivity:'base' }) : 0);
+  ).sort((a,b) => communitiesPage ? compareCommunities(a,b) : 0);
   const listing = paginate(filtered, requestedPage);
 
   function changeSearch(value: string) {
@@ -340,6 +347,7 @@ export function App({ path }: { path: string }) {
             <div className="space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<div className="flex flex-wrap items-center justify-between gap-3"><h1 className="min-w-0 text-3xl font-semibold tracking-tight">{page.resource.name}</h1><SuggestResource type={page.resource.type} /></div><p className="text-lg text-muted-foreground">{page.resource.summary}</p></div>
             <p className="whitespace-pre-wrap leading-relaxed">{page.resource.description}</p>
             <div className="flex flex-wrap gap-2">{page.resource.technologies.map(t => <Badge asChild variant="secondary" key={t}><a href={`/tecnologias/${t}`}>{labels[t] || t}</a></Badge>)}</div>
+            {page.resource.type==='communities' && <div className="space-y-3"><p className="text-sm text-muted-foreground">{resourceExtra(page.resource)}{page.resource.communityAudience ? ` · Público: ${communityAudiences.find(item=>item.id===page.resource!.communityAudience)?.name}` : ''}</p><div className="flex flex-wrap gap-2">{page.resource.communityLinks?.map(link=><Button asChild variant="outline" key={link.platform}><a href={link.url} target="_blank" rel="noopener noreferrer">{communityPlatforms.find(item=>item.id===link.platform)?.name}<ArrowUpRight /></a></Button>)}</div></div>}
             <Separator />
             <div className="space-y-2 text-sm text-muted-foreground"><p>Idiomas: {page.resource.languages.join(', ')}</p><p>Última atualização: {page.resource.updatedAt.split('-').reverse().join('/')}</p></div>
             <p className="text-sm text-muted-foreground">O conteúdo fica no site de origem. O link abre em uma nova aba.</p>
@@ -359,6 +367,10 @@ export function App({ path }: { path: string }) {
                   {creatorsPage && <Select name="creatorContent" value={creatorContent} onValueChange={changeCreatorContent}>
                     <SelectTrigger size="sm" aria-label="Categoria de conteúdo" className="h-8 w-40 min-w-0 shrink-0 text-xs sm:w-52"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="all">Todas as categorias</SelectItem>{creatorCategories.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+                  </Select>}
+                  {communitiesPage && <Select value={communitySelection.audience || 'all'} onValueChange={audience=>changeCommunityLocation({...communitySelection,audience})}>
+                    <SelectTrigger size="sm" aria-label="Público da comunidade" className="h-8 w-36 min-w-0 shrink-0 text-xs sm:w-44"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="all">Todos os públicos</SelectItem>{communityAudiences.map(item=><SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
                   </Select>}
                   <ResourceSearch value={searchQuery} onChange={changeSearch} />
                 </div>

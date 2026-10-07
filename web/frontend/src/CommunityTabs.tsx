@@ -1,4 +1,4 @@
-import {Facebook,Github,Linkedin,Users,Ellipsis,Send} from 'lucide-react';
+import {Facebook,Github,Linkedin,Users,Ellipsis,Send,Globe2} from 'lucide-react';
 import {Tabs} from 'radix-ui';
 import type {ReactNode} from 'react';
 
@@ -18,7 +18,7 @@ const platforms=[
   {id:'all',name:'Geral',Icon:Users}, {id:'whatsapp',name:'WhatsApp',Icon:WhatsAppIcon},
   {id:'telegram',name:'Telegram',Icon:Send}, {id:'discord',name:'Discord',Icon:DiscordIcon},
   {id:'facebook',name:'Facebook',Icon:Facebook}, {id:'linkedin',name:'LinkedIn',Icon:Linkedin},
-  {id:'reddit',name:'Reddit',Icon:RedditIcon}, {id:'github',name:'GitHub',Icon:Github}, {id:'other',name:'Outra',Icon:Ellipsis},
+  {id:'reddit',name:'Reddit',Icon:RedditIcon}, {id:'github',name:'GitHub',Icon:Github}, {id:'website',name:'Site próprio',Icon:Globe2}, {id:'other',name:'Outra',Icon:Ellipsis},
 ];
 export function CommunityTabs() {
   return <Tabs.List aria-label="Plataformas das comunidades" className="flex flex-wrap gap-1 border-b pb-2">
