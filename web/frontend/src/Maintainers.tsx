@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { Tooltip } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingImage } from './LoadingImage';
 
 type Maintainer = { name: string; url: string; avatarUrl: string; contributions: number };
 const MaintainersContext = createContext<{ people: Maintainer[] | null; error: boolean; retry: () => void }>({ people: null, error: false, retry: () => {} });
@@ -37,7 +38,7 @@ export function Maintainers({ compact = false }: { compact?: boolean }) {
       : <Tooltip.Provider delayDuration={150}><ul className={compact ? 'flex flex-wrap items-center justify-center gap-1' : 'flex max-w-sm flex-wrap gap-1 sm:max-w-lg'}>
         {shown?.map(person => <li key={person.url}><Tooltip.Root><Tooltip.Trigger asChild>
           <a href={person.url} target="_blank" rel="noopener noreferrer" aria-label={`Perfil de ${person.name} no GitHub`} className="block size-8 outline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-ring">
-            <img src={person.avatarUrl} alt={person.name} width="32" height="32" loading="lazy" referrerPolicy="no-referrer" className="size-8 object-cover" />
+            <LoadingImage src={person.avatarUrl} alt={person.name} width={32} height={32} referrerPolicy="no-referrer" className="size-8" imageClassName="object-cover" />
           </a>
         </Tooltip.Trigger><Tooltip.Portal><Tooltip.Content side="top" sideOffset={8} collisionPadding={12} className="z-[100] max-w-64 border bg-popover px-3 py-2 text-popover-foreground shadow-md">
           <p className="text-sm font-semibold">{person.name}</p>

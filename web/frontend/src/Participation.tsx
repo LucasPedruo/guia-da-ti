@@ -1,5 +1,7 @@
 import { creatorCategories } from './creator-categories';
 import { universityTypes } from './university-options';
+import { useContributionToast } from './ContributionToasts';
+import { ContributionWizard } from './ContributionWizard';
 import {SelectField} from './SelectField';
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -207,6 +209,7 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
 const typeNames: Record<string, string> = { courses: 'Cursos', platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Vagas', internships: 'Estágios', scholarships: 'Bolsas', mentoring: 'Mentorias', volunteering: 'Voluntariado' };
 
 export function ResourceContribution() {
+  const notify = useContributionToast();
   const session = useContext(SessionContext)?.session;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -266,6 +269,7 @@ export function ResourceContribution() {
         setSuccess(`Sugestão enviada! A conversa #${result.number} já está aberta para comentários.`);
         setSuccessUrl(`/?conversa=${result.number}`); setSuccessLinkLabel('Abrir conversa');
       }
+      notify(result.notice ?? { id: crypto.randomUUID(), login: session.login, name: proposal.name, category: proposal.type, url: result.kind === 'catalog' ? result.url : `/?conversa=${result.number}` });
       formElement.reset(); setType(''); setArea(''); setLanguages(['pt-BR']); setTechnologies([]);
       setUrl(''); setName(''); setSummary(''); setDescription('');
       setCommunityScope(''); setCommunityStates([]);
@@ -276,13 +280,9 @@ export function ResourceContribution() {
     finally { setBusy(false); }
   }
   if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. Criadores e comunidades vão para revisão do catálogo; as demais sugestões abrem uma conversa no fórum.</p><LoginButton /></div>;
-  return <form onSubmit={submit} className="space-y-4 rounded-lg border p-5">
+  return <ContributionWizard onSubmit={submit} category={type} busy={busy} rules={{ 'Categoria do guia': !!type, 'Tipo de instituição': !!universityType, 'Categorias de conteúdo': !!creatorCategoryIds.length, 'Localização da comunidade': !!communityScope && (communityScope !== 'regional' || !!communityStates.length), 'Público da comunidade': !!communityAudience, 'Modalidade': !!communityModality, 'Plataformas da comunidade': !!communityPlatformIds.length && communityPlatformIds.every(id => !!communityUrls[id]?.trim()), 'Idiomas disponíveis': !!languages.length }} footer={<>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}</>}>
     <label className="block space-y-2 text-sm font-medium">Categoria do guia<select required value={type} onChange={event => setType(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha uma categoria</option>{taxonomy.types.map((id: string) => <option key={id} value={id}>{typeNames[id] || categories.find(category => category.id === id)?.name || id}</option>)}</select></label>
     {type === 'universities' && <SelectField label="Tipo de instituição" name="universityType" required value={universityType} onChange={setUniversityType} placeholder="Escolha o tipo" options={universityTypes.map(t => ({...t}))} />}
-    {creatorCategory && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Categorias de conteúdo</legend>
-      <p className="text-xs text-muted-foreground">Escolha pelo menos uma categoria. Um perfil pode abordar vários tipos de conteúdo.</p>
-      <div className="grid gap-2 sm:grid-cols-2">{creatorCategories.map(item => <label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="creatorCategories" value={item.id} checked={creatorCategoryIds.includes(item.id)} disabled={busy} onChange={event => setCreatorCategoryIds(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.name}</label>)}</div>
-    </fieldset>}
     {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Localização da comunidade</legend>
       <SelectField label="Área de atuação" name="communityScope" required value={communityScope} onChange={value=>setCommunityScope(value as CommunityLocation['scope'])} placeholder="Escolha o alcance" options={[{id:'regional',name:'Regional'},{id:'national',name:'Nacional'},{id:'international',name:'Internacional'}]} />
       {communityScope === 'regional' && <>
@@ -291,17 +291,18 @@ export function ResourceContribution() {
         <div className="grid gap-2 sm:grid-cols-2">{[...brazilMap.states].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR')).map(state => <label key={state.uf} className="flex items-center gap-2 text-xs"><input type="checkbox" name="communityStates" value={state.uf} checked={communityStates.includes(state.uf)} onChange={event => setCommunityStates(current => event.target.checked ? [...current, state.uf] : current.filter(uf => uf !== state.uf))} />{state.name} ({state.uf})</label>)}</div>
       </>}
     </fieldset>}
-    {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Como a comunidade se reúne</legend>
-      <SelectField label="Público da comunidade" name="communityAudience" required value={communityAudience} onChange={setCommunityAudience} placeholder="Escolha o público" options={communityAudiences} />
+    {type === 'communities' && <SelectField label="Público da comunidade" name="communityAudience" required value={communityAudience} onChange={setCommunityAudience} placeholder="Escolha o público" options={communityAudiences} />}
+    {type === 'communities' && <div data-step-title="Quantidade de membros" className="space-y-3">
       <label className="block space-y-2 text-sm font-medium">Quantidade de membros (opcional)<Input name="communityMemberCount" type="number" min={0} max={2147483647} step={1} placeholder="Ex.: 4000" disabled={busy} /></label>
       <label className="flex items-center gap-2 text-sm"><input name="communityMembersMoreThan" type="checkbox" disabled={busy} />A comunidade tem mais membros que esse número</label>
       <p className="text-xs text-muted-foreground">Informe uma contagem confirmada. Evite somar a mesma pessoa em plataformas diferentes.</p>
-      <SelectField label="Modalidade" name="communityModality" required value={communityModality} onChange={setCommunityModality} placeholder="Escolha a modalidade" options={communityModalities} />
-      <p className="text-sm font-medium">Plataformas</p><p className="text-xs text-muted-foreground">Marque todas as plataformas onde a comunidade está e informe o link de cada uma.</p>
+    </div>}
+    {type === 'communities' && <fieldset className="space-y-3"><legend className="text-sm font-medium">Plataformas da comunidade</legend><p className="text-xs text-muted-foreground">Marque todas as plataformas onde a comunidade está e informe o link de cada uma.</p>
       <div className="grid gap-2 sm:grid-cols-2">{communityPlatforms.map(item=><label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="communityPlatforms" value={item.id} checked={communityPlatformIds.includes(item.id)} onChange={event=>setCommunityPlatformIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))} />{item.name}</label>)}</div>
       {communityPlatforms.filter(item=>communityPlatformIds.includes(item.id)).map(item=><label key={item.id} className="block space-y-2 text-sm font-medium">Link no {item.name}<Input name={`communityLink-${item.id}`} type="url" required maxLength={500} placeholder="https://" value={communityUrls[item.id]||''} disabled={busy} onChange={event=>setCommunityUrls(current=>({...current,[item.id]:event.target.value}))} /></label>)}
     </fieldset>}
-    <label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
+    {type === 'communities' && <SelectField label="Modalidade" name="communityModality" required value={communityModality} onChange={setCommunityModality} placeholder="Escolha a modalidade" options={communityModalities} />}
+    <div data-step-title="Link" className="space-y-4"><label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
       setUrl(event.target.value);
       if (creatorCategory) { setName(''); setSummary(''); setDescription(''); }
     }} /></label>
@@ -311,16 +312,21 @@ export function ResourceContribution() {
       {lookup.error && <p role="status">{lookup.error}</p>}
       {lookup.profile && <div className="flex items-center gap-3 rounded-md border p-3"><CreatorAvatar profile={lookup.profile} name={lookup.profile.name} /><div><p className="font-medium text-foreground">{lookup.profile.name}</p><p>{followersLabel(lookup.profile)}</p></div></div>}
     </div>}
+    </div>
     <label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
     <label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" value={summary} onChange={event => setSummary(event.target.value)} /></label>
     <label className="block space-y-2 text-sm font-medium">Descrição<textarea name="description" required minLength={10} maxLength={4000} rows={4} value={description} onChange={event => setDescription(event.target.value)} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></label>
+    {creatorCategory && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Categorias de conteúdo</legend>
+      <p className="text-xs text-muted-foreground">Escolha pelo menos uma categoria. Um perfil pode abordar vários tipos de conteúdo.</p>
+      <div className="grid gap-2 sm:grid-cols-2">{creatorCategories.map(item => <label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="creatorCategories" value={item.id} checked={creatorCategoryIds.includes(item.id)} disabled={busy} onChange={event => setCreatorCategoryIds(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.name}</label>)}</div>
+    </fieldset>}
     {type === 'communities' ? <SelectField label="Categoria da comunidade" name="area" required value={area} onChange={setArea} placeholder="Escolha uma categoria" options={[...communityCategoryOrder, ...taxonomy.areas.filter(id=>!communityCategoryOrder.includes(id))].map(id=>({id,name:labels[id]||id}))} /> : <label className="block space-y-2 text-sm font-medium">Assunto principal<select name="area" required value={area} onChange={event=>setArea(event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 font-normal"><option value="">Escolha um assunto</option>{taxonomy.areas.map(id=><option key={id} value={id}>{labels[id]||id}</option>)}</select></label>}
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <label key={technology} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={technologies.includes(technology)} onChange={event => setTechnologies(current => event.target.checked ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <label key={language} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={languages.includes(language)} onChange={event => setLanguages(current => event.target.checked ? [...current, language] : current.filter(item => item !== language))} />{language}</label>)}</div></fieldset>
-    <p className="text-xs text-muted-foreground">{catalogOnly ? 'A sugestão vai para revisão dos mantenedores e entra no catálogo após a aprovação. Ela não abre uma conversa no fórum. Para enviar, o GitHub pode preparar uma cópia do catálogo na sua conta.' : 'A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação prepara estes dados no catálogo.'}</p>
+    <div data-step-title="Revisar e enviar" className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Categoria',typeNames[type] || type],['Nome',name],['Link',url],['Resumo',summary],['Descrição',description],['Assunto',labels[area] || area],['Idiomas',languages.join(', ')]].map(([label,value])=><div key={label} className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value || 'Não informado'}</dd></div>)}</dl><p className="text-xs text-muted-foreground">{catalogOnly ? 'A sugestão vai para revisão dos mantenedores e entra no catálogo após a aprovação. Ela não abre uma conversa no fórum. Para enviar, o GitHub pode preparar uma cópia do catálogo na sua conta.' : 'A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação prepara estes dados no catálogo.'}</p>
     <Button type="submit" disabled={busy || !type || !area || !languages.length || type === 'universities' && !universityType || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityAudience || !communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length || communityPlatformIds.some(id=>!communityUrls[id]?.trim()))}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
-    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}
-  </form>;
+    </div>
+  </ContributionWizard>;
 }
 
 export function ApproveContribution({ number }: { number: number }) {

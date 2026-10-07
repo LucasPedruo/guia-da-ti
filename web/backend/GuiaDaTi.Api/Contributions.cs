@@ -132,7 +132,7 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
     private static bool SameUrl(string a, string b) { static string Key(string value) { var uri = new Uri(value); return uri.GetLeftPart(UriPartial.Path).TrimEnd('/').ToLowerInvariant(); } return Key(a) == Key(b); }
 }
 
-public record ContributionResult(string Kind, int? Number = null, string? Url = null);
+public record ContributionResult(string Kind, int? Number = null, string? Url = null, ContributionNotice? Notice = null);
 
 public record ContributionDraft(string Type, string Name, string Url, string Summary, string Description, string[] Areas, string[] Technologies, string[] Languages, CommunityLocation? CommunityLocation = null, string[]? CommunityPlatforms = null, string? CommunityModality = null, string[]? CreatorCategories = null, string? CommunityAudience = null, CommunityLink[]? CommunityLinks = null, CommunityMembers? CommunityMembers = null, string? UniversityType = null);
 public record ContributionResource(string Slug, string Type, string Name, string Summary, string Description, string Url, string[] Areas, string[] Technologies, string[] Languages, string UpdatedAt, bool Demo = false,
@@ -151,11 +151,11 @@ public static class ContributionEndpoints
 {
     public static void MapContributions(this WebApplication app)
     {
-        app.MapPost("/api/contributions", async (ContributionDraft draft, HttpContext context, IAntiforgery csrf, ContributionService service, Catalog catalog, DiscussionsClient reader) => {
+        app.MapPost("/api/contributions", async (ContributionDraft draft, HttpContext context, IAntiforgery csrf, ContributionService service, Catalog catalog, DiscussionsClient reader, ContributionNotifications notices) => {
             if (context.User.Identity?.IsAuthenticated != true) return Results.Unauthorized();
             try { await csrf.ValidateRequestAsync(context); } catch (AntiforgeryValidationException) { return Results.BadRequest(new { error = "Atualize a página e tente novamente." }); }
             var token = await context.GetTokenAsync("access_token"); if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
-            try { var result = await service.Submit(token, draft, catalog, context.RequestAborted); if (result.Kind == "discussion") await reader.InvalidateAsync(context.RequestAborted); return Results.Ok(result); }
+            try { var result = await service.Submit(token, draft, catalog, context.RequestAborted); if (result.Kind == "discussion") await reader.InvalidateAsync(context.RequestAborted); return Results.Ok(result with { Notice = notices.Publish(context.User.Identity!.Name!, draft, result) }); }
             catch (ContributionRejectedException error) { return Results.BadRequest(new { error = error.Message }); }
             catch (Exception error) when (error is HttpRequestException or JsonException or DiscussionsUnavailableException or InvalidOperationException or KeyNotFoundException or OperationCanceledException) { return Results.Json(new { error = "Não foi possível enviar a sugestão. Os dados continuam no formulário; tente novamente." }, statusCode: 503); }
         }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(65536));

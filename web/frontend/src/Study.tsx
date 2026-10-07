@@ -24,6 +24,7 @@ import { ResourceSearch } from "./ResourceSearch";
 import { ResourcePagination } from "./ResourcePagination";
 import imageSources from "./assets/study/sources.json";
 import { universityTypes } from "./university-options";
+import { LoadingImage } from "./LoadingImage";
 import { paginate, readPage } from "./pagination";
 import {
   interactions,
@@ -111,12 +112,14 @@ const covers = import.meta.glob("./assets/study/*/*.{webp,png,jpg,svg}", {
   query: "?url",
   import: "default",
 }) as Record<string, string>;
-function StudyCover({
+export function StudyCover({
   resource,
   small = false,
+  priority = false,
 }: {
   resource: Resource;
   small?: boolean;
+  priority?: boolean;
 }) {
   const cover = Object.entries(covers).find(([path]) =>
     path.replace(/\.[^.]+$/, "").endsWith(`/${studyKey(resource)}`),
@@ -141,11 +144,14 @@ function StudyCover({
       }
     >
       {cover ? (
-        <img
+        <LoadingImage
           src={cover}
           alt=""
-          loading="lazy"
-          className={`h-full min-h-0 w-full min-w-0 ${resource.type !== "books" && imageSource?.kind === "social" ? "object-cover" : resource.type === "books" ? "object-contain p-3" : "object-contain p-2"}`}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          className="h-full min-h-0 w-full min-w-0"
+          imageClassName={resource.type !== "books" && imageSource?.kind === "social" ? "object-cover" : resource.type === "books" ? "object-contain p-3" : "object-contain p-2"}
+          fallback={<span className="flex size-full items-center justify-center"><BookOpen className={small ? "size-5 text-primary/70" : "size-9 text-primary/60"} /></span>}
         />
       ) : (
         <BookOpen
@@ -354,14 +360,14 @@ export function StudyListing({
           aria-label={`Cards: ${title}`}
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {listing.items.map((r) => (
+          {listing.items.map((r, index) => (
             <article
               data-motion
               key={studyKey(r)}
               className="relative flex min-w-0 cursor-pointer flex-col rounded-lg border bg-card transition-colors hover:bg-muted/30 focus-within:bg-muted/30 focus-within:outline-2 focus-within:outline-ring"
             >
               <a href={resourcePath(r)} tabIndex={-1} aria-hidden="true">
-                <StudyCover resource={r} />
+                <StudyCover resource={r} priority={index < 4} />
               </a>
               <div className="flex flex-1 flex-col p-3">
                 <div className="flex-1">{detail(r)}</div>
@@ -382,13 +388,13 @@ export function StudyListing({
           aria-label={`Lista: ${title}`}
           className="divide-y rounded-lg border bg-card"
         >
-          {listing.items.map((r) => (
+          {listing.items.map((r, index) => (
             <article
               data-motion
               key={studyKey(r)}
               className="relative flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-muted/30 focus-within:bg-muted/30 focus-within:outline-2 focus-within:outline-ring"
             >
-              <StudyCover small resource={r} />
+              <StudyCover small resource={r} priority={index < 4} />
               <div className="min-w-0 flex-1">{detail(r)}</div>
               <Button
                 asChild
@@ -455,9 +461,10 @@ export function StudyDetail({ resource }: { resource: Resource }) {
   return (
     <section
       aria-label="Avaliações e discussão"
-      className="space-y-5 border-t pt-6"
+      className="space-y-5"
     >
-      <h2 className="text-xl font-semibold">Avaliações e discussão</h2>
+      <section aria-label="Avaliações" className="space-y-4 rounded-lg border bg-card p-4 sm:p-6">
+      <h2 className="text-xl font-semibold">Avaliações</h2>
       <StudyBadges activity={a} />
       <p className="text-xs text-muted-foreground">
         Uma avaliação e um hype por conta. As interações somam comentários,
@@ -546,14 +553,21 @@ export function StudyDetail({ resource }: { resource: Resource }) {
               {a?.myHype ? "Remover hype" : "Dar hype"}
             </Button>
           </div>
-          {!a?.discussion && (
+        </>
+      )}
+      {message && (
+        <p role="status" className="text-sm">{message}</p>
+      )}
+      </section>
+      {!a?.discussion && !resource.demo && !!auth?.session?.login && (
             <form
               onSubmit={(event) => {
                 event.preventDefault();
                 void publish("comments", { body });
               }}
-              className="space-y-3"
+              className="space-y-3 rounded-lg border bg-card p-4 sm:p-6"
             >
+              <h2 className="text-xl font-semibold">Discussão</h2>
               <label htmlFor={id} className="text-sm font-medium">
                 Comente sua experiência
               </label>
@@ -569,7 +583,7 @@ export function StudyDetail({ resource }: { resource: Resource }) {
               />
               <p className="text-xs text-muted-foreground">
                 Seu comentário será público no Guia e no GitHub, em nome de{" "}
-                {auth.session.login}. A primeira mensagem abre o tópico deste
+                {auth?.session?.login}. A primeira mensagem abre o tópico deste
                 item no fórum.
               </p>
               <Button
@@ -579,13 +593,6 @@ export function StudyDetail({ resource }: { resource: Resource }) {
                 {busy ? "Publicando…" : "Publicar comentário"}
               </Button>
             </form>
-          )}
-        </>
-      )}
-      {message && (
-        <p role="status" className="text-sm">
-          {message}
-        </p>
       )}
       {a?.discussion ? (
         <DiscussionThread
@@ -595,9 +602,7 @@ export function StudyDetail({ resource }: { resource: Resource }) {
           onPublished={refresh}
         />
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Ainda não há uma conversa para este item.
-        </p>
+        !(auth?.session?.login && !resource.demo) && <section aria-label="Discussão" className="space-y-2 rounded-lg border bg-card p-4 sm:p-6"><h2 className="text-xl font-semibold">Discussão</h2><p className="text-sm text-muted-foreground">Ainda não há uma conversa para este item.</p></section>
       )}
     </section>
   );

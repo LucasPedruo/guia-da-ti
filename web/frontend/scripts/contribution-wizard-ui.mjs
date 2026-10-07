@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+
+export async function checkContributionWizard({ send, evaluate, waitFor, navigate, click, selectOption }) {
+  await evaluate(`sessionStorage.setItem('participationMode','member')`);
+  await navigate('/contribuir/?categoria=universities');
+  await waitFor(`!!document.querySelector('[role="progressbar"]')`);
+  assert.equal(await evaluate(`document.querySelector('main > article').getBoundingClientRect().width`),896);
+  const next = () => click(`[...document.querySelectorAll('main form button')].find(b=>b.textContent.trim()==='Continuar')`);
+  const active = title => waitFor(`document.querySelector('main form h2').textContent === ${JSON.stringify(title)}`);
+  const fill = async (name,value) => { await click(`document.querySelector('main form input[name="${name}"], main form textarea[name="${name}"]')`); await send('Input.insertText',{text:value}); };
+  assert.equal(await evaluate(`document.querySelectorAll('[data-contribution-step]:not([hidden])').length`),1);
+  await next(); await active('Tipo de instituição');
+  await next();
+  assert.equal(await evaluate(`document.querySelector('main form h2').textContent`),'Tipo de instituição');
+  await selectOption('Tipo de instituição','Privada');
+  await next(); await active('Link');
+  await next(); assert.equal(await evaluate(`!!document.querySelector('main form [role="alert"]')`),true);
+  await fill('url','https://example.org/wizard-university'); await next(); await active('Nome');
+  await fill('name','Faculdade por etapas');
+  await click(`[...document.querySelectorAll('main form button')].find(b=>b.textContent.trim()==='Voltar')`);
+  await active('Link');
+  assert.equal(await evaluate(`document.querySelector('input[name="url"]').value`),'https://example.org/wizard-university');
+  await next(); await active('Nome');
+  assert.equal(await evaluate(`document.querySelector('input[name="name"]').value`),'Faculdade por etapas');
+  await next(); await active('Resumo'); await fill('summary','Uma faculdade enviada pelo formulário em etapas.');
+  await next(); await active('Descrição'); await fill('description','Descrição da faculdade para conferir o envio e a preservação dos campos.');
+  await next(); await active('Assunto principal');
+  await evaluate(`(()=>{const el=document.querySelector('select[name="area"]');el.value='educacao';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await next(); await active('Tecnologias (opcional)'); await next(); await active('Idiomas disponíveis'); await next(); await active('Revisar e enviar');
+  assert.equal(await evaluate(`document.querySelector('[data-contribution-step]:not([hidden])').textContent.includes('Faculdade por etapas')`),true);
+  await click(`document.querySelector('main form button[type="submit"]')`);
+  await waitFor(`window.lastContribution?.name === 'Faculdade por etapas'`);
+  assert.equal(await evaluate(`window.lastContribution.universityType`),'private');
+  await waitFor(`document.querySelector('main form h2').textContent === 'Categoria do guia'`);
+  assert.equal(await evaluate(`document.querySelector('input[name="name"]').value`),'');
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
+  assert.equal(await evaluate(`document.documentElement.scrollWidth<=innerWidth`),true);
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await evaluate(`sessionStorage.removeItem('participationMode')`);
+  console.log('Contribution wizard OK: 896px, one step, validation, back/next, preserved values, review, submission and mobile.');
+}

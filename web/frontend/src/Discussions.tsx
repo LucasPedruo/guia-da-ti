@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { SuggestResource } from './SuggestResource';
 import { Advertisement } from './Advertisement';
 import { ApproveContribution, Composer } from './Participation';
 import { DiscussionSkeleton } from './Loading';
@@ -10,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { categories } from './catalog';
+import { DiscussionBody } from './DiscussionBody';
 
 type Category = { id: string; name: string };
 type PageInfo = { hasNextPage: boolean; endCursor: string | null };
@@ -58,17 +58,17 @@ function Pagination({ pageInfo, cursors, setCursors }: { pageInfo: PageInfo; cur
 }
 
 function CommentCard({ comment, url, number, onPublished, rootId }: { comment: Comment; url: string; number: number; onPublished: () => void; rootId?: string }) {
-  return <article data-motion className="min-w-0">
+  return <article data-motion className={`min-w-0 ${rootId ? 'rounded-lg bg-muted/20 p-3' : 'p-4 sm:p-5'}`}>
     <details open className="group/comment">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
         <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold uppercase text-muted-foreground">{comment.author.slice(0, 1)}</span>
         <span className="font-semibold">{comment.author}</span><span className="text-muted-foreground"><DateLabel value={comment.createdAt} /></span>{comment.isAnswer && <Badge variant="secondary" className="text-[10px]">Resposta aceita</Badge>}
         <span className="ml-auto text-muted-foreground group-open/comment:hidden">Expandir comentário</span>
       </summary>
-      <div className="ml-3.5 space-y-2 border-l pl-4 pb-2 sm:pl-5">
+      <div className="ml-3.5 space-y-3 border-l pl-4 pt-2 pb-1 sm:pl-5">
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{comment.body}</p>
         {number > 0 && <Composer compact number={number} replyToId={rootId || comment.id} githubUrl={url} onPublished={onPublished} label="Responder" />}
-        {comment.replies.length > 0 && <div className="space-y-3 pt-1">{comment.replies.map(reply => <CommentCard key={reply.id} comment={reply} url={url} number={number} onPublished={onPublished} rootId={rootId || comment.id} />)}</div>}
+        {comment.replies.length > 0 && <div aria-label="Respostas ao comentário" className="space-y-3 pt-2">{comment.replies.map(reply => <CommentCard key={reply.id} comment={reply} url={url} number={number} onPublished={onPublished} rootId={rootId || comment.id} />)}</div>}
         {comment.replyCount > comment.replies.length && <a className="inline-block text-xs text-muted-foreground hover:text-primary" href={url} target="_blank" rel="noopener noreferrer">Ver todas as {comment.replyCount} respostas no GitHub</a>}
       </div>
     </details>
@@ -85,22 +85,26 @@ export function DiscussionThread({ number, embedded = false, onPublished }: { nu
   returnParameters.delete('conversa');
   const returnUrl = returnParameters.size ? `/?${returnParameters}` : '/';
   useEffect(() => { if (ready && !embedded) heading.current?.focus(); }, [ready, embedded]);
-  return <section className="space-y-5" aria-label="Conversa">
-    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button><SuggestResource /></div>}
+  return <section className={`space-y-5 ${embedded ? '' : 'mx-auto w-full max-w-4xl'}`} aria-label="Conversa">
+    {!embedded && <Button asChild variant="ghost" className="-ml-3"><a href={returnUrl}><ArrowLeft />{returnParameters.has('q') ? 'Voltar à busca' : 'Todas as conversas'}</a></Button>}
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
-      <article data-motion className="space-y-4">
+      <article data-motion className="overflow-hidden rounded-lg border bg-card">
+        <header className="space-y-4 border-b p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /></div>
-        <h2 ref={heading} tabIndex={-1} className="break-words text-2xl font-semibold tracking-tight outline-none [overflow-wrap:anywhere]">{ready.discussion.title}</h2>
+        <h2 ref={heading} tabIndex={-1} className="break-words text-2xl font-semibold tracking-tight outline-none [overflow-wrap:anywhere]">{embedded ? 'Discussão' : ready.discussion.title}</h2>
         <div className="flex flex-wrap gap-2"><Badge variant="secondary">{ready.discussion.category.name}</Badge>{ready.discussion.resourceCategory && <Badge variant="outline">{categories.find(category => category.id === ready.discussion.resourceCategory)?.name || ready.discussion.resourceCategory}</Badge>}{ready.discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{ready.discussion.locked && <Badge variant="outline">Conversa encerrada</Badge>}</div>
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{ready.body}</p>
-        {ready.body.includes('Categoria do guia:') && <ApproveContribution number={number} />}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><MessageSquareText className="size-3.5" />{ready.discussion.commentCount} comentários</span><Button asChild variant="ghost" size="xs"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">Ver no GitHub<ArrowUpRight /></a></Button></div>
+        </header>
+        <div className="p-4 sm:p-6"><DiscussionBody body={embedded ? ready.body.split('\n').filter(line => !/^(Recurso do guia|Site):/.test(line)).join('\n').trim() : ready.body} title={ready.discussion.title} /></div>
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/10 px-4 py-3 sm:px-6">
+          <span className="inline-flex items-center gap-1.5 rounded border bg-card px-2.5 py-1.5 text-xs text-muted-foreground"><MessageSquareText className="size-3.5" />{ready.discussion.commentCount} comentários</span>
+          <div className="flex flex-wrap items-center gap-2">{ready.body.includes('Categoria do guia:') && <ApproveContribution number={number} />}<Button asChild variant="ghost" size="xs"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">Ver no GitHub<ArrowUpRight /></a></Button></div>
+        </footer>
       </article>
       <Advertisement />
-      {!ready.discussion.locked && <Composer prompt number={number} githubUrl={ready.discussion.url} onPublished={() => { setCursors([]); published(); }} />}
-      <section aria-label="Comentários" className="space-y-4">
-        <h3 className="text-lg font-semibold">Comentários ({ready.discussion.commentCount})</h3>
-        {ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={published} />) : <p className="text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}
+      {!ready.discussion.locked && <div className="rounded-lg border bg-card p-4"><Composer prompt number={number} githubUrl={ready.discussion.url} onPublished={() => { setCursors([]); published(); }} /></div>}
+      <section aria-label="Comentários" className="overflow-hidden rounded-lg border bg-card">
+        <h3 className="flex items-center gap-2 border-b px-4 py-3 text-sm font-semibold sm:px-5"><MessageSquareText className="size-4 text-muted-foreground" />Comentários ({ready.discussion.commentCount})</h3>
+        <div className="divide-y">{ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={published} />) : <p className="p-5 text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}</div>
       </section>
       <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
     </>}
@@ -149,7 +153,6 @@ function DiscussionFeed() {
       </form>
       {(ready || categories.length > 0) && <Select value={category} onValueChange={value => applyFilters(query, value)}><SelectTrigger aria-label="Categoria das conversas" className="h-9 min-w-0 flex-1 sm:w-44 sm:flex-none"><SelectValue placeholder="Todas as categorias" /></SelectTrigger><SelectContent><SelectItem value="all">Todas as categorias</SelectItem>{categories.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>}
       {ready && <Composer compact categories={categories} githubUrl={`${ready.repositoryUrl}/new`} label="Novo tópico" onPublished={number => { window.location.assign(`/?conversa=${number}`); }} />}
-      <SuggestResource />
     </div>
     {query && <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><p role="status">{ready ? `${ready.totalCount ?? ready.items.length} ${(ready.totalCount ?? ready.items.length) === 1 ? 'conversa encontrada' : 'conversas encontradas'} para “${query}”.` : 'Buscando…'}</p><Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(''); applyFilters(''); }}>Limpar busca</Button></div>}
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>

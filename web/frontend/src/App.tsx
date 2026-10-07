@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
-import { StudyDetail, StudyListing } from './Study';
+import { StudyCover, StudyDetail, StudyListing } from './Study';
 import { studyTypes } from './study-ranking';
 import { Community } from './Community';
 import { CommunityTabs } from './CommunityTabs';
@@ -18,6 +18,7 @@ import { ResourceSearch } from './ResourceSearch';
 import { matchesResourceSearch, readSearch } from './resource-search';
 import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
 import { Maintainers, MaintainersProvider } from './Maintainers';
+import { ContributionToasts } from './ContributionToasts';
 import { NavigationCard } from './NavigationCard';
 import { BrandMark } from './BrandMark';
 import { Motion } from './Motion';
@@ -230,7 +231,7 @@ export function App({ path }: { path: string }) {
   }
 
   return (
-    <Motion><Participation><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
+    <Motion><ContributionToasts><Participation><CommunityMetricsProvider><MaintainersProvider><div className="flex min-h-dvh flex-col">
       <Button asChild className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">
         <a href="#conteudo">Pular para o conteúdo</a>
       </Button>
@@ -337,23 +338,31 @@ export function App({ path }: { path: string }) {
             <Community area="supporters" embedded />
           </article>
         ) : path === '/contribuir' ? (
-          <article className="mx-auto max-w-2xl space-y-6">
+          <article className="mx-auto w-full max-w-4xl space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight">Contribuir</h1>
             <p className="text-muted-foreground">Sugira um recurso para o guia. Criadores e comunidades vão direto para revisão do catálogo; os demais recursos abrem uma conversa no fórum.</p>
             <ResourceContribution />
             {repository && <Button asChild variant="outline"><a href={`${repository}/blob/main/CONTRIBUTING.md`}><Github />Guia de contribuição</a></Button>}
           </article>
         ) : page.resource ? (
-          <article className="mx-auto w-full max-w-3xl space-y-6">
+          <article className="mx-auto w-full max-w-4xl space-y-6">
             <Button asChild variant="ghost" className="-ml-3"><a href={`/${page.category!.route}`}><ArrowLeft />{page.category!.name}</a></Button>
-            <div className="space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<div className="flex flex-wrap items-center justify-between gap-3"><h1 className="min-w-0 text-3xl font-semibold tracking-tight">{page.resource.name}</h1><SuggestResource type={page.resource.type} /></div><p className="text-lg text-muted-foreground">{page.resource.summary}</p></div>
+            <section aria-label="Apresentação do recurso" className="overflow-hidden rounded-lg border bg-card">
+            <header className="flex flex-col gap-5 border-b p-4 sm:flex-row sm:items-center sm:p-6">
+              <div className="min-w-0 flex-1 space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<Badge variant="secondary">{page.category!.name}</Badge><h1 className="text-3xl font-semibold tracking-tight">{page.resource.name}</h1><p className="text-sm leading-relaxed text-muted-foreground">{page.resource.summary}</p></div>
+              {studyTypes.has(page.resource.type) && <div className="w-full shrink-0 overflow-hidden rounded-lg border sm:w-48"><StudyCover resource={page.resource} priority /></div>}
+            </header>
+            <div className="space-y-4 p-4 sm:p-6">
             <p className="whitespace-pre-wrap leading-relaxed">{page.resource.description}</p>
-            <div className="flex flex-wrap gap-2">{page.resource.technologies.map(t => <Badge asChild variant="secondary" key={t}><a href={`/tecnologias/${t}`}>{labels[t] || t}</a></Badge>)}</div>
+            {!!page.resource.technologies.length && <div className="flex flex-wrap gap-2">{page.resource.technologies.map(t => <Badge asChild variant="secondary" key={t}><a href={`/tecnologias/${t}`}>{labels[t] || t}</a></Badge>)}</div>}
             {page.resource.type==='communities' && <div className="space-y-3"><p className="text-sm text-muted-foreground">{resourceExtra(page.resource)}{page.resource.communityAudience ? ` · Público: ${communityAudiences.find(item=>item.id===page.resource!.communityAudience)?.name}` : ''}</p><div className="flex flex-wrap gap-2">{page.resource.communityLinks?.map(link=><Button asChild variant="outline" key={link.platform}><a href={link.url} target="_blank" rel="noopener noreferrer">{communityPlatforms.find(item=>item.id===link.platform)?.name}<ArrowUpRight /></a></Button>)}</div></div>}
-            <Separator />
-            <div className="space-y-2 text-sm text-muted-foreground"><p>Idiomas: {page.resource.languages.join(', ')}</p><p>Última atualização: {page.resource.updatedAt.split('-').reverse().join('/')}</p></div>
+            </div>
+            <div aria-label="Informações e links do recurso" className="space-y-4 border-t bg-muted/10 p-4 sm:p-6">
+            <dl className="grid gap-4 text-sm sm:grid-cols-2"><div className="space-y-1"><dt className="text-xs text-muted-foreground">Idiomas</dt><dd>{page.resource.languages.join(', ')}</dd></div><div className="space-y-1"><dt className="text-xs text-muted-foreground">Última atualização</dt><dd>{page.resource.updatedAt.split('-').reverse().join('/')}</dd></div></dl>
             <p className="text-sm text-muted-foreground">O conteúdo fica no site de origem. O link abre em uma nova aba.</p>
             <div className="flex flex-wrap gap-3"><Button asChild><a href={page.resource.url} target="_blank" rel="noopener noreferrer">Abrir site<ArrowUpRight /></a></Button>{repository && <Button asChild variant="outline"><a href={`${repository}/edit/main/data/${page.resource.type}/${page.resource.slug}.json`}>Editar informação</a></Button>}</div>
+            </div>
+            </section>
             {studyTypes.has(page.resource.type) && <StudyDetail resource={page.resource} />}
           </article>
         ) : (
@@ -403,6 +412,6 @@ export function App({ path }: { path: string }) {
           <div className="flex w-full justify-center md:w-auto md:flex-1 md:justify-end"><Maintainers compact /></div>
         </div>
       </footer>
-    </div></MaintainersProvider></CommunityMetricsProvider></Participation></Motion>
+    </div></MaintainersProvider></CommunityMetricsProvider></Participation></ContributionToasts></Motion>
   );
 }

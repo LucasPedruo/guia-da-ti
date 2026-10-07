@@ -124,3 +124,9 @@ Os demais rótulos e textos de apoio novos de Estudar estão limpos. Não recebe
 Os novos parágrafos sobre imagens em `docs/study.md` também estão limpos. As frases descrevem onde os arquivos ficam, como carregam e como conferir novas imagens. Não exigiram mudanças de estilo.
 
 Os novos rótulos **Tipo de instituição**, **Pública** e **Privada**, as mensagens de validação e a explicação do filtro estão limpos. Não exigiram mudanças de estilo.
+
+O aviso “{pessoa} adicionou {item} em {categoria}” e os rótulos **Sugestão enviada para revisão**, **Acompanhar sugestão** e **Fechar aviso** estão limpos. Não exigiram mudanças de estilo.
+
+Os títulos **Avaliações** e **Discussão** e os rótulos dos novos blocos da página do recurso estão limpos. Não exigiram mudanças de estilo.
+
+Os rótulos **Continuar**, **Voltar**, **Revisar e enviar** e as mensagens de validação do formulário em etapas estão limpos. Não exigiram mudanças de estilo.

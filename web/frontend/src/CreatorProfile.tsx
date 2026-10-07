@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserRound } from 'lucide-react';
+import { LoadingImage } from './LoadingImage';
 
 export type CreatorProfile = {
   network: string; url: string; name: string; description: string; avatarUrl: string | null;
@@ -26,11 +27,10 @@ export function useCreatorProfile(url: string, enabled: boolean) {
   return state;
 }
 export function CreatorAvatar({ profile, name }: { profile: CreatorProfile | null; name: string }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [profile?.avatarUrl]);
-  return profile?.avatarUrl && !failed
-    ? <img src={profile.avatarUrl} alt={'Foto de ' + name} referrerPolicy="no-referrer" onError={() => setFailed(true)} className="size-10 shrink-0 rounded-full object-cover" />
-    : <span aria-label="Foto indisponível" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>;
+  const fallback = <span aria-label="Foto indisponível" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted"><UserRound className="size-5 text-muted-foreground" /></span>;
+  return profile?.avatarUrl
+    ? <LoadingImage src={profile.avatarUrl} alt={'Foto de ' + name} width={40} height={40} referrerPolicy="no-referrer" className="size-10 shrink-0 rounded-full" imageClassName="object-cover" fallback={fallback} />
+    : fallback;
 }
 export function followersLabel(profile: CreatorProfile | null) {
   return profile?.followers != null ? profile.followers.toLocaleString('pt-BR') + (profile.network === 'youtube' ? ' inscritos' : ' seguidores')

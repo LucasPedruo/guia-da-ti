@@ -100,6 +100,10 @@ export async function checkStudyCuration({
     `sessionStorage.setItem('participationMode','member');sessionStorage.setItem('discussionTestMode','showcase')`,
   );
   await navigate("/plataformas/alura/");
+  await waitFor(`!!document.querySelector('[aria-label="Apresentação do recurso"]') && !!document.querySelector('[aria-label="Avaliações"]')`);
+  assert.equal(await evaluate(`document.querySelector('[aria-label="Apresentação do recurso"]').contains(document.querySelector('[aria-label="Avaliações"]'))`), false);
+  assert.equal(await evaluate(`!!document.querySelector('[aria-label="Informações e links do recurso"] a[href^="https://www.alura.com.br/"]')`), true);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('[aria-label="Avaliações"]')).borderTopStyle`), 'solid');
   await waitFor(
     `document.querySelector('[aria-label="5 estrelas"]') && !document.querySelector('[aria-label="5 estrelas"]').disabled`,
   );

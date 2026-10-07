@@ -24,6 +24,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         finally { gate.Release(); }
         var commentCounts = new Dictionary<int, int>();
         var needed = store.Items.Values.Where(e => e.Discussion is not null).Select(e => e.Discussion!.Value).ToHashSet();
+        var verified = false;
         if (needed.Count > 0 && reader.Configured) {
             try {
                 string? cursor = null;
@@ -35,6 +36,7 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
                     }
                     cursor = page.PageInfo.HasNextPage ? page.PageInfo.EndCursor : null;
                 } while (needed.Count > 0 && cursor is not null);
+                verified = true;
             }
             catch (Exception e) when (e is HttpRequestException or JsonException or DiscussionsUnavailableException or InvalidOperationException or KeyNotFoundException or OperationCanceledException) {
                 if (cancellation.IsCancellationRequested) throw;
@@ -43,12 +45,13 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         var result = new List<StudySummary>();
         foreach (var resource in catalog.Resources.Where(r => Types.Contains(r.Type))) {
             var entry = store.Items.GetValueOrDefault(Key(resource)) ?? new Entry();
-            int? comments = entry.Discussion is null ? 0 : null;
-            if (entry.Discussion is int number && commentCounts.TryGetValue(number, out var count)) comments = count;
+            var discussion = verified && entry.Discussion is int missing && needed.Contains(missing) ? null : entry.Discussion;
+            int? comments = discussion is null ? 0 : null;
+            if (discussion is int number && commentCounts.TryGetValue(number, out var count)) comments = count;
             var ratings = entry.Votes.Values.Where(v => v.Rating is not null).Select(v => v.Rating!.Value).ToArray();
             var mine = userId is null ? null : entry.Votes.GetValueOrDefault(userId);
             result.Add(new(Key(resource), ratings.Length == 0 ? null : (double)ratings.Sum() / ratings.Length,
-                ratings.Length, entry.Votes.Values.Count(v => v.Hype), comments, entry.Discussion, mine?.Rating, mine?.Hype ?? false));
+                ratings.Length, entry.Votes.Values.Count(v => v.Hype), comments, discussion, mine?.Rating, mine?.Hype ?? false));
         }
         return result.ToArray();
     }
@@ -80,6 +83,8 @@ public sealed class StudyEngagement(IConfiguration configuration, IHostEnvironme
         try {
             var store = await ReadAsync(cancellation);
             var entry = store.Items.GetValueOrDefault(Key(resource)) ?? new Entry();
+            if (entry.Discussion is int linked && await reader.ThreadAsync(linked, null, cancellation) is null)
+                entry.Discussion = null;
             if (entry.Discussion is null) {
                 await reader.InvalidateAsync(cancellation);
                 string? cursor = null;

@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
 
 // Fixtures exist only in the browser test; production always uses the backend.
 export async function installDiscussionFixtures(send) {
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `
     const originalFetch = window.fetch.bind(window);
     window.discussionRequests = [];
+    window.noticeItems = [];
     window.fetch = async (input, options) => {
       const url = new URL(String(input), location.origin);
+      if (url.pathname === '/api/contributions/notices') return Response.json({stream:'test',cursor:window.noticeItems.length,items:url.searchParams.get('stream')==='test'?window.noticeItems.slice(Number(url.searchParams.get('after'))):[]});
       if (url.pathname === '/api/community/users') return sessionStorage.getItem('registeredTestMode') === 'error'
         ? new Response('{}', { status: 503 }) : Response.json({ registeredUsers: 37, trackingSince: '2026-10-06T12:00:00Z' });
       if (url.pathname === '/api/community/activity') return sessionStorage.getItem('activityTestMode') === 'error'
@@ -24,8 +27,11 @@ export async function installDiscussionFixtures(send) {
       }
       if (url.pathname === '/api/contributions') {
         window.lastContribution = JSON.parse(options.body);
-        if (['creators','youtube','communities'].includes(window.lastContribution.type)) return Response.json({kind:'catalog',url:'https://github.com/guia-da-ti/guia-da-ti-dados/pull/10'});
-        return Response.json({ kind:'discussion', number: 10 });
+        if (sessionStorage.getItem('participationMode') === 'error') return Response.json({error:'Envio recusado.'},{status:403});
+        const result=['creators','youtube','communities'].includes(window.lastContribution.type)?{kind:'catalog',url:'https://github.com/guia-da-ti/guia-da-ti-dados/pull/10'}:{kind:'discussion',number:10};
+        const notice={id:'test:'+window.noticeItems.length,login:'ana',name:window.lastContribution.name,category:window.lastContribution.type,url:result.url||'/?conversa=10'};
+        window.noticeItems.push(notice);
+        return Response.json({...result,notice});
       }
       if (!url.pathname.startsWith('/api/discussions')) return originalFetch(input, options);
       window.discussionRequests.push(url.pathname + url.search);
@@ -40,7 +46,7 @@ export async function installDiscussionFixtures(send) {
       const comment = { id: 'comment-1', author: 'bia', body: 'Resposta de exemplo', createdAt: '2026-10-05T12:00:00Z', isAnswer: true, replies: [], replyCount: 0 };
       const pageInfo = { hasNextPage: !secondPage, endCursor: secondPage ? null : 'cursor-2' };
       if (url.pathname === '/api/discussions/404') return new Response('{}', { status: 404 });
-      if (url.pathname.endsWith('/7')) return Response.json({ status: 'ready', discussion, body: '<img src=x onerror=alert(1)> Texto da conversa', comments: [secondPage ? { ...comment, id: 'comment-2', body: 'Segundo comentário' } : { ...comment, replies: [{ ...comment, id: 'reply-1', isAnswer: false }], replyCount: 6 }], pageInfo });
+      if (url.pathname.endsWith('/7')) return Response.json({ status: 'ready', discussion, body: mode==='suggestion'?'Faculdade de teste\\n\\nCategoria do guia: universities\\n\\nResumo da indicação.\\n\\nDescrição para quem está escolhendo onde estudar.\\n\\nLink: https://example.org\\n\\nAssuntos: educacao\\n\\nIdiomas: pt-BR\\n\\nTipo de instituição: Pública':'<img src=x onerror=alert(1)> Texto da conversa', comments: [secondPage ? { ...comment, id: 'comment-2', body: 'Segundo comentário' } : { ...comment, replies: [{ ...comment, id: 'reply-1', isAnswer: false }], replyCount: 6 }], pageInfo });
       if (mode === 'showcase') return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: [discussion, { ...discussion, number: 8, title: 'Qual foi o seu primeiro projeto?', author: 'bia', isAnswered: false }, { ...discussion, number: 9, title: 'Como organizar uma rotina de estudos?', author: 'caio', isAnswered: false }], pageInfo: { hasNextPage: false, endCursor: null } });
       if (url.searchParams.has('q')) return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, title: secondPage ? 'Dúvida sobre JavaScript (continuação)' : 'Dúvida sobre JavaScript' }], totalCount: url.searchParams.get('q') === 'semresultado' || url.searchParams.get('category') === 'ideas' ? 0 : 21, pageInfo });
       return Response.json({ status: 'ready', repositoryUrl, categories: [category, { id: 'ideas', name: 'Ideias' }], items: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? [] : [{ ...discussion, number: secondPage ? 8 : 7, title: secondPage ? 'Outra conversa' : discussion.title }], pageInfo: mode === 'empty' || url.searchParams.get('category') === 'ideas' ? { hasNextPage: false, endCursor: null } : pageInfo });
@@ -220,4 +226,23 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
       assert.equal(await evaluate(`document.querySelector('[aria-label="Principal"] a[href="/sobre"]').getAttribute('aria-current')`), 'page');
     }
   }
+  await mode('suggestion');
+  await navigate('/?conversa=7');
+  await waitFor(`!!document.querySelector('[aria-label="Detalhes da indicação"]')`);
+  assert.equal(await evaluate(`document.querySelector('[aria-label="Detalhes da indicação"]').textContent.includes('Pública')`), true);
+  assert.equal(await evaluate(`!!document.querySelector('[aria-label="Detalhes da indicação"] a[href="https://example.org"]')`), true);
+  assert.equal(await evaluate(`[...document.querySelectorAll('main a')].some(a=>a.href.includes('/contribuir'))`), false);
+  assert.equal(await evaluate(`!!document.querySelector('[aria-label="Respostas ao comentário"]')`), true);
+  await evaluate(`window.noticeItems.push({id:'remote-notice',login:'bia',name:'Curso de exemplo',category:'platforms',url:'https://github.com/example/community/discussions/10'})`);
+  await waitFor(`document.querySelector('[aria-label="Avisos de sugestões"]').textContent.includes('bia adicionou Curso de exemplo em Plataformas de cursos')`);
+  await click(`document.querySelector('[aria-label="Fechar aviso"]')`);
+  await waitFor(`!document.querySelector('[aria-label="Fechar aviso"]')`);
+  if (process.env.UI_SCREENSHOT_PATH) {
+    const capture = await send('Page.captureScreenshot', {captureBeyondViewport:true});
+    await writeFile(process.env.UI_SCREENSHOT_PATH.replace(/\.png$/, '.discussion.png'), Buffer.from(capture.data, 'base64'));
+  }
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
+  assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true);
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  console.log('Suggestion discussion OK: separate details and comments, nested replies, no suggestion button, mobile layout and live notices.');
 }

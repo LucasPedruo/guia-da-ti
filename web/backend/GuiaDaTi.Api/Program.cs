@@ -14,6 +14,7 @@ builder.Services.AddHttpClient("discussions", client => client.Timeout = TimeSpa
 builder.Services.AddSingleton<DiscussionsClient>();
 builder.Services.AddSingleton<DiscussionWriter>();
 builder.Services.AddSingleton<ContributionService>();
+builder.Services.AddSingleton<ContributionNotifications>();
 builder.Services.AddSingleton<ContributorsClient>();
 builder.Logging.AddFilter("System.Net.Http.HttpClient.creator-profiles", LogLevel.None);
 builder.Services.AddHttpClient("creator-profiles", client => client.Timeout = TimeSpan.FromSeconds(8))
@@ -39,6 +40,7 @@ app.MapCommunityAuth();
 app.MapDiscussionWrites();
 app.MapDiscussions();
 app.MapContributions();
+app.MapContributionNotifications();
 app.MapContributors();
 app.MapCreatorProfiles();
 app.MapCommunityActivity();

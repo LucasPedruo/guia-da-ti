@@ -53,6 +53,12 @@ static class StudyChecks
             await File.WriteAllTextAsync(path,"{\"version\":1,\"items\":{}}");
             await activity.CommentAsync(resource,"visitor-token","Recuperada",default);
             Assert(handler.Topics==1 && handler.Comments==2,"Recovery uses direct repository reads rather than delayed search indexing");
+            await activity.VoteAsync(resource,"1",new(Rating:4,Hype:true),default);
+            handler.Missing=true;
+            await reader.InvalidateAsync(default);
+            Assert((await activity.ListAsync("1",default))[0] is {Discussion:null,Comments:0,Ratings:1,Hypes:1},"Deleted discussions disappear without losing votes");
+            await activity.CommentAsync(resource,"visitor-token","Nova conversa",default);
+            Assert(handler.Topics==2 && (await activity.ListAsync("1",default))[0] is {Discussion:7,Ratings:1,Hypes:1},"Comment recreates a missing topic and preserves ratings");
             var valid=await File.ReadAllTextAsync(path);
             Assert(!valid.Contains("visitor-token") && !valid.Contains("Primeira experiência"),"Local activity excludes credentials and comment content");
             await File.WriteAllTextAsync(path,"broken");
@@ -100,7 +106,7 @@ static class StudyChecks
 sealed class StudyFactory(StudyGitHub handler):IHttpClientFactory {public HttpClient CreateClient(string name)=>new(handler,false);}
 sealed class StudyGitHub(Resource resource):HttpMessageHandler
 {
-    public int Topics;public int Comments;public bool VisitorOnly=true;public bool Unavailable;
+    public int Topics;public int Comments;public bool VisitorOnly=true;public bool Unavailable;public bool Missing;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken cancellation)
     {
         if(Unavailable)return new(HttpStatusCode.ServiceUnavailable){Content=JsonContent.Create(new {})};
@@ -108,12 +114,12 @@ sealed class StudyGitHub(Resource resource):HttpMessageHandler
         object data;
         if(query.Contains("mutation")) {
             VisitorOnly&=request.Headers.Authorization?.Parameter=="visitor-token";
-            if(query.Contains("createDiscussion")){Topics++;data=new {createDiscussion=new {discussion=new {number=7}}};}
+            if(query.Contains("createDiscussion")){Topics++;Missing=false;data=new {createDiscussion=new {discussion=new {number=7}}};}
             else{Comments++;data=new {addDiscussionComment=new {comment=new {id="comment"}}};}
         }else{
             var category=new {id="general",name="Geral"};var pageInfo=new {hasNextPage=false,endCursor=(string?)null};
             var thread=new {number=7,id="topic-7",title=StudyEngagement.TopicTitle(resource),bodyText="Primeira experiência",category,author=new {login="visitor"},updatedAt="2026-10-07T12:00:00Z",isAnswered=false,locked=false,closed=false,comments=new {totalCount=Comments,pageInfo,nodes=Array.Empty<object>()}};
-            data=new {repository=new {id="repo",isPrivate=false,hasDiscussionsEnabled=true,discussionCategories=new {nodes=new[]{category}},discussions=new {pageInfo,nodes=Topics==0?[]:new[]{thread}},discussion=thread}};
+            data=new {repository=new {id="repo",isPrivate=false,hasDiscussionsEnabled=true,discussionCategories=new {nodes=new[]{category}},discussions=new {pageInfo,nodes=Topics==0||Missing?[]:new[]{thread}},discussion=Missing?(object?)null:thread}};
         }
         return new(HttpStatusCode.OK){Content=JsonContent.Create(new {data})};
     }

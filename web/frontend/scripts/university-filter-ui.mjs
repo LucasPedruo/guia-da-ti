@@ -93,6 +93,13 @@ export async function checkUniversityFilter({
   await click(`document.querySelector('main form button[type="submit"]')`);
   await waitFor(`window.lastContribution?.universityType === 'public'`);
   assert.equal(await evaluate(`window.lastContribution.type`), "universities");
+  await waitFor(`document.querySelector('[aria-label="Avisos de sugestões"]').textContent.includes('ana adicionou Faculdade de teste em Faculdades')`);
+  assert.equal(await evaluate(`document.querySelectorAll('[aria-label="Avisos de sugestões"] > li').length`), 1);
+  const toast = await evaluate(`(()=>{const r=document.querySelector('[aria-label="Avisos de sugestões"]').getBoundingClientRect();return {right:document.documentElement.clientWidth-r.right,bottom:innerHeight-r.bottom}})()`);
+  assert.ok(toast.right >= 16 && toast.right <= 31);
+  assert.equal(toast.bottom,16);
+  await click(`document.querySelector('[aria-label="Fechar aviso"]')`);
+  await waitFor(`!document.querySelector('[aria-label="Fechar aviso"]')`);
   await evaluate(`sessionStorage.removeItem('participationMode')`);
   await send("Emulation.setDeviceMetricsOverride", {
     width: 390,
