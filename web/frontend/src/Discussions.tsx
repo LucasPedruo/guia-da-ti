@@ -44,7 +44,7 @@ function DateLabel({ value }: { value: string }) {
 
 function RequestState({ error, unconfigured, retry }: { error: string; unconfigured: boolean; retry: () => void }) {
   if (error) return <div role="alert" className="space-y-3 rounded-lg border p-6"><p>{error}</p><Button variant="outline" onClick={retry}>Tentar novamente</Button></div>;
-  if (unconfigured) return <Empty className="min-h-52 border bg-card"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>As conversas da comunidade vão aparecer aqui</EmptyTitle><EmptyDescription>Estamos preparando este espaço para trocar experiências, tirar dúvidas e compartilhar ideias.</EmptyDescription></EmptyHeader></Empty>;
+  if (unconfigured) return <Empty className="min-h-52 border bg-card"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>As conversas da comunidade vão aparecer aqui</EmptyTitle><EmptyDescription>Estamos preparando o fórum para você tirar dúvidas e compartilhar experiências.</EmptyDescription></EmptyHeader></Empty>;
   return <DiscussionSkeleton />;
 }
 

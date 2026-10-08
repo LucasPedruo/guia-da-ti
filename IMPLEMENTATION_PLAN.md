@@ -16,7 +16,7 @@
 - [ ] Schema específico: localização, modalidade, organizadores, links, custo e ano de criação.
 - [ ] Mapa Leaflet com clusters, carregamento sob demanda e acessibilidade via lista.
 - [ ] Filtros geográficos, modalidade, gratuidade, idioma e tema.
-- [ ] Cadastros reais revisados; remover exemplos da publicação.
+- [ ] Cadastros reais revisados. Remover exemplos da publicação.
 
 ## Fase 3 — completar o MVP
 

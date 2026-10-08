@@ -1,6 +1,6 @@
 # Organização do Guia da TI
 
-A organização [guia-da-ti](https://github.com/guia-da-ti) é proprietária dos dois repositórios do projeto. A transferência foi verificada em 5 de outubro de 2026: os commits anteriores foram preservados e o GitHub Discussions continua ativado no repositório de dados. Na verificação final, a aplicação estava privada e o repositório de dados estava público.
+A organização [guia-da-ti](https://github.com/guia-da-ti) é proprietária dos dois repositórios do projeto. A transferência foi verificada em 5 de outubro de 2026. Os commits anteriores foram preservados e o GitHub Discussions continua ativado no repositório de dados. Na verificação final, a aplicação estava privada e o repositório de dados estava público.
 
 Repositórios atuais:
 

@@ -48,6 +48,6 @@ export function Maintainers({ compact = false }: { compact?: boolean }) {
         </Tooltip.Content></Tooltip.Portal></Tooltip.Root></li>)}
       </ul></Tooltip.Provider>}
     {compact && people && people.length > limit && <a href="/sobre#mantenedores" className="shrink-0 font-mono text-xs uppercase tracking-widest hover:text-primary">+{people.length - limit} mais</a>}
-    {!compact && <><p className="text-xs text-muted-foreground">Autores de contribuições nos repositórios públicos do Guia, reconhecidos pelo GitHub.</p><Button variant="outline" onClick={() => openContribution()}>Quero contribuir</Button></>}
+    {!compact && <><p className="text-xs text-muted-foreground">O GitHub reúne aqui quem contribuiu com alterações nos repositórios públicos do Guia.</p><Button variant="outline" onClick={() => openContribution()}>Quero contribuir</Button></>}
   </section>;
 }

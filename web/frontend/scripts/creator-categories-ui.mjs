@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 
 export async function checkCreatorCategories({send, evaluate, waitFor, navigate, click, selectOption}) {
   await navigate('/criadores/?plataforma=instagram&conteudo=lifestyle&pagina=2');
-  await waitFor(`document.querySelector('[role="combobox"][aria-label="Categoria de conteúdo"]')?.textContent.includes('Lifestyle')`);
+  await waitFor(`document.querySelector('[role="combobox"][aria-label="Categoria de conteúdo"]')?.textContent.includes('Estilo de vida')`);
   const controls = await evaluate(`(()=>{const category=document.querySelector('[role="combobox"][aria-label="Categoria de conteúdo"]').getBoundingClientRect(), search=document.querySelector('#resource-search').getBoundingClientRect();return {category:{x:category.x,y:category.y,width:category.width,height:category.height},search:{x:search.x,y:search.y,width:search.width,height:search.height}}})()`);
   assert.ok(Math.abs(controls.category.y - controls.search.y) < 2, 'Category and search share the same row');
   assert.ok(controls.category.x + controls.category.width <= controls.search.x, 'Category appears beside the search');
@@ -10,7 +10,7 @@ export async function checkCreatorCategories({send, evaluate, waitFor, navigate,
   const profiles = await evaluate(`[...document.querySelectorAll('main tbody tr td:first-child a')].map(a => a.href)`);
   assert.equal(profiles.length, 4);
   assert.ok(profiles.some(url => url.includes('lucasmontano')));
-  assert.equal(await evaluate(`document.querySelector('main tbody').textContent.includes('Lifestyle')`), true);
+  assert.equal(await evaluate(`document.querySelector('main tbody').textContent.includes('Estilo de vida')`), true);
   await selectOption('Categoria de conteúdo', 'Humor');
   await waitFor(`document.querySelector('main').textContent.includes('Ainda não há criadores nesta categoria')`);
   assert.equal(await evaluate(`new URLSearchParams(location.search).has('pagina')`), false);

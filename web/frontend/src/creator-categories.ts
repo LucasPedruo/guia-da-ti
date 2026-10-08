@@ -2,7 +2,7 @@ export const creatorCategories = [
   { id: 'education', name: 'Tutoriais e educação' },
   { id: 'career', name: 'Carreira' },
   { id: 'humor', name: 'Humor' },
-  { id: 'lifestyle', name: 'Lifestyle' },
+  { id: 'lifestyle', name: 'Estilo de vida' },
   { id: 'news', name: 'Notícias' },
   { id: 'reviews', name: 'Análises e opiniões' },
   { id: 'projects', name: 'Projetos e bastidores' },

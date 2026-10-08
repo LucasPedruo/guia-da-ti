@@ -467,7 +467,7 @@ export function StudyDetail({ resource }: { resource: Resource }) {
       <h2 className="text-xl font-semibold">Avaliações</h2>
       <StudyBadges activity={a} />
       <p className="text-xs text-muted-foreground">
-        Uma avaliação e um hype por conta. As interações somam comentários,
+        Você pode dar uma nota e um hype por conta. As interações somam comentários,
         avaliações e hypes.
       </p>
       {loading && (
@@ -582,7 +582,7 @@ export function StudyDetail({ resource }: { resource: Resource }) {
                 className="w-full rounded-lg border bg-transparent p-3 text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Seu comentário será público no Guia e no GitHub, em nome de{" "}
+                Seu comentário aparecerá no Guia e no GitHub com o nome de{" "}
                 {auth?.session?.login}, na discussão deste recurso.
               </p>
               <Button
