@@ -87,6 +87,7 @@ static class StudyChecks
     {
         var builder=WebApplication.CreateBuilder(new WebApplicationOptions {EnvironmentName=Environments.Development});
         builder.Configuration.Sources.Clear();builder.Configuration.AddConfiguration(configuration);builder.Logging.ClearProviders();
+        builder.Configuration["AUTH_STORAGE_PATH"] = Path.Combine(folder, "auth");
         builder.Services.AddSingleton(TimeProvider.System);builder.Services.AddSingleton(catalog);builder.Services.AddSingleton(activity);
         builder.AddCommunityAuth();builder.WebHost.UseSetting("urls","http://127.0.0.1:0");
         await using var app=builder.Build();app.UseAuthentication();app.MapCommunityAuth();app.MapStudyEngagement();

@@ -55,7 +55,7 @@ static class RegisteredUserChecks
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
         builder.Configuration.Sources.Clear();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["COMMUNITY_USERS_PATH"] = path });
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["COMMUNITY_USERS_PATH"] = path, ["AUTH_STORAGE_PATH"] = Path.Combine(Path.GetDirectoryName(path)!, "auth") });
         builder.Logging.ClearProviders();
         builder.Services.AddSingleton(TimeProvider.System);
         builder.AddCommunityAuth();

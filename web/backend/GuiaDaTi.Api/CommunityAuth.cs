@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 public static class CommunityAuth
 {
@@ -16,6 +17,11 @@ public static class CommunityAuth
     public static void AddCommunityAuth(this WebApplicationBuilder builder)
     {
         builder.Services.AddMemoryCache();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        var keys = ServerTickets.CreatePrivateDirectory(Path.Combine(ServerTickets.StoragePath(builder.Configuration, builder.Environment), "keys"));
+        var protection = builder.Services.AddDataProtection().SetApplicationName("GuiaDaTi.CommunityAuth")
+            .PersistKeysToFileSystem(keys);
+        if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi();
         builder.Services.AddSingleton<ServerTickets>();
         builder.Services.AddSingleton<RegisteredUsers>();
         builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-Token");
@@ -26,8 +32,8 @@ public static class CommunityAuth
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.SecurePolicy = secure;
-                options.ExpireTimeSpan = TimeSpan.FromHours(8);
-                options.SlidingExpiration = false;
+                options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                options.SlidingExpiration = true;
                 options.Events.OnRedirectToLogin = context => { context.Response.StatusCode = 401; return Task.CompletedTask; };
                 options.Events.OnSignedIn = context => RegisteredUsersEndpoints.RecordLoginAsync(context.HttpContext, context.Principal);
             });
@@ -78,7 +84,7 @@ public static class CommunityAuth
             if (!Enabled(config)) return Results.Json(new { error = "Login em preparação." }, statusCode: 503);
             var local = returnUrl is not null && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//")
                 && !returnUrl.Contains('\\') && !returnUrl.Any(char.IsControl) && !returnUrl.StartsWith("/api", StringComparison.OrdinalIgnoreCase);
-            return Results.Challenge(new AuthenticationProperties { RedirectUri = local ? returnUrl : "/" }, ["GitHub"]);
+            return Results.Challenge(new AuthenticationProperties { RedirectUri = local ? returnUrl : "/", IsPersistent = true }, ["GitHub"]);
         });
         app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery csrf) => {
             try { await csrf.ValidateRequestAsync(context); }
@@ -87,17 +93,4 @@ public static class CommunityAuth
             return Results.NoContent();
         });
     }
-}
-
-// Only an opaque session ID reaches the browser. OAuth tokens remain in server memory.
-public sealed class ServerTickets(IMemoryCache cache) : ITicketStore
-{
-    public Task<string> StoreAsync(AuthenticationTicket ticket) {
-        var key = "auth:" + Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-        cache.Set(key, ticket, ticket.Properties.ExpiresUtc ?? DateTimeOffset.UtcNow.AddHours(8));
-        return Task.FromResult(key);
-    }
-    public Task RenewAsync(string key, AuthenticationTicket ticket) { cache.Set(key, ticket, ticket.Properties.ExpiresUtc ?? DateTimeOffset.UtcNow.AddHours(8)); return Task.CompletedTask; }
-    public Task<AuthenticationTicket?> RetrieveAsync(string key) => Task.FromResult(cache.Get<AuthenticationTicket>(key));
-    public Task RemoveAsync(string key) { cache.Remove(key); return Task.CompletedTask; }
 }

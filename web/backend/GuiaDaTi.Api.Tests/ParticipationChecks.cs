@@ -1,10 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
 
 static class ParticipationChecks
 {
@@ -36,16 +32,7 @@ static class ParticipationChecks
         try { await writer.PublishAsync("user-token", topic with { CategoryId = "foreign-category" }, default); }
         catch (DiscussionWriteRejectedException) { invalidCategory = true; }
         Assert(invalidCategory, "Reject category outside repository");
-        using var memory = new MemoryCache(new MemoryCacheOptions());
-        var tickets = new ServerTickets(memory);
-        var properties = new AuthenticationProperties { ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) };
-        properties.StoreTokens([new AuthenticationToken { Name = "access_token", Value = "user-token" }]);
-        var ticket = new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, "member")], "test")), properties, CookieAuthenticationDefaults.AuthenticationScheme);
-        var key = await tickets.StoreAsync(ticket);
-        Assert(!key.Contains("user-token"), "Opaque browser session");
-        Assert((await tickets.RetrieveAsync(key))?.Properties.GetTokenValue("access_token") == "user-token", "Token stored on server");
-        await tickets.RemoveAsync(key);
-        Assert(await tickets.RetrieveAsync(key) is null, "Logout removes server credential");
+        await AuthSessionChecks.Run();
         Console.WriteLine("Participation OK: visitor credentials, topics, comments, replies, permissions, repository boundaries, locked topics and server sessions.");
     }
     static void Assert(bool value, string name) { if (!value) throw new Exception(name); }
