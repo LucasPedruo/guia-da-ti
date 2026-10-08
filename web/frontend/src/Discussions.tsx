@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Advertisement } from './Advertisement';
+import { PublicationActions } from './PublicationActions';
 import { ApproveContribution, Composer } from './Participation';
 import { DiscussionSkeleton } from './Loading';
 import { ArrowLeft, ArrowUpRight, MessageSquareText, Search } from 'lucide-react';
@@ -57,7 +58,7 @@ function Pagination({ pageInfo, cursors, setCursors }: { pageInfo: PageInfo; cur
   </nav>;
 }
 
-function CommentCard({ comment, url, number, onPublished, rootId }: { comment: Comment; url: string; number: number; onPublished: () => void; rootId?: string }) {
+function CommentCard({ comment, url, number, onPublished, rootId, locked = false }: { comment: Comment; url: string; number: number; onPublished: () => void; rootId?: string; locked?: boolean }) {
   return <article data-motion className={`min-w-0 ${rootId ? 'rounded-lg bg-muted/20 p-3' : 'p-4 sm:p-5'}`}>
     <details open className="group/comment">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
@@ -67,8 +68,9 @@ function CommentCard({ comment, url, number, onPublished, rootId }: { comment: C
       </summary>
       <div className="ml-3.5 space-y-3 border-l pl-4 pt-2 pb-1 sm:pl-5">
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{comment.body}</p>
-        {number > 0 && <Composer compact number={number} replyToId={rootId || comment.id} githubUrl={url} onPublished={onPublished} label="Responder" />}
-        {comment.replies.length > 0 && <div aria-label="Respostas ao comentário" className="space-y-3 pt-2">{comment.replies.map(reply => <CommentCard key={reply.id} comment={reply} url={url} number={number} onPublished={onPublished} rootId={rootId || comment.id} />)}</div>}
+        <div className="flex justify-end"><PublicationActions author={comment.author} number={number} commentId={comment.id} body={comment.body} hasReplies={comment.replyCount > 0} onChanged={onPublished} /></div>
+        {number > 0 && !locked && <Composer compact number={number} replyToId={rootId || comment.id} githubUrl={url} onPublished={onPublished} label="Responder" />}
+        {comment.replies.length > 0 && <div aria-label="Respostas ao comentário" className="space-y-3 pt-2">{comment.replies.map(reply => <CommentCard key={reply.id} comment={reply} url={url} number={number} locked={locked} onPublished={onPublished} rootId={rootId || comment.id} />)}</div>}
         {comment.replyCount > comment.replies.length && <a className="inline-block text-xs text-muted-foreground hover:text-primary" href={url} target="_blank" rel="noopener noreferrer">Ver todas as {comment.replyCount} respostas no GitHub</a>}
       </div>
     </details>
@@ -90,7 +92,7 @@ export function DiscussionThread({ number, embedded = false, onPublished }: { nu
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
       <article data-motion className="overflow-hidden rounded-lg border bg-card">
         <header className="space-y-4 border-b p-4 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-muted font-semibold uppercase">{ready.discussion.author.slice(0, 1)}</span><span className="font-semibold text-foreground">{ready.discussion.author}</span><span>·</span><DateLabel value={ready.discussion.updatedAt} /><span className="ml-auto"><PublicationActions author={ready.discussion.author} number={number} title={ready.discussion.title} body={ready.body} onChanged={published} onDeleted={() => { if (embedded) published(); else window.location.assign(returnUrl); }} /></span></div>
         <h2 ref={heading} tabIndex={-1} className="break-words text-2xl font-semibold tracking-tight outline-none [overflow-wrap:anywhere]">{embedded ? 'Discussão' : ready.discussion.title}</h2>
         <div className="flex flex-wrap gap-2"><Badge variant="secondary">{ready.discussion.category.name}</Badge>{ready.discussion.resourceCategory && <Badge variant="outline">{categories.find(category => category.id === ready.discussion.resourceCategory)?.name || ready.discussion.resourceCategory}</Badge>}{ready.discussion.isAnswered && <Badge variant="outline">Respondida</Badge>}{ready.discussion.locked && <Badge variant="outline">Conversa encerrada</Badge>}</div>
         </header>
@@ -100,11 +102,11 @@ export function DiscussionThread({ number, embedded = false, onPublished }: { nu
           <div className="flex flex-wrap items-center gap-2">{ready.body.includes('Categoria do guia:') && <ApproveContribution number={number} />}<Button asChild variant="ghost" size="xs"><a href={ready.discussion.url} target="_blank" rel="noopener noreferrer">Ver no GitHub<ArrowUpRight /></a></Button></div>
         </footer>
       </article>
-      <Advertisement />
+      <Advertisement placement={embedded ? 'study-topic' : 'forum-topic'} />
       {!ready.discussion.locked && <div className="rounded-lg border bg-card p-4"><Composer prompt number={number} githubUrl={ready.discussion.url} onPublished={() => { setCursors([]); published(); }} /></div>}
       <section aria-label="Comentários" className="overflow-hidden rounded-lg border bg-card">
         <h3 className="flex items-center gap-2 border-b px-4 py-3 text-sm font-semibold sm:px-5"><MessageSquareText className="size-4 text-muted-foreground" />Comentários ({ready.discussion.commentCount})</h3>
-        <div className="divide-y">{ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={ready.discussion.locked ? 0 : number} onPublished={published} />) : <p className="p-5 text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}</div>
+        <div className="divide-y">{ready.comments.length ? ready.comments.map(comment => <CommentCard key={comment.id} comment={comment} url={ready.discussion.url} number={number} locked={ready.discussion.locked} onPublished={published} />) : <p className="p-5 text-sm text-muted-foreground">Ainda não há comentários. Participe da conversa!</p>}</div>
       </section>
       <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
     </>}
@@ -157,13 +159,13 @@ function DiscussionFeed() {
     {query && <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><p role="status">{ready ? `${ready.totalCount ?? ready.items.length} ${(ready.totalCount ?? ready.items.length) === 1 ? 'conversa encontrada' : 'conversas encontradas'} para “${query}”.` : 'Buscando…'}</p><Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(''); applyFilters(''); }}>Limpar busca</Button></div>}
     {!ready ? <RequestState error={error} unconfigured={result?.status === 'unconfigured'} retry={retry} /> : <>
       {ready.items.length ? <ul className="divide-y border-y" aria-label="Conversas">{ready.items.map((discussion, index) => <Fragment key={discussion.number}><li>
-        <article data-motion className="relative min-w-0 space-y-2 px-1 py-4 transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
+        <article data-motion className="relative min-w-0 cursor-pointer space-y-2 px-1 py-4 transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><span className="font-medium text-foreground">{discussion.category.name}</span>{discussion.resourceCategory && <Badge variant="outline" className="text-[10px]">{categories.find(category => category.id === discussion.resourceCategory)?.name || discussion.resourceCategory}</Badge>}<span aria-hidden="true">·</span><span>{discussion.author}</span><span aria-hidden="true">·</span><DateLabel value={discussion.updatedAt} />{discussion.isAnswered && <Badge variant="secondary" className="text-[10px]">Respondida</Badge>}{discussion.locked && <Badge variant="outline" className="text-[10px]">Encerrada</Badge>}</div>
           <h2 className="text-base font-semibold leading-snug sm:text-lg"><a className="rounded-sm hover:text-primary after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-ring [overflow-wrap:anywhere]" href={discussionUrl(discussion.number)}>{discussion.title}</a></h2>
           {discussion.preview && <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">{discussion.preview}</p>}
           <Button asChild variant="secondary" size="xs" className="relative"><a href={discussionUrl(discussion.number)} aria-label={`${discussion.commentCount} comentários em ${discussion.title}`}><MessageSquareText aria-hidden="true" />{discussion.commentCount} {discussion.commentCount === 1 ? 'comentário' : 'comentários'}</a></Button>
         </article>
-      </li>{index + 1 === advertisementAfter && <li><Advertisement /></li>}</Fragment>)}</ul> : <Empty className="border"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>{query ? 'Nenhuma conversa encontrada' : category === 'all' ? 'Comece a primeira conversa' : 'Ainda não há conversas nesta categoria'}</EmptyTitle><EmptyDescription>{query ? 'Tente outras palavras ou selecione todas as categorias. Você também pode abrir uma nova conversa.' : 'Compartilhe uma dúvida, uma descoberta ou uma experiência com a comunidade.'}</EmptyDescription></EmptyHeader></Empty>}
+      </li>{index + 1 === advertisementAfter && <Advertisement listItem />}</Fragment>)}</ul> : <Empty className="border"><EmptyHeader><EmptyMedia variant="icon"><MessageSquareText /></EmptyMedia><EmptyTitle>{query ? 'Nenhuma conversa encontrada' : category === 'all' ? 'Comece a primeira conversa' : 'Ainda não há conversas nesta categoria'}</EmptyTitle><EmptyDescription>{query ? 'Tente outras palavras ou selecione todas as categorias. Você também pode abrir uma nova conversa.' : 'Compartilhe uma dúvida, uma descoberta ou uma experiência com a comunidade.'}</EmptyDescription></EmptyHeader></Empty>}
       <Pagination pageInfo={ready.pageInfo} cursors={cursors} setCursors={setCursors} />
     </>}
   </div>;

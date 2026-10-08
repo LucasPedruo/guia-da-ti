@@ -21,10 +21,14 @@ git submodule update --init database
 npm --prefix tools/catalog ci
 npm --prefix web/frontend ci
 ./scripts/build.ps1
-dotnet run --project web/backend/GuiaDaTi.Api --no-build --urls http://localhost:5080
+dotnet run --project web/backend/GuiaDaTi.Api --no-build
 ```
 
 Para desenvolver a interface após gerar o catálogo: `npm --prefix web/frontend run dev`.
+
+O servidor aceita conexões da rede na porta 5080. Em outro dispositivo conectado à mesma rede, abra `http://IP-DA-MAQUINA:5080`. Consulte o IPv4 da conexão Ethernet ou Wi-Fi com `ipconfig`. Na própria máquina, você também pode usar `http://localhost:5080`.
+
+A conta administradora gerencia campanhas em `/admin/anuncios`. Consulte os espaços, limites e instruções de armazenamento em [Administração de anúncios](docs/publicidade.md).
 
 ## Atualizar os dados
 
@@ -63,7 +67,7 @@ Para conectar dados reais:
 1. Ative Discussions nas configurações de `guia-da-ti/guia-da-ti-dados` e organize as categorias no GitHub.
 2. O servidor usa esse repositório por padrão. Se já existir uma variável `DISCUSSIONS_REPOSITORY`, atualize-a para `guia-da-ti/guia-da-ti-dados` ou remova-a para usar o padrão.
 3. Configure `DISCUSSIONS_TOKEN` no gerenciador de segredos do servidor. Use uma credencial com acesso de leitura a Discussions no repositório. Para desenvolvimento, use os [User Secrets do .NET](https://learn.microsoft.com/aspnet/core/security/app-secrets) no projeto `web/backend/GuiaDaTi.Api`, com a chave `DISCUSSIONS_TOKEN`, e execute em ambiente `Development`. Não registre a credencial em arquivos versionados nem envie ao frontend.
-4. Execute `dotnet run --project web/backend/GuiaDaTi.Api`: o perfil local usa `Development`, carrega os User Secrets e inicia em `http://localhost:5080`, sem abrir o navegador. Inicie o frontend com `npm --prefix web/frontend run dev`. A prévia Vite também encaminha `/api` para essa API. O perfil local não configura o servidor de produção.
+4. Execute `dotnet run --project web/backend/GuiaDaTi.Api`: o perfil local usa `Development`, carrega os User Secrets e aceita conexões na porta 5080, sem abrir o navegador. Inicie o frontend com `npm --prefix web/frontend run dev`. A prévia Vite também encaminha `/api` para essa API. O perfil local não configura o servidor de produção.
 
 Sem credencial, a página mostra que o espaço está em preparação. Configuração inválida, serviço indisponível e lista vazia têm estados distintos. A API recusa repositórios privados e mantém um cache em memória por um minuto. Tópicos e comentários são exibidos como texto, sem executar HTML. Comentários ocultados pela moderação não têm seu conteúdo exposto. A configuração não ativa Discussions nem cria publicações automaticamente.
 

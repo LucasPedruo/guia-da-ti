@@ -5,7 +5,7 @@ const nouns:Record<string,string>={courses:'curso',platforms:'plataforma',univer
   certifications:'certificação',news:'portal de notícias',blogs:'blog',newsletters:'newsletter',podcasts:'podcast',creators:'criador',youtube:'canal',
   articles:'artigo',tutorials:'tutorial',studies:'estudo','case-studies':'estudo de caso',reports:'relatório',communities:'comunidade',events:'evento',
   meetups:'meetup',conferences:'conferência',hackathons:'hackathon',tools:'ferramenta','open-source':'projeto de código aberto',challenges:'desafio',
-  labs:'laboratório',jobs:'vaga',internships:'estágio',scholarships:'bolsa',mentoring:'mentoria',volunteering:'oportunidade de voluntariado'};
+  labs:'laboratório',jobs:'site de vagas',scholarships:'site ou programa de bolsas',mentoring:'programa de mentoria',volunteering:'programa de voluntariado'};
 export function SuggestResource({type}:{type?:string}) {
   const noun=type?nouns[type]:undefined;
   return <Button variant="default" size="default" onClick={() => openContribution(type)}><Plus />{noun?'Sugerir '+noun:'Contribuir com o guia'}</Button>;

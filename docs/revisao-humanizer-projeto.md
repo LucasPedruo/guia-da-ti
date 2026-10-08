@@ -395,3 +395,59 @@ O novo trecho “um cursor animado aponta para o ícone e simula um clique” de
 ## Quatro etapas nas dicas de cada seção
 
 Os textos foram separados em “O que é”, “Por que vale a pena”, “Como escolher” e “Como usar esta seção”. Cada trecho trata de uma ideia. As novas definições dizem o que você encontra na área e usam “site de origem” quando o conteúdo é externo. Os rótulos já estavam curtos e não exigiram outra revisão.
+
+## Imagens das prévias e tutoriais
+
+- “Os 54 cadastros têm imagem verificada” informa o resultado, sem adjetivo vago. As frases novas do registro de curadoria já estavam curtas.
+- A dica de Se informar deixa de citar tutoriais. O passo de Estudar agora inclui essa categoria e limita a instrução de alternar a visualização às categorias com cards.
+- As descrições revisadas usam voz ativa. Não houve mudança em mensagens de API ou identificadores.
+
+## Pessoas e empresas em Sobre
+
+“Empresas que apoiam o Guia da TI” descreve quem aparece na seção. “Conheça cada empresa pelo link para o site oficial” usa voz ativa. Os novos textos já estavam curtos e não exigiram outra revisão. O título “Empresas apoiadoras” usa caixa de sentença.
+
+## Curadoria de networking e categorias de Carreira
+
+- As novas descrições de networking explicam público, formato e condições de participação. Os trechos já estavam curtos e não exigiram outra revisão.
+- “Vagas” virou “Sites de vagas”. “Mentorias” virou “Programas de mentoria”. Os rótulos indicam a fonte que você encontra no catálogo.
+- “Buscar vagas, estágios, bolsas e mentorias” virou “encontrar sites de vagas, bolsas de estudo e programas de mentoria ou voluntariado”. A explicação acompanha o escopo de curadoria.
+- “Sugira o site ou a página do programa” usa voz ativa. A orientação seguinte explica que anúncios individuais ficam fora do catálogo.
+
+## Curadoria de Praticar e Carreira
+
+Os novos textos descrevem a atividade que você encontra em cada fonte. As frases usam voz ativa e indicam condições de acesso ou participação.
+
+“Confira preço, idioma e formato antes de agendar” orienta a escolha de uma mentoria. “Uma oportunidade remota pode ter restrições geográficas” explica um limite concreto.
+
+Os trechos já estavam sem travessões, ponto e vírgula ou adjetivos vagos. A revisão manteve nomes oficiais e não alterou textos de cadastros anteriores.
+
+## Acesso pela rede local
+
+As novas instruções do README dizem qual endereço abrir e como consultar o IP da máquina. As frases já estavam curtas e usam voz ativa. A revisão preservou comandos e nomes de configuração.
+
+## Página para empresas
+
+Os textos novos explicam o público e os locais de divulgação com frases curtas. “Visitas ao seu site” nomeia o destino da campanha. “Público de tecnologia” descreve quem usa o Guia, sem inventar números de alcance. Os trechos já estavam limpos e não exigiram trocas. A revisão preservou textos antigos.
+
+## Painel e rotação de anúncios
+
+“Vagas em uso agora” diferencia campanhas atuais de agendamentos. “Cada espaço mostra um anúncio por vez” explica a consequência do limite. Os erros dizem o que aconteceu e orientam a próxima ação. A revisão manteve frases curtas, voz ativa e números concretos. Nomes de configuração e mensagens antigas foram preservados.
+
+## Como usar o painel de anúncios
+
+O novo manual e a ajuda do painel usam os nomes dos controles e passos com verbos diretos. “Cinco vagas não são cinco anúncios aparecendo juntos” esclarece o limite com um exemplo. As frases explicam cadastro, agendamento e contadores sem vocabulário de implementação. Os trechos já estavam curtos e não exigiram trocas. A revisão preservou textos anteriores.
+
+## Controle geral da publicidade
+
+“Desabilitar todos os anúncios” e “Habilitar todos os anúncios” dizem o efeito do botão. A descrição explica que as datas e pausas individuais ficam preservadas. Os trechos já estavam curtos e não exigiram trocas.
+
+## Formatos de publicidade e ações do autor
+
+“Ocultar anúncios por 4 horas” informa o alcance e a duração da escolha. “Somente imagem e link” diferencia o anúncio visual do formato com texto. “Editar comentário” e “Excluir tópico” nomeiam a publicação afetada. Os avisos de exclusão dizem o que será removido do Guia e do GitHub. Os trechos novos já estavam curtos e não exigiram trocas.
+# Campos das sugestões
+
+Os novos títulos e rótulos dizem qual item você está indicando. “Nome” virou “Nome da comunidade” ou o nome da categoria escolhida. “Link” virou “Link principal da comunidade” ou “Link do perfil do criador”.
+
+“Resumo” virou “Apresentação” com uma orientação sobre o que escrever. “Descrição” virou “Detalhes” com instruções sobre participação ou condições de acesso.
+
+Regras aplicadas: rótulos com contexto, voz ativa e frases de até 25 palavras. A busca de categorias informa quando não encontra resultados. Textos antigos fora desses campos foram preservados.

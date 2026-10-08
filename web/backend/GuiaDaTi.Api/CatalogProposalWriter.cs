@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 public sealed class CatalogProposalWriter(IHttpClientFactory clients, IConfiguration configuration, ContributionImages? images = null)
 {
     private readonly string repository = configuration["DISCUSSIONS_REPOSITORY"] ?? "guia-da-ti/guia-da-ti-dados";
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     public async Task<string> Publish(string token, ContributionResource resource, CancellationToken cancellation)
     {
@@ -65,7 +64,7 @@ public sealed class CatalogProposalWriter(IHttpClientFactory clients, IConfigura
             await Task.Delay(1000, cancellation);
         }
         if (images is not null) resource = await images.Publish(client, target, repository, branch, baseBranch, resource, cancellation);
-        var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(resource, JsonOptions)));
+        var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(CatalogJson.Serialize(resource)));
         using var file = await client.PutAsJsonAsync($"repos/{target}/contents/data/{resource.Type}/{resource.Slug}.json",
             new { message = $"catalog: add {resource.Slug}", content, branch }, cancellation);
         file.EnsureSuccessStatusCode();

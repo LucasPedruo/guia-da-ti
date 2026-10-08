@@ -32,6 +32,27 @@ static class ParticipationChecks
         try { await writer.PublishAsync("user-token", topic with { CategoryId = "foreign-category" }, default); }
         catch (DiscussionWriteRejectedException) { invalidCategory = true; }
         Assert(invalidCategory, "Reject category outside repository");
+        await writer.ChangeAsync("user-token", "777", 7, null, new("Edited body", "Edited title"), default);
+        Assert(handler.LastQuery.Contains("updateDiscussion(input:") && handler.LastInput.GetProperty("discussionId").GetString() == "thread-7", "Owner edits topic using repository-derived ID");
+        await writer.ChangeAsync("user-token", "777", 7, null, null, default);
+        Assert(handler.LastQuery.Contains("deleteDiscussion(input:"), "Owner deletes topic");
+        await writer.ChangeAsync("user-token", "777", 7, "comment-1", new("Edited comment"), default);
+        Assert(handler.LastQuery.Contains("updateDiscussionComment") && handler.LastInput.GetProperty("commentId").GetString() == "comment-1", "Owner edits comment or reply");
+        await writer.ChangeAsync("user-token", "777", 7, "comment-1", null, default);
+        Assert(handler.LastQuery.Contains("deleteDiscussionComment"), "Owner deletes comment or reply");
+        foreach (var mode in new[] { "foreign-author", "private", "disabled", "missing", "foreign-reply", "hidden-reply", "denied" }) {
+            handler.Mode = mode;
+            var before = handler.Mutations;
+            var rejected = false;
+            try { await writer.ChangeAsync("user-token", "777", 7, "comment-1", new("Edited comment"), default); }
+            catch (Exception error) when (error is DiscussionWriteRejectedException or DiscussionsUnavailableException) { rejected = true; }
+            Assert(rejected && handler.Mutations == before, $"Reject edit/delete metadata {mode} before mutation");
+        }
+        handler.Mode = "ready";
+        var wrongOwner = false;
+        try { await writer.ChangeAsync("user-token", "888", 7, null, null, default); }
+        catch (DiscussionWriteRejectedException) { wrongOwner = true; }
+        Assert(wrongOwner && handler.UserTokenOnly, "Different GitHub ID cannot delete even with same visible name; visitor credentials only");
         await AuthSessionChecks.Run();
         Console.WriteLine("Participation OK: visitor credentials, topics, comments, replies, permissions, repository boundaries, locked topics and server sessions.");
     }
@@ -45,6 +66,7 @@ sealed class WriteGitHub : HttpMessageHandler
     public bool UserTokenOnly = true;
     public int Mutations;
     public JsonElement LastInput;
+    public string LastQuery = "";
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
     {
         UserTokenOnly &= request.Headers.Authorization?.Parameter == "user-token";
@@ -52,13 +74,14 @@ sealed class WriteGitHub : HttpMessageHandler
         var query = payload.RootElement.GetProperty("query").GetString()!;
         object data;
         if (query.Contains("mutation")) {
+            LastQuery = query;
             Mutations++;
             LastInput = payload.RootElement.GetProperty("variables").GetProperty("input").Clone();
             data = query.Contains("createDiscussion") ? new { createDiscussion = new { discussion = new { number = 8 } } } : (object)new { addDiscussionComment = new { comment = new { id = "new-comment" } } };
         } else if (query.Contains("node(id:")) {
-            data = new { node = new { isMinimized = Mode == "hidden-reply", replyTo = Mode == "nested-reply" ? new { id = "root" } : null, discussion = new { id = Mode == "foreign-reply" ? "foreign-thread" : "thread-7" } } };
+            data = new { node = new { id = "comment-1", body = "**Original** [link](https://example.com)", author = new { databaseId = Mode == "foreign-author" ? 888 : 777 }, isMinimized = Mode == "hidden-reply", replyTo = Mode == "nested-reply" ? new { id = "root" } : null, discussion = new { id = Mode == "foreign-reply" ? "foreign-thread" : "thread-7" } } };
         } else {
-            data = new { repository = new { id = "repo-1", isPrivate = Mode == "private", hasDiscussionsEnabled = Mode != "disabled", discussionCategories = new { nodes = new[] { new { id = "category-1" } } }, discussion = Mode == "missing" ? null : new { id = "thread-7", locked = Mode == "locked", closed = Mode == "closed" } } };
+            data = new { repository = new { id = "repo-1", isPrivate = Mode == "private", hasDiscussionsEnabled = Mode != "disabled", discussionCategories = new { nodes = new[] { new { id = "category-1" } } }, discussion = Mode == "missing" ? null : new { id = "thread-7", title = "Original title", body = "**Original** [link](https://example.com)", author = new { databaseId = Mode == "foreign-author" ? 888 : 777 }, locked = Mode == "locked", closed = Mode == "closed" } } };
         }
         var body = Mode == "denied" ? "{\"errors\":[{\"message\":\"sensitive upstream detail\"}]}" : JsonSerializer.Serialize(new { data });
         return new(HttpStatusCode.OK) { Content = new StringContent(body) };

@@ -78,6 +78,7 @@ public static class CommunityAuth
             return Results.Ok(new { enabled = Enabled(config), login = context.User.Identity?.IsAuthenticated == true ? context.User.Identity.Name : null,
                 avatarUrl = context.User.Identity?.IsAuthenticated == true && long.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
                     ? $"https://avatars.githubusercontent.com/u/{userId}?s=80" : null,
+                canManageAds = AdvertisingAdmin.Allowed(context.User, config),
                 csrfToken = csrf.GetAndStoreTokens(context).RequestToken });
         });
         app.MapGet("/api/auth/login", (string? returnUrl, IConfiguration config) => {

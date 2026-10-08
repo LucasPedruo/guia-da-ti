@@ -1,0 +1,49 @@
+# Administração de anúncios
+
+Para usar o painel, comece pelo [passo a passo com exemplos](como-usar-painel-anuncios.md). Este documento reúne as regras de funcionamento e armazenamento.
+
+O painel fica em `/admin/anuncios`. A conta administradora vê **Administrar anúncios** no menu do perfil depois de entrar com GitHub.
+
+O servidor permite acesso ao ID GitHub `147441250`, da conta `LucasPedruo`. O nome do perfil não concede acesso. A configuração `ADS_ADMIN_GITHUB_ID` permite trocar o responsável. Cada alteração exige a sessão autenticada e a proteção de formulário usada pelo Guia.
+
+## Espaços e limites
+
+| Espaço | Onde aparece | Vagas iniciais |
+| --- | --- | --- |
+| Lista do fórum | Entre os tópicos do Início | 5 |
+| Conversas do fórum | Depois do tópico, antes dos comentários | 5 |
+| Discussões de Estudar | Na conversa vinculada ao item, antes dos comentários | 5 |
+
+Cada espaço mostra um anúncio por vez. As vagas limitam quantas campanhas podem participar da rotação no mesmo período. As datas de campanhas habilitadas não podem ultrapassar a capacidade do espaço, inclusive em agendamentos futuros.
+
+O painel começa com limite de 100 cadastros e troca a cada 45 segundos. Você pode escolher até 500 cadastros, de 1 a 20 vagas por espaço e de 15 a 300 segundos de intervalo.
+
+## Cadastrar e exibir
+
+O controle **Publicidade no site** habilita ou desabilita todos os anúncios. Essa escolha fica salva no servidor e preserva as datas e pausas individuais.
+
+Preencha empresa, título, descrição e site de destino. Você pode enviar uma imagem PNG, JPG ou WebP de até 2 MB ou informar um link público HTTPS. A prévia acompanha o preenchimento.
+
+Escolha os espaços, a prioridade e o início da campanha. O término é opcional. Um cadastro novo começa pausado. Habilite a campanha para participar da rotação dentro do período escolhido.
+
+A seleção considera o espaço, as datas e a prioridade de 1 a 10. Quando há alternativas, ela evita repetir o anúncio anterior na próxima troca. Com duas campanhas, elas se alternam. Com três ou mais, a prioridade influencia a seleção entre as alternativas.
+
+Fora da tela ou com a aba oculta, o anúncio não troca. Ao voltar, o espaço consulta as campanhas novamente. Sem campanha disponível, ele mostra o espaço reservado.
+
+Os anúncios não mudam as posições do catálogo. As empresas apoiadoras continuam com a apresentação separada no Início e em Sobre. A prévia de `/empresas` não exibe campanhas nem soma contadores.
+
+## Contadores
+
+Uma exibição conta quando pelo menos metade do anúncio fica visível por um segundo, com a aba aberta. O clique conta quando a pessoa abre o site pelo anúncio. Os contadores não representam pessoas únicas e não são uma medição auditada de audiência.
+
+O servidor emite uma autorização temporária para cada anúncio selecionado. Repetir o mesmo registro de exibição ou clique não soma novamente. Essa autorização expira após dez minutos. O destino do clique vem do cadastro, sem aceitar um endereço enviado por quem clica.
+
+## Armazenamento
+
+As campanhas, configurações e contadores ficam em `web/backend/GuiaDaTi.Api/App_Data/advertising.json`. As imagens enviadas ficam em `App_Data/contribution-images`. Esses dados ficam no servidor e sobrevivem a reinicializações. O catálogo público continua no GitHub.
+
+Configure `ADS_STORAGE_PATH` para usar outro caminho persistente. Preserve o arquivo de anúncios, a pasta de imagens e as chaves de autenticação nas atualizações. A estrutura atende uma instância do servidor. Ela não sincroniza arquivos entre máquinas.
+
+O servidor grava primeiro um arquivo temporário e depois substitui o anterior. Ele serializa alterações concorrentes para impedir reservas acima do limite. Se o arquivo existente estiver inválido, informa a falha e preserva o conteúdo para recuperação.
+
+Excluir uma campanha remove também seus contadores. O painel pede confirmação antes dessa ação.

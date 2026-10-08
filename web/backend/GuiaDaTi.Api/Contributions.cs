@@ -86,7 +86,7 @@ public sealed class ContributionService(IHttpClientFactory clients, IConfigurati
         if (!createBranch.IsSuccessStatusCode) throw new ContributionRejectedException("Não foi possível criar um branch de revisão. Verifique se esta sugestão já foi aprovada.");
         if (images is not null) resource = await images.Publish(client, repository, repository, branch, defaultBranch, resource, cancellation);
         var path = $"data/{resource.Type}/{resource.Slug}.json";
-        var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(resource, JsonOptions)));
+        var content = Convert.ToBase64String(Encoding.UTF8.GetBytes(CatalogJson.Serialize(resource)));
         using var putFile = await client.PutAsJsonAsync(new Uri(api, $"repos/{owner}/{name}/contents/{path}"), new { message = $"catalog: add {resource.Slug}", content, branch }, cancellation);
         if (!putFile.IsSuccessStatusCode) throw new ContributionRejectedException("O arquivo do recurso não pôde ser criado. Confira se já existe no catálogo.");
         using var pull = await client.PostAsJsonAsync(new Uri(api, $"repos/{owner}/{name}/pulls"), new {

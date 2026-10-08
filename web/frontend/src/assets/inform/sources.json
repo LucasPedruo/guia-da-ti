@@ -1,0 +1,434 @@
+[
+  {
+    "key": "articles/alura-artigos",
+    "page": "https://www.alura.com.br/artigos",
+    "source": "https://www.alura.com.br/img/favicon.png",
+    "file": "articles/alura-artigos.png",
+    "bytes": 7311,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "articles/css-tricks",
+    "page": "https://css-tricks.com/",
+    "source": "https://css-tricks.com/apple-touch-icon.png",
+    "file": "articles/css-tricks.png",
+    "bytes": 14277,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "articles/freecodecamp-publicacoes",
+    "page": "https://www.freecodecamp.org/news/",
+    "source": "https://cdn.freecodecamp.org/universal/favicons/favicon.ico",
+    "file": "articles/freecodecamp-publicacoes.ico",
+    "bytes": 7406,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "articles/smashing-magazine",
+    "page": "https://www.smashingmagazine.com/articles/",
+    "source": "https://www.smashingmagazine.com/images/favicon/favicon.ico",
+    "file": "articles/smashing-magazine.ico",
+    "bytes": 4286,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "articles/web-dev",
+    "page": "https://web.dev/discover",
+    "source": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/web/images/touchicon-180.png",
+    "file": "articles/web-dev.png",
+    "bytes": 1025,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/akita-on-rails",
+    "page": "https://akitaonrails.com/",
+    "source": "https://akitaonrails.com/apple-touch-icon.png",
+    "file": "blogs/akita-on-rails.png",
+    "bytes": 3687,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/chrome-developers-blog",
+    "page": "https://developer.chrome.com/blog",
+    "source": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/chrome/images/touchicon-180.png",
+    "file": "blogs/chrome-developers-blog.png",
+    "bytes": 20124,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/diolinux",
+    "page": "https://diolinux.com.br/",
+    "source": "https://diolinux.com.br/wp-content/uploads/2021/05/cropped-diolinux-logo-180x180.png",
+    "file": "blogs/diolinux.png",
+    "bytes": 15006,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/github-blog",
+    "page": "https://github.blog/",
+    "source": "https://github.blog/wp-content/uploads/2019/01/cropped-github-favicon-512.png?fit=180%2C180",
+    "file": "blogs/github-blog.png",
+    "bytes": 3785,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/loiane-groner-blog",
+    "page": "https://loiane.com/",
+    "source": "https://loiane.com/assets/img/favicons/apple-touch-icon.png",
+    "file": "blogs/loiane-groner-blog.png",
+    "bytes": 7987,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/netflix-tech-blog",
+    "page": "https://netflixtechblog.com/",
+    "source": "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico",
+    "file": "blogs/netflix-tech-blog.ico",
+    "bytes": 16958,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/stack-overflow-blog",
+    "page": "https://stackoverflow.blog/",
+    "source": "https://stackoverflow.blog/apple-touch-icon.png",
+    "file": "blogs/stack-overflow-blog.png",
+    "bytes": 879,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "blogs/tableless",
+    "page": "https://tableless.com.br/",
+    "source": "https://tableless.com.br/wp-content/uploads/2024/01/logo-tableless.svg",
+    "file": "blogs/tableless.svg",
+    "bytes": 10282,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "case-studies/aws-estudos-de-caso",
+    "page": "https://aws.amazon.com/solutions/case-studies/",
+    "source": "https://a0.awsstatic.com/libra-css/images/site/touch-icon-iphone-114-smile.png",
+    "file": "case-studies/aws-estudos-de-caso.png",
+    "bytes": 2352,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "case-studies/cloudflare-estudos-de-caso",
+    "page": "https://www.cloudflare.com/case-studies/",
+    "source": "https://www.cloudflare.com/favicon.ico",
+    "file": "case-studies/cloudflare-estudos-de-caso.png",
+    "bytes": 908,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "case-studies/google-cloud-clientes",
+    "page": "https://cloud.google.com/customers",
+    "source": "https://www.gstatic.com/cgc/super_cloud_gradient.png",
+    "file": "case-studies/google-cloud-clientes.png",
+    "bytes": 9447,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "case-studies/microsoft-historias-clientes",
+    "page": "https://www.microsoft.com/en-us/customers",
+    "source": "https://www.microsoft.com/favicon.ico?v2",
+    "file": "case-studies/microsoft-historias-clientes.ico",
+    "bytes": 17174,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/ars-technica",
+    "page": "https://arstechnica.com/",
+    "source": "https://cdn.arstechnica.net/favicon.ico",
+    "file": "news/ars-technica.ico",
+    "bytes": 22382,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/canaltech",
+    "page": "https://canaltech.com.br/",
+    "source": "https://canaltech.com.br/apple-touch-icon.png",
+    "file": "news/canaltech.png",
+    "bytes": 1973,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/infoq",
+    "page": "https://www.infoq.com/",
+    "source": "https://cdn.infoq.com/statics_s2_20261007095246/apple-touch-icon.png",
+    "file": "news/infoq.png",
+    "bytes": 2910,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/olhar-digital",
+    "page": "https://olhardigital.com.br/",
+    "source": "https://img.odcdn.com.br/wp-content/uploads/images/header-logo.webp",
+    "file": "news/olhar-digital.webp",
+    "bytes": 7544,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/tecmundo",
+    "page": "https://www.tecmundo.com.br/",
+    "source": "https://cloudfront-us-east-1.images.arcpublishing.com/estadao/HF3I65OGPFBXBG4YQVXTUQOYZM.png",
+    "file": "news/tecmundo.png",
+    "bytes": 12830,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/tecnoblog",
+    "page": "https://tecnoblog.net/",
+    "source": "https://tecnoblog.net/apple-touch-icon.png",
+    "file": "news/tecnoblog.png",
+    "bytes": 14683,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/the-register",
+    "page": "https://www.theregister.com/",
+    "source": "https://www.theregister.com/view-resources/dachser2/public/theregister/favicons/apple-touch-icon.png",
+    "file": "news/the-register.png",
+    "bytes": 4109,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "news/the-verge",
+    "page": "https://www.theverge.com/tech",
+    "source": "https://www.theverge.com/static-assets/icons/apple-touch-icon.png",
+    "file": "news/the-verge.png",
+    "bytes": 2832,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/bytebytego-newsletter",
+    "page": "https://newsletter.bytebytego.com/",
+    "source": "https://media.beehiiv.com/cdn-cgi/image/fit=scale-down,format=auto,onerror=redirect,quality=80/uploads/publication/logo/f279c4bc-e693-44fa-a843-d3d63cae1766/thumb_%E9%BB%91%E7%BA%BF%E4%B8%8A%E8%89%B245px%2B.png",
+    "file": "newsletters/bytebytego-newsletter.png",
+    "bytes": 4526,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/data-hackers-newsletter",
+    "page": "https://www.datahackers.news/",
+    "source": "https://media.beehiiv.com/cdn-cgi/image/fit=scale-down,format=auto,onerror=redirect,quality=80/uploads/publication/logo/0f0bfe98-8943-4bc1-b95d-7c9ecfd3e402/thumb_Design_sem_nome__43_.png",
+    "file": "newsletters/data-hackers-newsletter.png",
+    "bytes": 6973,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/filipe-deschamps-newsletter",
+    "page": "https://newsletter.filipedeschamps.com.br/",
+    "source": "https://embed.filekitcdn.com/e/iajLrvtJnG9GL5FWs5H8a1/6M4He65n8bpXQJNcxeLXLL",
+    "file": "newsletters/filipe-deschamps-newsletter.jpg",
+    "bytes": 29021,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/frontend-focus",
+    "page": "https://frontendfoc.us/",
+    "source": "https://frontendfoc.us/logo.png",
+    "file": "newsletters/frontend-focus.png",
+    "bytes": 11617,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/javascript-weekly",
+    "page": "https://javascriptweekly.com/",
+    "source": "https://javascriptweekly.com/logo.png",
+    "file": "newsletters/javascript-weekly.png",
+    "bytes": 11617,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/pragmatic-engineer",
+    "page": "https://newsletter.pragmaticengineer.com/",
+    "source": "https://substackcdn.com/image/fetch/$s_!TlPE!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F47d77fcc-2914-46a1-8d39-3a6e8758e0ad%2Fapple-touch-icon-57x57.png",
+    "file": "newsletters/pragmatic-engineer.png",
+    "bytes": 650,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/python-weekly",
+    "page": "https://www.pythonweekly.com/",
+    "source": "https://media.beehiiv.com/cdn-cgi/image/fit=scale-down,format=auto,onerror=redirect,quality=80/uploads/publication/logo/0dfe72e1-380f-4399-a50e-134919512092/thumb_Python-Weekly-Square-Logo.jpg",
+    "file": "newsletters/python-weekly.jpg",
+    "bytes": 7275,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "newsletters/tldr-tech",
+    "page": "https://tldr.tech/",
+    "source": "https://tldr.tech/apple-touch-icon-kf.png",
+    "file": "newsletters/tldr-tech.png",
+    "bytes": 3815,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/braincast",
+    "page": "https://www.b9.com.br/braincast/",
+    "source": "https://www.b9.com.br/assets/b9-mark-official.png?v=7xJldkGXy9owgEj8",
+    "file": "podcasts/braincast.png",
+    "bytes": 77390,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/carreira-sem-fronteiras",
+    "page": "https://www.carreirasemfronteiras.com.br/",
+    "source": "https://www.carreirasemfronteiras.com.br/wp-content/uploads/2021/09/cropped-cropped-CAP1-180x180.png",
+    "file": "podcasts/carreira-sem-fronteiras.png",
+    "bytes": 28867,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/changelog",
+    "page": "https://changelog.com/podcast",
+    "source": "https://cdn.changelog.com/static/favicon-b4b2f962a1fe2a589cbe515208193316.ico",
+    "file": "podcasts/changelog.ico",
+    "bytes": 45010,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/data-hackers-podcast",
+    "page": "https://www.datahackers.com.br/podcast/",
+    "source": "https://cdn.sanity.io/images/mcq3inxc/production/e5c6e2178baf3dd6e828462848527be24fe43979-1200x630.png",
+    "file": "podcasts/data-hackers-podcast.png",
+    "bytes": 329714,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/hipsters-ponto-tech",
+    "page": "https://www.hipsters.tech/",
+    "source": "https://www.hipsters.tech/wp-content/uploads/2016/07/cropped-hipsters-logo.png",
+    "file": "podcasts/hipsters-ponto-tech.png",
+    "bytes": 82321,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/pizza-de-dados",
+    "page": "https://podcast.pizzadedados.com/",
+    "source": "https://pbcdn1.podbean.com/imglogo/image-logo/2203782/avatar_large_2.png",
+    "file": "podcasts/pizza-de-dados.png",
+    "bytes": 101308,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/syntax",
+    "page": "https://syntax.fm/",
+    "source": "https://syntax.fm/favicon.svg",
+    "file": "podcasts/syntax.svg",
+    "bytes": 4381,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "podcasts/tecnocast",
+    "page": "https://tecnoblog.net/tecnocast/",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/1a/25/4d/1a254d7d-d084-25bb-25b1-7f1af570c0c1/mza_17020645238384525079.jpg/600x600bb.webp",
+    "file": "podcasts/tecnocast.webp",
+    "bytes": 15538,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "reports/cetic-pesquisas-tic",
+    "page": "https://cetic.br/pt/pesquisas/",
+    "source": "https://cetic.br/favicon.ico",
+    "file": "reports/cetic-pesquisas-tic.ico",
+    "bytes": 25214,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "reports/dora-relatorios",
+    "page": "https://dora.dev/research/",
+    "source": "https://dora.dev/img/misc/dora_social_image.png",
+    "file": "reports/dora-relatorios.png",
+    "bytes": 138277,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "reports/github-octoverse",
+    "page": "https://github.blog/news-insights/octoverse/",
+    "source": "https://github.blog/wp-content/uploads/2019/01/cropped-github-favicon-512.png?fit=180%2C180",
+    "file": "reports/github-octoverse.png",
+    "bytes": 3785,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "reports/jetbrains-developer-ecosystem",
+    "page": "https://devecosystem-2025.jetbrains.com/",
+    "source": "https://devecosystem-2025.jetbrains.com/favicon.ico?favicon.b2c05d4c.ico",
+    "file": "reports/jetbrains-developer-ecosystem.ico",
+    "bytes": 177258,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "reports/stack-overflow-survey",
+    "page": "https://survey.stackoverflow.co/",
+    "source": "https://survey.stackoverflow.co/apple-touch-icon.png",
+    "file": "reports/stack-overflow-survey.png",
+    "bytes": 879,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "studies/acl-anthology",
+    "page": "https://aclanthology.org/",
+    "source": "https://aclanthology.org/images/acl-logo.svg",
+    "file": "studies/acl-anthology.svg",
+    "bytes": 1024,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "studies/arxiv-computacao",
+    "page": "https://arxiv.org/archive/cs",
+    "source": "https://arxiv.org/static/browse/0.3.4/images/icons/apple-touch-icon.png",
+    "file": "studies/arxiv-computacao.png",
+    "bytes": 7360,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "studies/google-research-publicacoes",
+    "page": "https://research.google/pubs/",
+    "source": "https://www.gstatic.com/images/branding/googleg_gradient/1x/googleg_gradient_standard_20dp.png",
+    "file": "studies/google-research-publicacoes.png",
+    "bytes": 827,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "studies/jmlr",
+    "page": "https://jmlr.org/",
+    "source": "https://jmlr.org/img/favicon.ico",
+    "file": "studies/jmlr.ico",
+    "bytes": 15406,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tutorials/digitalocean-tutoriais",
+    "page": "https://www.digitalocean.com/community/tutorials",
+    "source": "https://www.digitalocean.com/_do-www-marketing/5f562aff/_next/static/media/apple-touch-icon.9537f22a.png",
+    "file": "tutorials/digitalocean-tutoriais.png",
+    "bytes": 3116,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tutorials/javascript-info",
+    "page": "https://javascript.info/",
+    "source": "https://javascript.info/img/favicon/apple-touch-icon-precomposed.png",
+    "file": "tutorials/javascript-info.png",
+    "bytes": 6004,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tutorials/mdn-aprender-web",
+    "page": "https://developer.mozilla.org/pt-BR/docs/Learn_web_development",
+    "source": "https://developer.mozilla.org/apple-touch-icon.png",
+    "file": "tutorials/mdn-aprender-web.png",
+    "bytes": 2171,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tutorials/real-python",
+    "page": "https://realpython.com/",
+    "source": "https://realpython.com/static/apple-touch-icon.png",
+    "file": "tutorials/real-python.png",
+    "bytes": 16149,
+    "checkedAt": "2026-10-08"
+  }
+]

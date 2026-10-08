@@ -1,0 +1,226 @@
+[
+  {
+    "key": "challenges/beecrowd",
+    "page": "https://beecrowd.com/pt/",
+    "source": "https://beecrowd.com/wp-content/uploads/2024/03/main-favicon-96px.svg",
+    "file": "challenges/beecrowd.svg",
+    "bytes": 1832,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/codewars",
+    "page": "https://www.codewars.com/",
+    "source": "https://cdn.prod.website-files.com/6674f0cdb5b7b401612cf015/67180821f483344739cfb029_Codewars_red_white.svg",
+    "file": "challenges/codewars.svg",
+    "bytes": 6554,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/codingame",
+    "page": "https://www.codingame.com/start/",
+    "source": "https://static.codingame.com/start/static/2b0e71471a7dfcfba6971ca5c0b7a0f5/15e82/logo4.png",
+    "file": "challenges/codingame.png",
+    "bytes": 1439,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/exercism",
+    "page": "https://exercism.org/",
+    "source": "https://assets.exercism.org/assets/icons/exercism-with-logo-black-12752bd7fcf6862ba8ad7a2b75e21a9b2409d7fd.svg",
+    "file": "challenges/exercism.svg",
+    "bytes": 7278,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/frontend-mentor",
+    "page": "https://www.frontendmentor.io/",
+    "source": "https://www.frontendmentor.io/images/logo-mobile.svg",
+    "file": "challenges/frontend-mentor.svg",
+    "bytes": 587,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/hackerrank",
+    "page": "https://www.hackerrank.com/dashboard",
+    "source": "https://hrcdn.net/hrc/_next/static/next_assets/brand/logo-light.svg",
+    "file": "challenges/hackerrank.svg",
+    "bytes": 5134,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/leetcode",
+    "page": "https://leetcode.com/",
+    "source": "https://assets.leetcode.com/static_assets/public/icons/apple-touch-icon.png",
+    "file": "challenges/leetcode.png",
+    "bytes": 16665,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "challenges/project-euler",
+    "page": "https://projecteuler.net/",
+    "source": "https://projecteuler.net/favicons/apple-touch-icon.png",
+    "file": "challenges/project-euler.png",
+    "bytes": 4501,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/google-skills",
+    "page": "https://www.skills.google/",
+    "source": "https://cdn.qwiklabs.com/X46FrQX4iLxHW5MxL8jICvgZM0evMEKscCeQO%2BazGdo%3D",
+    "file": "labs/google-skills.ico",
+    "bytes": 5430,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/hack-the-box-labs",
+    "page": "https://www.hackthebox.com/hacker/hacking-labs",
+    "source": "https://www.hackthebox.com/hubfs/raw_assets/HackTheBox/56/js_client_assets/assets/nav-logo-3JkQrnNl.svg",
+    "file": "labs/hack-the-box-labs.svg",
+    "bytes": 9384,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/killercoda",
+    "page": "https://killercoda.com/",
+    "source": "https://killercoda.com/assets/cnpe-o8MfR5Bn.png",
+    "file": "labs/killercoda.png",
+    "bytes": 10635,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/overthewire",
+    "page": "https://overthewire.org/wargames/",
+    "source": "https://overthewire.org/img/favicon.ico",
+    "file": "labs/overthewire.png",
+    "bytes": 7060,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/portswigger-web-security-academy",
+    "page": "https://portswigger.net/web-security",
+    "source": "https://portswigger.net/web-security/images/landing-page/web-security-academy-logo.svg",
+    "file": "labs/portswigger-web-security-academy.svg",
+    "bytes": 8621,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "labs/tryhackme",
+    "page": "https://tryhackme.com/",
+    "source": "https://assets.tryhackme.com/img/logo/tryhackme_logo_full.svg",
+    "file": "labs/tryhackme.svg",
+    "bytes": 20707,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/codetriage",
+    "page": "https://www.codetriage.com/",
+    "source": "https://www.codetriage.com/assets/favicon-3f3e475345be27562adee9d8e596a032785e3efd4496111cab0b1fe0a81ad722.ico",
+    "file": "open-source/codetriage.ico",
+    "bytes": 18094,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/first-contributions",
+    "page": "https://firstcontributions.github.io/",
+    "source": "https://firstcontributions.github.io/android-chrome-256x256.png",
+    "file": "open-source/first-contributions.png",
+    "bytes": 3041,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/github-explore",
+    "page": "https://github.com/explore",
+    "source": "https://github.com/fluidicon.png",
+    "file": "open-source/github-explore.png",
+    "bytes": 33270,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/good-first-issue",
+    "page": "https://goodfirstissue.dev/",
+    "source": "https://goodfirstissue.dev/_nuxt/gfi-logo-white.B_q-F5-X.svg",
+    "file": "open-source/good-first-issue.svg",
+    "bytes": 21375,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/open-source-guides",
+    "page": "https://opensource.guide/pt/",
+    "source": "https://github.githubassets.com/favicon.ico",
+    "file": "open-source/open-source-guides.ico",
+    "bytes": 6518,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "open-source/up-for-grabs",
+    "page": "https://up-for-grabs.net/",
+    "source": "https://up-for-grabs.net/images/logo.png",
+    "file": "open-source/up-for-grabs.png",
+    "bytes": 7783,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/bruno",
+    "page": "https://www.usebruno.com/",
+    "source": "https://www.usebruno.com/bruno-logo.png",
+    "file": "tools/bruno.png",
+    "bytes": 3489,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/codepen",
+    "page": "https://codepen.io/",
+    "source": "https://avatars.githubusercontent.com/u/1545643?v=4",
+    "file": "tools/codepen.png",
+    "bytes": 19293,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/dbdiagram",
+    "page": "https://dbdiagram.io/",
+    "source": "https://cdn.holistics.io/logo-dbdiagram-notext.ico",
+    "file": "tools/dbdiagram.ico",
+    "bytes": 110342,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/figma",
+    "page": "https://www.figma.com/",
+    "source": "https://cdn.sanity.io/images/599r6htc/regionalized/717af6633a6896341b7c95807c05f449597ef769-98x32.svg?q=75&fit=max&auto=format",
+    "file": "tools/figma.svg",
+    "bytes": 8514,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/git",
+    "page": "https://git-scm.com/",
+    "source": "https://git-scm.com/images/logo@2x.png",
+    "file": "tools/git.png",
+    "bytes": 3783,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/postman",
+    "page": "https://www.postman.com/",
+    "source": "https://voyager.postman.com/uploads/postman-postman-logo-full-white-1-2026-09-29-2042.svg",
+    "file": "tools/postman.svg",
+    "bytes": 12377,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/stackblitz",
+    "page": "https://stackblitz.com/",
+    "source": "https://stackblitz.com/_astro/img/brands/stackblitz-monotone.svg",
+    "file": "tools/stackblitz.svg",
+    "bytes": 3654,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "tools/visual-studio-code",
+    "page": "https://code.visualstudio.com/",
+    "source": "https://code.visualstudio.com/assets/favicon.ico",
+    "file": "tools/visual-studio-code.ico",
+    "bytes": 113128,
+    "checkedAt": "2026-10-08"
+  }
+]

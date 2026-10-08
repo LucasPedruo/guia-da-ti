@@ -6,7 +6,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
 import { StudyCover, StudyDetail, StudyListing } from './Study';
 import { studyTypes } from './study-ranking';
+import { ResourcePreview } from './ResourcePreview';
+import { resourceImage } from './resource-image';
+import { shouldOpenRow, openRowLink } from './row-navigation';
 import { Community } from './Community';
+import { Companies } from './Companies';
+import { AdvertisingAdmin } from './AdvertisingAdmin';
 import { CommunityTabs } from './CommunityTabs';
 import { CommunityFiltersDialog } from './CommunityFiltersDialog';
 import { SuggestResource } from './SuggestResource';
@@ -46,7 +51,7 @@ const resourceIcons: Record<string, LucideIcon> = {
   news: Newspaper, blogs: FileText, newsletters: Mail, podcasts: Headphones, youtube: Youtube, creators: Users, articles: FileText, tutorials: Code,
   studies: FlaskConical, 'case-studies': BriefcaseBusiness, reports: FileText, communities: Users, events: CalendarDays, meetups: Users,
   conferences: CalendarDays, hackathons: Code, tools: Wrench, 'open-source': Code, challenges: Award, labs: FlaskConical, jobs: BriefcaseBusiness,
-  internships: GraduationCap, scholarships: BookOpen, mentoring: Users, volunteering: Users,
+  scholarships: BookOpen, mentoring: Users, volunteering: Users,
 };
 const platformIcons: Record<string, LucideIcon> = { youtube: Youtube, instagram: Instagram, linkedin: Linkedin, twitter: Twitter, tiktok: Globe2 };
 const dialogTypes = new Set(['articles', 'tutorials', 'studies', 'case-studies', 'reports', 'news', 'blogs', 'newsletters', 'podcasts', 'communities']);
@@ -61,7 +66,7 @@ function resourceExtra(resource: Resource) {
   if (profileTypes.has(resource.type)) {
     try { return new URL(resource.url).hostname.replace(/^www\./, ''); } catch { return 'Perfil externo'; }
   }
-  if (['jobs', 'internships', 'scholarships', 'events', 'meetups', 'conferences', 'hackathons'].includes(resource.type)) {
+  if (['jobs', 'scholarships', 'events', 'meetups', 'conferences', 'hackathons'].includes(resource.type)) {
     return resource.countries?.length ? resource.countries.map(country => labels[country] || country).join(' · ') : resource.areas.map(area => labels[area] || area).join(' · ');
   }
   if (resource.technologies.length) return resource.technologies.map(technology => labels[technology] || technology).join(' · ');
@@ -71,15 +76,6 @@ function resourceExtra(resource: Resource) {
 function ResourceIcon({ resource, platform }: { resource: Resource; platform: string | null }) {
   const Icon = platformIcons[platform || resource.type] || resourceIcons[resource.type] || Globe2;
   return <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded bg-muted/50 text-primary"><Icon className="size-3.5" /></span>;
-}
-
-function ResourcePreview({ resource, extra }: { resource: Resource; extra: string }) {
-  return <span role="tooltip" className="absolute left-0 top-full z-30 hidden max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-4rem))] overflow-y-auto rounded-lg border bg-popover p-4 text-popover-foreground shadow-xl group-hover:block group-focus-within:block">
-    <span className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground"><Globe2 className="size-4" />{new URL(resource.url).hostname.replace(/^www\./, '')}</span>
-    <span className="block text-base font-semibold">{resource.name}</span>
-    <span className="mt-1 block text-sm leading-relaxed">{resource.description}</span>
-    {extra && <span className="mt-3 block border-t pt-2 text-xs text-muted-foreground">{extra}</span>}
-  </span>;
 }
 
 function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: string }) {
@@ -98,11 +94,13 @@ function ResourceDetailDialog({ resource, extra }: { resource: Resource; extra: 
 }
 
 function ResourceRow({ resource, platform, locationColumn = false }: { resource: Resource; platform: string | null; locationColumn?: boolean }) {
+  const [open, setOpen] = useState(false);
   const extra = resourceExtra(resource);
   const profile = profileTypes.has(resource.type);
   const { profile: creator, loading: profileLoading } = useCreatorProfile(resource.url, profile && !resource.demo, 0);
   const displayName = creator?.name || resource.name;
   const displaySummary = creator?.description || resource.summary;
+  const imageUrl = resourceImage(resource) || creator?.avatarUrl || undefined;
   const dialog = dialogTypes.has(resource.type);
   const actionLabel = profile ? 'Ver perfil' : resource.type==='communities' ? 'Ver detalhes' : dialog ? 'Ver conteúdo' : 'Ver detalhes';
   const href = profile ? resource.url : resourcePath(resource);
@@ -114,10 +112,13 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
   const action = <Button size="xs" variant="outline" aria-label={`${actionLabel}: ${resource.name}`}>
     {actionLabel}
   </Button>;
-  const row = <tr className="border-t transition-colors hover:bg-muted/30 focus-within:bg-muted/30">
+  const row = <tr className="cursor-pointer border-t transition-colors hover:bg-muted/30 focus-within:bg-muted/30" onClick={event => {
+    if (!shouldOpenRow(event)) return;
+    if (dialog) setOpen(true); else openRowLink(event, href, profile);
+  }}>
     <td className="px-3 py-2.5 align-middle sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
-      {(profile || resource.imageUrl) && <CreatorAvatar profile={creator} name={displayName} imageUrl={resource.imageUrl} loading={profileLoading} />}
+      {(profile || imageUrl) && <CreatorAvatar profile={creator} name={displayName} imageUrl={imageUrl} loading={profileLoading} />}
       <div className="group relative min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2"><div className="min-w-0">{title}</div>{resource.demo && <Badge variant="outline" className="shrink-0 text-[10px]">Exemplo</Badge>}</div>
         <p className="truncate text-[11px] leading-5 text-muted-foreground" title={displaySummary}>{displaySummary}</p>
@@ -126,7 +127,6 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
         {resource.communityMembers && <p className="text-[11px] font-medium text-muted-foreground">{communityMembersLabel(resource.communityMembers)}</p>}
         {profile && <p className="text-[11px] text-muted-foreground">{resource.demo ? 'Perfil de exemplo' : followersLabel(creator)}</p>}
         <p className="truncate text-[11px] text-muted-foreground sm:hidden">{category}</p>
-        <ResourcePreview resource={{ ...resource, name: displayName, description: displaySummary }} extra={extra} />
       </div>
       </div>
     </td>
@@ -134,7 +134,8 @@ function ResourceRow({ resource, platform, locationColumn = false }: { resource:
     <td className="hidden px-3 py-2.5 align-middle font-mono text-[11px] text-muted-foreground lg:table-cell"><time dateTime={resource.updatedAt}>{resource.updatedAt.split('-').reverse().join('/')}</time></td>
     <td className="px-3 py-2.5 text-right align-middle sm:px-4">{dialog ? <Dialog.Trigger asChild>{action}</Dialog.Trigger> : <Button asChild size="xs" variant="outline"><a href={href} target={profile ? '_blank' : undefined} rel={profile ? 'noopener noreferrer' : undefined} aria-label={`${profile ? 'Ver perfil' : 'Ver detalhes'}: ${resource.name}`}>{profile ? 'Ver perfil' : 'Ver detalhes'}</a></Button>}</td>
   </tr>;
-  return dialog ? <Dialog.Root>{row}<ResourceDetailDialog resource={resource} extra={extra} /></Dialog.Root> : row;
+  const preview = <ResourcePreview resource={{ ...resource, name: displayName, description: creator?.description || resource.description, imageUrl }} extra={extra} disabled={open}>{row}</ResourcePreview>;
+  return dialog ? <Dialog.Root open={open} onOpenChange={setOpen}>{preview}<ResourceDetailDialog resource={resource} extra={extra} /></Dialog.Root> : preview;
 }
 
 export function App({ path }: { path: string }) {
@@ -324,17 +325,20 @@ export function App({ path }: { path: string }) {
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar ao início</a></Button></EmptyContent></Empty>
         ) : home ? (
           <div className="flex flex-1 flex-col gap-8"><Discussions className="w-full flex-1" /><div className="section-divider" aria-hidden="true" /><Community area="supporters" preview /></div>
+        ) : path === '/admin/anuncios' ? (
+          <AdvertisingAdmin />
+        ) : path === '/empresas' ? (
+          <Companies />
         ) : path === '/sobre' ? (
           <article className="mx-auto w-full max-w-4xl space-y-6 [&>p]:max-w-2xl">
             <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1><SectionGuide section="about" dark={dark} /></div><SuggestResource /></div>
             <p className="text-lg leading-relaxed">Um guia de links para sites, conteúdos e oportunidades de tecnologia, mantido pela comunidade.</p>
             <CommunityMetrics />
             <AboutGuide dark={dark} />
-            <SectionGuide section="github" dark={dark} label="Primeira vez no GitHub?" />
-            <Separator />
-            <Maintainers />
-            <Separator />
-            <Community area="supporters" embedded />
+            <div className="grid items-stretch gap-5 md:grid-cols-2">
+              <Maintainers />
+              <Community area="supporters" embedded />
+            </div>
           </article>
         ) : page.resource ? (
           <article className="mx-auto w-full max-w-4xl space-y-6">

@@ -9,6 +9,8 @@ import { universityTypes } from './university-options';
 import { useContributionToast } from './ContributionToasts';
 import { ContributionWizard } from './ContributionWizard';
 import {SelectField} from './SelectField';
+import { ComboboxField } from './ComboboxField';
+import { contributionCopy } from './contribution-copy';
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +25,7 @@ import { brazilRegions, type CommunityLocation } from './community-location';
 import brazilMap from './data/brazil-states.json';
 import { communityAudiences, communityCategoryOrder, communityModalities, communityPlatforms } from './community-options';
 
-type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string };
+type Session = { enabled: boolean; login: string | null; avatarUrl: string | null; csrfToken: string; canManageAds?: boolean };
 export const SessionContext = createContext<{ session: Session | null; loading: boolean; logout: () => Promise<void>; startLogin: () => void; pending: boolean } | null>(null);
 export function Participation({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -132,6 +134,7 @@ export function UserControls({ dark, toggleTheme }: { dark: boolean; toggleTheme
       <DropdownMenuLabel>{auth.session.login}</DropdownMenuLabel><DropdownMenuSeparator />
       <DropdownMenuItem onSelect={toggleTheme}><ThemeIcon />{themeLabel}</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => setTimeout(() => openContribution(), 0)}><HeartHandshake />Contribuir</DropdownMenuItem>
+      {auth.session.canManageAds && <DropdownMenuItem asChild><a href="/admin/anuncios"><HeartHandshake />Administrar anúncios</a></DropdownMenuItem>}
       <DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { void auth.logout(); }}><LogOut />Sair</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
@@ -223,7 +226,7 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
   </div>;
 }
 
-const typeNames: Record<string, string> = { courses: 'Cursos', platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Vagas', internships: 'Estágios', scholarships: 'Bolsas', mentoring: 'Mentorias', volunteering: 'Voluntariado' };
+const typeNames: Record<string, string> = { courses: 'Cursos', platforms: 'Plataformas de cursos', universities: 'Faculdades', bootcamps: 'Bootcamps', roadmaps: 'Roadmaps', books: 'Livros', certifications: 'Certificações', news: 'Notícias', blogs: 'Blogs', newsletters: 'Newsletters', podcasts: 'Podcasts', youtube: 'YouTube', creators: 'Criadores', articles: 'Artigos', tutorials: 'Tutoriais', studies: 'Estudos', 'case-studies': 'Estudos de caso', reports: 'Relatórios', communities: 'Comunidades', events: 'Eventos', meetups: 'Meetups', conferences: 'Conferências', hackathons: 'Hackathons', tools: 'Ferramentas', 'open-source': 'Projetos open source', challenges: 'Desafios', labs: 'Laboratórios', jobs: 'Sites de vagas', scholarships: 'Bolsas de estudo', mentoring: 'Programas de mentoria', volunteering: 'Programas de voluntariado' };
 
 export function ResourceContribution({initialCategory = ""}: {initialCategory?: string}) {
   const notify = useContributionToast();
@@ -258,6 +261,7 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
   const [imageError, setImageError] = useState('');
   useEffect(() => { if (!imageFile) { setImagePreview(''); return; } const objectUrl = URL.createObjectURL(imageFile); setImagePreview(objectUrl); return () => URL.revokeObjectURL(objectUrl); }, [imageFile]);
   const creatorCategory = type === 'creators' || type === 'youtube';
+  const copy = contributionCopy(type);
   const catalogOnly = creatorCategory || type === 'communities';
   const lookup = useCreatorProfile(url, creatorCategory && !!session?.login);
   useEffect(() => {
@@ -318,8 +322,8 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
       ['Membros', type === 'communities' && memberCount ? (moreThan ? 'Mais de ' : '') + Number(memberCount).toLocaleString('pt-BR') : ''],
       ['Plataformas', type === 'communities' ? communityPlatforms.filter(item => communityPlatformIds.includes(item.id)).map(item => item.name).join(', ') : ''],
       ['Modalidade', type === 'communities' ? communityModalities.find(item => item.id === communityModality)?.name || '' : ''],
-    ]} />} onSubmit={submit} category={type} busy={busy} rules={{ 'Categoria do guia': !!type, 'Tipo de instituição': !!universityType, 'Categorias de conteúdo': !!creatorCategoryIds.length, 'Localização da comunidade': !!communityScope && (communityScope !== 'regional' || !!communityStates.length), 'Público da comunidade': !!communityAudience, 'Modalidade': !!communityModality, 'Plataformas da comunidade': !!communityPlatformIds.length && communityPlatformIds.every(id => !!communityUrls[id]?.trim()), 'Idiomas disponíveis': !!languages.length }} footer={<>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}</>}>
-    <SelectField label="Categoria do guia" name="type" required value={type} onChange={setType} placeholder="Escolha uma categoria" options={taxonomy.types.map((id: string) => ({id, name:typeNames[id] || categories.find(category => category.id === id)?.name || id}))} />
+    ]} />} onSubmit={submit} category={type} busy={busy} rules={{ 'Categoria da comunidade': !!area, 'Categoria do guia': !!type, 'Tipo de instituição': !!universityType, 'Categorias de conteúdo': !!creatorCategoryIds.length, 'Localização da comunidade': !!communityScope && (communityScope !== 'regional' || !!communityStates.length), 'Público da comunidade': !!communityAudience, 'Modalidade': !!communityModality, 'Plataformas da comunidade': !!communityPlatformIds.length && communityPlatformIds.every(id => !!communityUrls[id]?.trim()), 'Idiomas disponíveis': !!languages.length }} footer={<>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}{success && <p role="status" className="text-sm text-muted-foreground">{success} <a className="text-primary underline" href={successUrl}>{successLinkLabel}</a></p>}</>}>
+    <div data-step-title="Categoria do guia" className="space-y-3"><SelectField label="Categoria do guia" name="type" required value={type} onChange={setType} placeholder="Escolha uma categoria" options={taxonomy.types.map((id: string) => ({id, name:typeNames[id] || categories.find(category => category.id === id)?.name || id}))} />{['jobs', 'scholarships', 'mentoring', 'volunteering'].includes(type) && <p className="text-xs text-muted-foreground">Sugira o site ou a página do programa. Consulte vagas e inscrições na fonte, sem cadastrar anúncios individuais.</p>}</div>
     {type === 'universities' && <SelectField label="Tipo de instituição" name="universityType" required value={universityType} onChange={setUniversityType} placeholder="Escolha o tipo" options={universityTypes.map(t => ({...t}))} />}
     {type === 'communities' && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Localização da comunidade</legend>
       <SelectField label="Área de atuação" name="communityScope" required value={communityScope} onChange={value=>setCommunityScope(value as CommunityLocation['scope'])} placeholder="Escolha o alcance" options={[{id:'regional',name:'Regional'},{id:'national',name:'Nacional'},{id:'international',name:'Internacional'}]} />
@@ -340,10 +344,10 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
       {communityPlatforms.filter(item=>communityPlatformIds.includes(item.id)).map(item=><Label key={item.id} className="block space-y-2 text-sm font-medium">Link no {item.name}<Input name={`communityLink-${item.id}`} type="url" required maxLength={500} placeholder="https://" value={communityUrls[item.id]||''} disabled={busy} onChange={event=>setCommunityUrls(current=>({...current,[item.id]:event.target.value}))} /></Label>)}
     </fieldset>}
     {type === 'communities' && <SelectField label="Modalidade" name="communityModality" required value={communityModality} onChange={setCommunityModality} placeholder="Escolha a modalidade" options={communityModalities} />}
-    <div data-step-title="Link" className="space-y-4"><Label className="block space-y-2 text-sm font-medium">Link<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
+    <div data-step-title={copy.url} className="space-y-4"><Label className="block space-y-2 text-sm font-medium">{copy.url}<Input name="url" type="url" required maxLength={500} placeholder="https://" value={url} onChange={event => {
       setUrl(event.target.value);
       if (creatorCategory) { setName(''); setSummary(''); setDescription(''); }
-    }} /></Label>
+    }} /></Label><p className="text-sm text-muted-foreground">{copy.urlHelp}</p>
     {creatorCategory && <div aria-live="polite" className="space-y-2 text-sm text-muted-foreground">
       <p>Cole o link do perfil para buscar os dados automaticamente. Confira as informações antes de enviar.</p>
       {lookup.loading && <p role="status">Buscando perfil…</p>}
@@ -358,17 +362,17 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
       <p className="text-xs text-muted-foreground">Imagem opcional. Envie PNG, JPG ou WebP de até 2 MB ou informe um link HTTPS.</p>
       {imageError && <p role="alert" className="text-sm text-destructive">{imageError}</p>}
     </div>
-    <Label className="block space-y-2 text-sm font-medium">Nome<Input name="name" required minLength={2} maxLength={100} value={name} onChange={event => setName(event.target.value)} /></Label>
-    <Label className="block space-y-2 text-sm font-medium">Resumo<Input name="summary" required minLength={10} maxLength={240} placeholder="Uma frase para apresentar o recurso" value={summary} onChange={event => setSummary(event.target.value)} /></Label>
-    <Label className="block space-y-2 text-sm font-medium">Descrição<Textarea name="description" required minLength={10} maxLength={4000} rows={4} value={description} onChange={event => setDescription(event.target.value)} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></Label>
+    <div data-step-title={copy.name} className="space-y-3"><Label className="block space-y-2 text-sm font-medium">{copy.name}<Input name="name" required minLength={2} maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder={type === 'communities' ? 'Ex.: FullDev' : copy.name} /></Label></div>
+    <div data-step-title={copy.summary} className="space-y-3"><Label className="block space-y-2 text-sm font-medium">{copy.summary}<Input name="summary" required minLength={10} maxLength={240} value={summary} onChange={event => setSummary(event.target.value)} /></Label><p className="text-sm text-muted-foreground">{copy.summaryHelp}</p></div>
+    <div data-step-title={copy.description} className="space-y-3"><Label className="block space-y-2 text-sm font-medium">{copy.description}<Textarea name="description" required minLength={10} maxLength={4000} rows={4} value={description} onChange={event => setDescription(event.target.value)} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-normal" /></Label><p className="text-sm text-muted-foreground">{copy.descriptionHelp}</p></div>
     {creatorCategory && <fieldset className="space-y-3 rounded-md border p-4"><legend className="text-sm font-medium">Categorias de conteúdo</legend>
       <p className="text-xs text-muted-foreground">Escolha pelo menos uma categoria. Um perfil pode abordar vários tipos de conteúdo.</p>
       <div className="grid gap-2 sm:grid-cols-2">{creatorCategories.map(item => <Label key={item.id} className="flex items-center gap-2 text-sm"><Checkbox name="creatorCategories" value={item.id} checked={creatorCategoryIds.includes(item.id)} disabled={busy} onCheckedChange={checked => setCreatorCategoryIds(current => checked === true ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.name}</Label>)}</div>
     </fieldset>}
-    {type === 'communities' ? <SelectField label="Categoria da comunidade" name="area" required value={area} onChange={setArea} placeholder="Escolha uma categoria" options={[...communityCategoryOrder, ...taxonomy.areas.filter(id=>!communityCategoryOrder.includes(id))].map(id=>({id,name:labels[id]||id}))} /> : <SelectField label="Assunto principal" name="area" required value={area} onChange={setArea} placeholder="Escolha um assunto" options={taxonomy.areas.map(id => ({id, name:labels[id] || id}))} />}
+    {type === 'communities' ? <div data-step-title="Categoria da comunidade"><ComboboxField label="Categoria da comunidade" name="area" value={area} onChange={setArea} disabled={busy} options={[...communityCategoryOrder, ...taxonomy.areas.filter(id=>!communityCategoryOrder.includes(id))].map(id=>({id,name:labels[id]||id}))} /></div> : <SelectField label="Assunto principal" name="area" required value={area} onChange={setArea} placeholder="Escolha um assunto" options={taxonomy.areas.map(id => ({id, name:labels[id] || id}))} />}
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <Label key={technology} className="flex items-center gap-2 text-sm"><Checkbox checked={technologies.includes(technology)} onCheckedChange={checked => setTechnologies(current => checked === true ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</Label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <Label key={language} className="flex items-center gap-2 text-sm"><Checkbox checked={languages.includes(language)} onCheckedChange={checked => setLanguages(current => checked === true ? [...current, language] : current.filter(item => item !== language))} />{language}</Label>)}</div></fieldset>
-    <div data-step-title="Revisar e enviar" className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Categoria',typeNames[type] || type],['Nome',name],['Link',url],['Resumo',summary],['Descrição',description],['Assunto',labels[area] || area],['Idiomas',languages.join(', ')]].map(([label,value])=><div key={label} className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value || 'Não informado'}</dd></div>)}</dl><p className="text-xs text-muted-foreground">{catalogOnly ? 'Os mantenedores revisam sua sugestão antes de adicioná-la ao catálogo. Criadores e comunidades não abrem conversas no fórum. O GitHub pode criar uma cópia do catálogo na sua conta para enviar a proposta.' : 'Sua sugestão abre uma conversa em Ideias, onde a comunidade pode comentar. Após a revisão, um mantenedor prepara o cadastro para entrar no catálogo.'}</p>
+    <div data-step-title="Revisar e enviar" className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Categoria',typeNames[type] || type],[copy.name,name],[copy.url,url],[copy.summary,summary],[copy.description,description],['Assunto',labels[area] || area],['Idiomas',languages.join(', ')]].map(([label,value])=><div key={label} className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value || 'Não informado'}</dd></div>)}</dl><p className="text-xs text-muted-foreground">{catalogOnly ? 'Os mantenedores revisam sua sugestão antes de adicioná-la ao catálogo. Criadores e comunidades não abrem conversas no fórum. O GitHub pode criar uma cópia do catálogo na sua conta para enviar a proposta.' : 'Sua sugestão abre uma conversa em Ideias, onde a comunidade pode comentar. Após a revisão, um mantenedor prepara o cadastro para entrar no catálogo.'}</p>
     <Button type="submit" disabled={busy || !type || !area || !languages.length || type === 'universities' && !universityType || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityAudience || !communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length || communityPlatformIds.some(id=>!communityUrls[id]?.trim()))}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
     </div>
   </ContributionWizard>;

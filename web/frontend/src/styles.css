@@ -221,3 +221,18 @@ header a[aria-current], footer a[aria-current] { background: var(--accent); colo
 @supports (scrollbar-gutter: stable) {
   html body[data-scroll-locked] { margin-right: 0 !important; }
 }
+
+@keyframes resource-preview-enter {
+  from { opacity: 0; transform: translateY(6px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes resource-preview-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.resource-preview { transform-origin: var(--radix-hover-card-content-transform-origin); }
+.resource-preview[data-state="open"] { animation: resource-preview-enter 240ms ease-out; }
+.resource-preview[data-state="closed"] { animation: resource-preview-exit 140ms ease-in; }
+@media (prefers-reduced-motion: reduce) {
+  .resource-preview { animation: none !important; }
+}

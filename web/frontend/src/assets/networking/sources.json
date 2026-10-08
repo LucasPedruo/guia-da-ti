@@ -1,0 +1,226 @@
+[
+  {
+    "key": "conferences/aws-reinvent",
+    "page": "https://aws.amazon.com/events/reinvent/",
+    "source": "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/events/approved/reinvent26/RIV-navlogo-v2.f95e8a33c69deb053e79828b0806c68944922fd7.png",
+    "file": "conferences/aws-reinvent.png",
+    "bytes": 946,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/codecon",
+    "page": "https://codecon.dev/eventos",
+    "source": "https://framerusercontent.com/images/xOtlWKMI2g8F7sCvurdGXG5Eao.png",
+    "file": "conferences/codecon.png",
+    "bytes": 4589,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/devopsdays",
+    "page": "https://devopsdays.org/",
+    "source": "https://devopsdays.org/img/sharing.jpg",
+    "file": "conferences/devopsdays.jpg",
+    "bytes": 497434,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/frontin",
+    "page": "https://frontinsampa.com.br/",
+    "source": "https://frontin.cdn.prismic.io/frontin/b40079e6-e354-4612-bcfe-314f6978c7cc_logo-frontin-full.svg?fit=max&w=828",
+    "file": "conferences/frontin.svg",
+    "bytes": 4132,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/gophercon-brasil",
+    "page": "https://gopherconbr.org/",
+    "source": "https://gopherconbr.org/images/floripa/logo-header.png",
+    "file": "conferences/gophercon-brasil.png",
+    "bytes": 19861,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/jsconf-brasil",
+    "page": "https://jsconf.com.br/",
+    "source": "https://jsconf.com.br/img/logotype.png",
+    "file": "conferences/jsconf-brasil.png",
+    "bytes": 20953,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/kubecon-cloudnativecon",
+    "page": "https://www.cncf.io/events/",
+    "source": "https://www.cncf.io/wp-content/uploads/2023/04/cncf-main-site-logo.svg",
+    "file": "conferences/kubecon-cloudnativecon.svg",
+    "bytes": 11018,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/latinoware",
+    "page": "https://latinoware.org/",
+    "source": "https://latinoware.org/wp-content/uploads/2026/03/logo_Gabarito26_menu.svg",
+    "file": "conferences/latinoware.svg",
+    "bytes": 10746,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/python-brasil",
+    "page": "https://2026.pythonbrasil.org.br/",
+    "source": "https://2026.pythonbrasil.org.br/vite.svg",
+    "file": "conferences/python-brasil.svg",
+    "bytes": 417354,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "conferences/tdc",
+    "page": "https://thedevconf.com/tdc/2026/index.html",
+    "source": "https://cdn.thedevconf.com.br/2026/img/site/logo-summit-ia.png",
+    "file": "conferences/tdc.png",
+    "bytes": 47345,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/agenda-tech-brasil",
+    "page": "https://agenda-tech-brasil-site.js.org/",
+    "source": "https://agenda-tech-brasil-site.js.org/agenda-tech.png",
+    "file": "events/agenda-tech-brasil.png",
+    "bytes": 4103,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/aws-events",
+    "page": "https://aws.amazon.com/events/",
+    "source": "https://a0.awsstatic.com/libra-css/images/site/fav/favicon.ico",
+    "file": "events/aws-events.ico",
+    "bytes": 1150,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/divulga-dev",
+    "page": "https://www.divulga.dev/",
+    "source": "https://www.divulga.dev/icon.svg?433b59591507751f",
+    "file": "events/divulga-dev.svg",
+    "bytes": 366,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/google-developers-events",
+    "page": "https://developers.google.com/events",
+    "source": "https://www.gstatic.com/devrel-devsite/prod/vc572093a046b25fad0d22bd3210637939b9c971bea06a064d6f48a166bf893c5/developers/images/lockup-new.svg",
+    "file": "events/google-developers-events.svg",
+    "bytes": 11949,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/luma-tech",
+    "page": "https://luma.com/tech",
+    "source": "https://luma.com/favicon.ico",
+    "file": "events/luma-tech.png",
+    "bytes": 875,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "events/microsoft-events",
+    "page": "https://www.microsoft.com/pt-br/events",
+    "source": "https://cdn-dynmedia-1.microsoft.com/is/image/microsoftcorp/Facebook%202x?scl=1",
+    "file": "events/microsoft-events.jpg",
+    "bytes": 825,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/devpost",
+    "page": "https://devpost.com/hackathons",
+    "source": "https://assets.devpost.com/assets/reimagine2/devpost-logo-mobile-f3aff76bfc0b6ada9bb4ddd773bfc534769ed793f962612804a1e84c305a5f94.svg",
+    "file": "hackathons/devpost.svg",
+    "bytes": 1542,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/ethglobal",
+    "page": "https://ethglobal.com/events",
+    "source": "https://cdn.ethglobal.com/events/ethereum-korea-one-genesis-build-beyond-the-narrative-drtd4/square-logo/default.png",
+    "file": "hackathons/ethglobal.png",
+    "bytes": 18661,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/global-game-jam",
+    "page": "https://globalgamejam.org/",
+    "source": "https://pbs.twimg.com/profile_images/1569737465337987073/ONU4fAlv.jpg",
+    "file": "hackathons/global-game-jam.jpg",
+    "bytes": 24875,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/hackerearth-hackathons",
+    "page": "https://www.hackerearth.com/challenges/hackathon/",
+    "source": "https://cdn.hackerearth.com/community/production/static/img/favicon/favicon.ico",
+    "file": "hackathons/hackerearth-hackathons.ico",
+    "bytes": 15086,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/major-league-hacking",
+    "page": "https://www.mlh.com/",
+    "source": "https://static.mlh.io/brand-assets/logo/official/mlh-logo-color.svg",
+    "file": "hackathons/major-league-hacking.svg",
+    "bytes": 8966,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "hackathons/nasa-space-apps",
+    "page": "https://www.spaceappschallenge.org/",
+    "source": "https://assets.spaceappschallenge.org/media/images/Space_Apps_Logo_Color_and_Black.width-580.png",
+    "file": "hackathons/nasa-space-apps.png",
+    "bytes": 29663,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/cncf-community-meetups",
+    "page": "https://ocgroups.dev/cncf",
+    "source": "https://ocgroups.dev/static/images/logo_ocg.png",
+    "file": "meetups/cncf-community-meetups.png",
+    "bytes": 378493,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/google-developer-groups",
+    "page": "https://gdg.community.dev/",
+    "source": "https://res.cloudinary.com/startup-grind/image/upload/dpr_2.0,fl_sanitize/v1/gcs/platform-data-goog/contentbuilder/GDG-Lockup-1Line-Black_vMWBFT9.svg",
+    "file": "meetups/google-developer-groups.svg",
+    "bytes": 63858,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/meetup-technology",
+    "page": "https://www.meetup.com/topics/technology/",
+    "source": "https://secure.meetupstatic.com/next/images/complex-icons/branded/pin.webp?w=96",
+    "file": "meetups/meetup-technology.webp",
+    "bytes": 11760,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/pydata-meetups",
+    "page": "https://www.meetup.com/pro/pydata/",
+    "source": "https://pydata.org/wp-content/uploads/2019/06/pydata-logo-final.png",
+    "file": "meetups/pydata-meetups.png",
+    "bytes": 6265,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/python-user-groups",
+    "page": "https://www.python.org/events/python-user-group/",
+    "source": "https://www.python.org/static/img/python-logo.png",
+    "file": "meetups/python-user-groups.png",
+    "bytes": 15770,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "meetups/wordpress-meetups",
+    "page": "https://www.meetup.com/pro/wordpress/",
+    "source": "https://s.w.org/images/wmark.png",
+    "file": "meetups/wordpress-meetups.png",
+    "bytes": 84434,
+    "checkedAt": "2026-10-08"
+  }
+]

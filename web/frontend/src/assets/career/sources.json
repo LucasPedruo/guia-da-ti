@@ -1,0 +1,186 @@
+[
+  {
+    "key": "jobs/geekhunter",
+    "page": "https://www.geekhunter.com/pt",
+    "source": "https://www.geekhunter.com/cdn-cgi/image/width=384,quality=75/https://www.geekhunter.com/images/landing/Geekhunter_logo_without_margin.svg",
+    "file": "jobs/geekhunter.svg",
+    "bytes": 11621,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/gupy",
+    "page": "https://portal.gupy.io/pt",
+    "source": "https://portal.gupy.io/images/gupy-logo-short.svg",
+    "file": "jobs/gupy.svg",
+    "bytes": 725,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/indeed-brasil",
+    "page": "https://br.indeed.com/",
+    "source": "https://br.indeed.com/apple-touch-icon.png",
+    "file": "jobs/indeed-brasil.png",
+    "bytes": 966,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/linkedin-jobs",
+    "page": "https://www.linkedin.com/jobs/",
+    "source": "https://static.licdn.com/aero-v1/sc/h/al2o9zrvru7aqj8e1x2rzsrca",
+    "file": "jobs/linkedin-jobs.ico",
+    "bytes": 24838,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/programathor",
+    "page": "https://programathor.com.br/",
+    "source": "https://programathor.com.br/assets/logo-programathor-0e4438ec430a00e1352a5ec8729f0ddbc4dd8d148973a6d6a3654800688e2089.png",
+    "file": "jobs/programathor.png",
+    "bytes": 2616,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/remotive",
+    "page": "https://remotive.com/",
+    "source": "https://remotive.com/remotive_website_layout/static/src/brand/SVG/wordmark_H_orange.svg",
+    "file": "jobs/remotive.svg",
+    "bytes": 24104,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/vagas-com",
+    "page": "https://www.vagas.com.br/",
+    "source": "https://www.vagas.com.br/favicon.ico",
+    "file": "jobs/vagas-com.png",
+    "bytes": 512,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "jobs/we-work-remotely",
+    "page": "https://weworkremotely.com/",
+    "source": "https://weworkremotely.com/apple-touch-icon.png",
+    "file": "jobs/we-work-remotely.png",
+    "bytes": 5872,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "mentoring/adplist",
+    "page": "https://adplist.org/",
+    "source": "https://adplist.org/landing/matched/logo.svg",
+    "file": "mentoring/adplist.svg",
+    "bytes": 9683,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "mentoring/lfx-mentorship",
+    "page": "https://mentorship.lfx.linuxfoundation.org/",
+    "source": "https://cdn.platform.linuxfoundation.org/assets/lf-favicon.png",
+    "file": "mentoring/lfx-mentorship.png",
+    "bytes": 1006,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "mentoring/mentorcruise",
+    "page": "https://mentorcruise.com/",
+    "source": "https://cdn.mentorcruise.com/img/mc-logo-white.svg",
+    "file": "mentoring/mentorcruise.svg",
+    "bytes": 10746,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "mentoring/topmate",
+    "page": "https://topmate.io/",
+    "source": "https://topmate.io/favicon.svg",
+    "file": "mentoring/topmate.svg",
+    "bytes": 674,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/capes-bolsas",
+    "page": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/bolsas",
+    "source": "https://www.gov.br/capes/icon.svg",
+    "file": "scholarships/capes-bolsas.svg",
+    "bytes": 1001,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/cnpq-bolsas",
+    "page": "https://www.gov.br/cnpq/pt-br/acesso-a-informacao/bolsas-e-auxilios/copy_of_modalidades",
+    "source": "https://www.gov.br/cnpq/logo.png",
+    "file": "scholarships/cnpq-bolsas.png",
+    "bytes": 28280,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/fundacion-carolina",
+    "page": "https://www.fundacioncarolina.es/",
+    "source": "https://www.fundacioncarolina.es/wp-content/uploads/2026/04/logo_horizontal_2026-scaled.png",
+    "file": "scholarships/fundacion-carolina.png",
+    "bytes": 101681,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/lideres-estudar",
+    "page": "https://www.estudar.org.br/lideres/",
+    "source": "https://www.estudar.org.br/wp-content/uploads/2026/01/img-destacada.png",
+    "file": "scholarships/lideres-estudar.png",
+    "bytes": 467793,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/prouni",
+    "page": "https://acessounico.mec.gov.br/prouni",
+    "source": "https://www.unibh.br/faculdade-de-medicina-em-minas-gerais/assets/img/bolsas/logo-prouni.webp",
+    "file": "scholarships/prouni.webp",
+    "bytes": 57172,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "scholarships/santander-open-academy",
+    "page": "https://www.santanderopenacademy.com/pt_br/index.html",
+    "source": "https://assets.santanderopenacademy.com/images/favicon/favicon.ico",
+    "file": "scholarships/santander-open-academy.ico",
+    "bytes": 15086,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "volunteering/atados",
+    "page": "https://www.atados.com.br/",
+    "source": "https://empresas.atados.com.br/assets/atados-logo-horizontal-BLXkT_PG.svg",
+    "file": "volunteering/atados.svg",
+    "bytes": 6358,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "volunteering/catchafire",
+    "page": "https://www.catchafire.org/volunteer/",
+    "source": "https://blog.catchafire.org/hubfs/Catchafire-Logo.svg",
+    "file": "volunteering/catchafire.svg",
+    "bytes": 9878,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "volunteering/datakind",
+    "page": "https://www.datakind.org/join-us/volunteer/",
+    "source": "https://www.datakind.org/wp-content/uploads/2023/04/DK_LOGO_R_ORG.svg",
+    "file": "volunteering/datakind.svg",
+    "bytes": 3592,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "volunteering/taproot",
+    "page": "https://taprootfoundation.org/volunteers",
+    "source": "https://taprootfoundation.org/static/marketing/favicon/apple-touch-icon_new.80fe81ce17b6.png",
+    "file": "volunteering/taproot.png",
+    "bytes": 3895,
+    "checkedAt": "2026-10-08"
+  },
+  {
+    "key": "volunteering/unv-online",
+    "page": "https://www.unv.org/become-online-volunteer",
+    "source": "https://cinfo.rokka.io/logo/5c04e834528a33f965c5fccdccf32a1eacaef1f1/logo-unv-pos.png?itok=ocSa8P-C",
+    "file": "volunteering/unv-online.png",
+    "bytes": 7885,
+    "checkedAt": "2026-10-08"
+  }
+]

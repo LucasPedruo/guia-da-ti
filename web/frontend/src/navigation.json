@@ -31,6 +31,11 @@
         "name": "Cursos"
       },
       {
+        "id": "tutorials",
+        "route": "tutoriais",
+        "name": "Tutoriais"
+      },
+      {
         "id": "platforms",
         "route": "plataformas",
         "name": "Plataformas de cursos"
@@ -90,11 +95,6 @@
         "id": "articles",
         "route": "artigos",
         "name": "Artigos"
-      },
-      {
-        "id": "tutorials",
-        "route": "tutoriais",
-        "name": "Tutoriais"
       },
       {
         "id": "studies",
@@ -172,27 +172,22 @@
       {
         "id": "jobs",
         "route": "vagas",
-        "name": "Vagas"
-      },
-      {
-        "id": "internships",
-        "route": "estagios",
-        "name": "Estágios"
+        "name": "Sites de vagas"
       },
       {
         "id": "scholarships",
         "route": "bolsas",
-        "name": "Bolsas"
+        "name": "Bolsas de estudo"
       },
       {
         "id": "mentoring",
         "route": "mentorias",
-        "name": "Mentorias"
+        "name": "Programas de mentoria"
       },
       {
         "id": "volunteering",
         "route": "voluntariado",
-        "name": "Voluntariado"
+        "name": "Programas de voluntariado"
       }
     ]
   }

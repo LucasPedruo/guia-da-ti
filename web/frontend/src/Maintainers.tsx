@@ -4,6 +4,7 @@ import { Tooltip } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingImage } from './LoadingImage';
+import { Users } from 'lucide-react';
 
 type Maintainer = { name: string; url: string; avatarUrl: string; contributions: number };
 const MaintainersContext = createContext<{ people: Maintainer[] | null; error: boolean; retry: () => void }>({ people: null, error: false, retry: () => {} });
@@ -30,24 +31,23 @@ export function Maintainers({ compact = false }: { compact?: boolean }) {
   const { people, error, retry } = useContext(MaintainersContext);
   const limit = 8;
   const shown = compact ? people?.slice(0, limit) : people;
-  return <section id={compact ? undefined : 'mantenedores'} aria-label="Mantenedores" className={compact ? 'flex max-w-full items-center justify-center gap-2' : 'space-y-4'}>
-    <h2 className={compact ? 'sr-only' : 'text-2xl font-semibold tracking-tight'}>Mantenedores</h2>
-    {!compact && <p className="text-muted-foreground">Pessoas que ajudam a construir o Guia e melhorar o catálogo.</p>}
+  return <section id={compact ? undefined : 'mantenedores'} aria-label="Mantenedores" className={compact ? 'flex max-w-full items-center justify-center gap-2' : 'flex h-full flex-col gap-5 rounded-2xl border bg-card p-5 sm:p-6'}>
+    {compact ? <h2 className="sr-only">Mantenedores</h2> : <header className="space-y-3"><span aria-hidden="true" className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Users className="size-5" /></span><h2 className="text-xl font-semibold tracking-tight">Mantenedores</h2><p className="text-sm leading-relaxed text-muted-foreground">Pessoas que ajudam a construir o Guia e melhorar o catálogo.</p></header>}
     {error ? <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><p>Não foi possível carregar os mantenedores.</p><Button variant="link" size="inline" onClick={retry}>Tentar novamente</Button></div>
-      : people === null ? <div role="status" aria-label="Carregando mantenedores" className="flex gap-1">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="size-8 rounded-none" />)}</div>
+      : people === null ? <div role="status" aria-label="Carregando mantenedores" className="flex gap-2">{Array.from({ length: compact ? 4 : 5 }, (_, index) => <Skeleton key={index} className={compact ? 'size-8 rounded-full' : 'size-12 rounded-full'} />)}</div>
       : people.length === 0 ? <p className="text-xs text-muted-foreground">Os mantenedores serão apresentados aqui.</p>
-      : <Tooltip.Provider delayDuration={150}><ul className={compact ? 'flex flex-wrap items-center justify-center gap-1' : 'flex max-w-sm flex-wrap gap-1 sm:max-w-lg'}>
+      : <Tooltip.Provider delayDuration={200}><ul className={compact ? 'flex flex-wrap items-center justify-center gap-2' : 'flex flex-wrap items-center gap-3'}>
         {shown?.map(person => <li key={person.url}><Tooltip.Root><Tooltip.Trigger asChild>
-          <a href={person.url} target="_blank" rel="noopener noreferrer" aria-label={`Perfil de ${person.name} no GitHub`} className="block size-8 outline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-ring">
-            <LoadingImage src={person.avatarUrl} alt={person.name} width={32} height={32} referrerPolicy="no-referrer" className="size-8" imageClassName="object-cover" />
+          <a href={person.url} target="_blank" rel="noopener noreferrer" aria-label={`Perfil de ${person.name} no GitHub`} className={`block shrink-0 overflow-hidden rounded-full border border-border/70 bg-muted ring-2 ring-background outline-offset-4 transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transform-none ${compact ? 'size-8' : 'size-12'}`}>
+            <LoadingImage src={person.avatarUrl} alt={person.name} width={compact ? 32 : 48} height={compact ? 32 : 48} referrerPolicy="no-referrer" className="size-full rounded-full" imageClassName="rounded-full object-cover" />
           </a>
-        </Tooltip.Trigger><Tooltip.Portal><Tooltip.Content side="top" sideOffset={8} collisionPadding={12} className="z-[100] max-w-64 border bg-popover px-3 py-2 text-popover-foreground shadow-md">
+        </Tooltip.Trigger><Tooltip.Portal><Tooltip.Content side="top" sideOffset={8} collisionPadding={12} className="z-[100] max-w-64 rounded-lg border bg-popover px-3 py-2 text-popover-foreground shadow-md">
           <p className="text-sm font-semibold">{person.name}</p>
           <p className="text-xs text-muted-foreground">{person.contributions.toLocaleString('pt-BR')} {person.contributions === 1 ? 'contribuição' : 'contribuições'} no Guia</p>
           <Tooltip.Arrow className="fill-popover" />
         </Tooltip.Content></Tooltip.Portal></Tooltip.Root></li>)}
       </ul></Tooltip.Provider>}
     {compact && people && people.length > limit && <a href="/sobre#mantenedores" className="shrink-0 font-mono text-xs uppercase tracking-widest hover:text-primary">+{people.length - limit} mais</a>}
-    {!compact && <><p className="text-xs text-muted-foreground">O GitHub reúne aqui quem contribuiu com alterações nos repositórios públicos do Guia.</p><Button variant="outline" onClick={() => openContribution()}>Quero contribuir</Button></>}
+    {!compact && <div className="mt-auto space-y-4 border-t pt-4"><p className="text-xs leading-relaxed text-muted-foreground">O GitHub reúne aqui quem contribuiu com alterações nos repositórios públicos do Guia.</p><Button variant="outline" onClick={() => openContribution()}>Quero contribuir</Button></div>}
   </section>;
 }

@@ -25,6 +25,8 @@ import { ResourcePagination } from "./ResourcePagination";
 import imageSources from "./assets/study/sources.json";
 import { universityTypes } from "./university-options";
 import { LoadingImage } from "./LoadingImage";
+import { resourceImage } from './resource-image';
+import { ResourcePreview } from './ResourcePreview';
 import { paginate, readPage } from "./pagination";
 import {
   interactions,
@@ -107,11 +109,6 @@ export function StudyBadges({ activity }: { activity?: StudyActivity }) {
 }
 
 // Covers are optional, versioned assets; no third-party thumbnail tracking or fake images.
-const covers = import.meta.glob("./assets/study/*/*.{webp,png,jpg,svg}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
 export function StudyCover({
   resource,
   small = false,
@@ -121,9 +118,7 @@ export function StudyCover({
   small?: boolean;
   priority?: boolean;
 }) {
-  const cover = resource.imageUrl || Object.entries(covers).find(([path]) =>
-    path.replace(/\.[^.]+$/, "").endsWith(`/${studyKey(resource)}`),
-  )?.[1];
+  const cover = resourceImage(resource);
   const imageSource = imageSources.find(
     (image) => image.key === studyKey(resource),
   );
@@ -361,6 +356,7 @@ export function StudyListing({
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           {listing.items.map((r, index) => (
+            <ResourcePreview key={studyKey(r)} resource={r}>
             <article
               data-motion
               key={studyKey(r)}
@@ -381,6 +377,7 @@ export function StudyListing({
                 </Button>
               </div>
             </article>
+            </ResourcePreview>
           ))}
         </div>
       ) : (
@@ -389,6 +386,7 @@ export function StudyListing({
           className="divide-y rounded-lg border bg-card"
         >
           {listing.items.map((r, index) => (
+            <ResourcePreview key={studyKey(r)} resource={r}>
             <article
               data-motion
               key={studyKey(r)}
@@ -405,6 +403,7 @@ export function StudyListing({
                 <a href={resourcePath(r)}>Ver detalhes</a>
               </Button>
             </article>
+            </ResourcePreview>
           ))}
         </div>
       )}

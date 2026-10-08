@@ -65,13 +65,16 @@ settings["DISCUSSIONS_REPOSITORY"] = "https://evil.example/repo";
 using var invalid = new DiscussionsClient(new FakeFactory(handler), settings);
 Check(!invalid.Configured, "Reject malformed repository");
 await ParticipationChecks.Run();
+await DiscussionChangeChecks.Run();
 await ContributorChecks.Run();
 ActivityChecks.Run();
 await RegisteredUserChecks.Run();
 await StudyChecks.Run();
+await AdvertisingChecks.Run();
 await CreatorProfileChecks.Run();
 CommunityLocationChecks.Run();
 await CatalogProposalChecks.Run();
+CatalogJsonChecks.Run();
 ContributionNoticeChecks.Run();
 Console.WriteLine("Discussions OK: filtering, cursors, cache, thread, replies, moderation, public-only data, errors and configuration.");
 
