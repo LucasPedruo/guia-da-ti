@@ -2,6 +2,7 @@ export type GuideStepId = 'explore' | 'communities' | 'creators' | 'study' | 'in
 export type GuideStep = {
   id: GuideStepId; label: string; category: string; description: string; tip: string; action: string; href: string;
   reason?: string; selection?: string;
+  phase?: 'what' | 'why' | 'choose' | 'use';
 };
 
 export const guideSteps = [
@@ -131,4 +132,27 @@ export const animationGuideSteps: readonly GuideStep[] = [...guideSteps, ...gith
 export function guideSectionForGroup(group?: string): GuideStepId {
   const sections: Record<string, GuideStepId> = { communities: 'communities', creators: 'creators', learn: 'study', inform: 'inform', connect: 'networking', create: 'practice', opportunities: 'career' };
   return sections[group ?? ''] ?? 'explore';
+}
+
+const sectionIntroductions: Partial<Record<GuideStepId, string>> = {
+  communities: 'Comunidades reúnem pessoas para conversar sobre assuntos em comum. Elas podem ter grupos em várias plataformas e atender uma região, todo o Brasil ou outros países.',
+  creators: 'Esta seção reúne perfis que publicam conteúdo de tecnologia nas redes sociais. O Guia ajuda você a encontrar esses perfis e acompanhar o conteúdo na rede de origem.',
+  study: 'Esta seção reúne links para plataformas de cursos, faculdades, bootcamps, roadmaps, livros e certificações. O conteúdo fica nos sites indicados.',
+  inform: 'Esta seção reúne fontes para acompanhar e consultar assuntos de tecnologia. Você encontra notícias, blogs, newsletters, podcasts e publicações para ler na fonte.',
+  networking: 'Networking é a troca de experiências e contatos com outras pessoas. Esta seção reúne eventos, meetups, conferências e hackathons onde essas conversas podem acontecer.',
+  practice: 'Esta seção reúne recursos para aplicar o que você aprende. Você encontra ferramentas, projetos de código aberto, desafios e laboratórios nos sites indicados.',
+  career: 'Esta seção reúne links para oportunidades profissionais e de formação. Você encontra vagas, estágios, bolsas, mentorias e opções de voluntariado.',
+  forum: 'O fórum é o espaço de conversa dentro do Guia. Você pode ler tópicos, fazer perguntas e trocar experiências com a comunidade.',
+  explore: 'O catálogo reúne links de tecnologia organizados por assunto e categoria. Você encontra uma indicação no Guia e acessa o conteúdo no site de origem.',
+  contribute: 'As sugestões ajudam a atualizar o catálogo com indicações da comunidade. Você pode propor um recurso novo ou uma correção para revisão.',
+};
+
+export function sectionWalkthrough(section: GuideStepId): readonly GuideStep[] {
+  const base: GuideStep = guideSteps.find(step => step.id === section) ?? guideSteps[0];
+  return [
+    { ...base, phase: 'what', label: 'O que é', description: sectionIntroductions[base.id] ?? base.description, tip: 'Conheça a proposta da seção antes de explorar os itens.' },
+    { ...base, phase: 'why', label: 'Por que vale a pena', description: base.reason ?? 'Reunir as indicações em um lugar ajuda você a encontrar referências e comparar opções antes de escolher.', tip: 'Use as indicações como ponto de partida para pesquisar na fonte.' },
+    { ...base, phase: 'choose', label: 'Como escolher', description: base.selection ?? 'Defina o que você procura. Compare as opções e confira os detalhes na página de origem antes de decidir.', tip: 'Escolha pelo seu objetivo e pelo seu momento, além da popularidade.' },
+    { ...base, phase: 'use', label: 'Como usar esta seção', description: base.description },
+  ];
 }

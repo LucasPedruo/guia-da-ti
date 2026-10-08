@@ -91,6 +91,10 @@ Uma barra abaixo do menu mostra o botão **Como usar o Guia**, que abre um diál
 
 Ao lado dos títulos das listagens, o botão de dicas explica por que usar a seção e como escolher entre as opções. As dicas de cada categoria abrem mesmo depois de fechar a barra. Sobre apresenta o projeto em uma linha do tempo com demonstrações. **Primeira vez no GitHub?** abre outro passo a passo, desde criar a conta até participar pelo Guia.
 
+As dicas das categorias têm quatro etapas: **O que é**, **Por que vale a pena**, **Como escolher** e **Como usar esta seção**. Cada etapa mostra sua própria demonstração, com pausa e carregamento conforme entra na área visível.
+
+Na primeira visita a cada rota com esse botão, um cursor animado aponta para o ícone e simula um clique. A animação não abre o diálogo. O navegador salva a exibição por rota e não a repete nas próximas visitas. A preferência de movimento reduzido desativa esse destaque.
+
 Endpoints: `GET /api/auth/session`, `GET /api/auth/login`, callback OAuth em `/api/auth/callback`, `POST /api/auth/logout` e `POST /api/discussions/publish`. Para publicar, envie o cabeçalho `X-CSRF-Token` recebido na sessão e JSON com `body`. Um tópico novo também exige `title` e `categoryId`. Comentário usa `number`. Resposta acrescenta `replyToId` do comentário principal. Sem login configurado, a leitura e os links para o GitHub continuam funcionando.
 
 ### Contas únicas que já entraram

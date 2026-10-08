@@ -387,3 +387,11 @@ JSON, código, contratos da API, identificadores, blocos de código e tabelas de
 - As dicas orientam você com verbos como “Compare”, “Confira” e “Leia”. Os textos explicam por que participar e como escolher sem prometer resultados.
 - Os passos “Crie sua conta no GitHub”, “Volte ao Guia e entre” e “Participe com sua conta” usam voz ativa. Os novos trechos já estavam curtos.
 - A explicação de Sobre mantém “guia de links” e “página de origem”. As instruções do GitHub dizem que o nome e as publicações ficam públicos.
+
+## Destaque do botão de dicas
+
+O novo trecho “um cursor animado aponta para o ícone e simula um clique” descreve o efeito na tela. “O navegador salva a exibição por rota” usa voz ativa. As frases já estavam curtas e não exigiram outra revisão.
+
+## Quatro etapas nas dicas de cada seção
+
+Os textos foram separados em “O que é”, “Por que vale a pena”, “Como escolher” e “Como usar esta seção”. Cada trecho trata de uma ideia. As novas definições dizem o que você encontra na área e usam “site de origem” quando o conteúdo é externo. Os rótulos já estavam curtos e não exigiram outra revisão.

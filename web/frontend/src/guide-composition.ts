@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import './guide-composition.css';
 import { animationGuideSteps } from './guide-steps';
 import runtimeUrl from '../node_modules/@hyperframes/core/dist/hyperframe.runtime.iife.js?url';
+import { macCursorSvg } from './mac-cursor';
 
 const parameters = new URLSearchParams(location.search);
 const step = animationGuideSteps.find(item => item.id === parameters.get('secao')) ?? animationGuideSteps[0];
@@ -48,8 +49,29 @@ const scenes: Record<typeof step.id, string> = {
     <div class="results">${row('Participe do fórum', 'Abra tópicos e responda às conversas', '↳')}${row('Indique um recurso', 'Envie uma sugestão para revisão', '+')}</div>${completion('Seu nome acompanha suas publicações')}`,
 };
 
+const sectionDemos: Partial<Record<typeof step.id, { items: string[]; benefits: string[]; filters: string[] }>> = {
+  communities: { items: ['Grupos para conversar', 'Encontros e trocas', 'Comunidades de várias regiões'], benefits: ['Tire dúvidas com outras pessoas', 'Compartilhe experiências'], filters: ['Plataforma', 'Localização', 'Público'] },
+  creators: { items: ['Perfis em redes sociais', 'Tutoriais e experiências', 'Conteúdo para acompanhar'], benefits: ['Conheça outras perspectivas', 'Encontre referências para estudar'], filters: ['Rede social', 'Tipo de conteúdo', 'Assunto'] },
+  study: { items: ['Plataformas e faculdades', 'Bootcamps e roadmaps', 'Livros e certificações'], benefits: ['Planeje o que estudar', 'Compare fontes antes de escolher'], filters: ['Objetivo', 'Nível atual', 'Idioma'] },
+  inform: { items: ['Notícias e blogs', 'Newsletters e podcasts', 'Artigos e pesquisas'], benefits: ['Entenda mudanças em tecnologia', 'Compare fontes e contextos'], filters: ['Assunto', 'Fonte', 'Data da publicação'] },
+  networking: { items: ['Eventos e meetups', 'Conferências', 'Hackathons'], benefits: ['Troque experiências com pessoas da área', 'Conheça novas perspectivas'], filters: ['Tema', 'Público', 'Formato do encontro'] },
+  practice: { items: ['Ferramentas', 'Projetos de código aberto', 'Desafios e laboratórios'], benefits: ['Aplique o que você está estudando', 'Descubra o que precisa aprofundar'], filters: ['Seu conhecimento', 'Requisitos', 'Tamanho da tarefa'] },
+  career: { items: ['Vagas e estágios', 'Bolsas e mentorias', 'Voluntariado'], benefits: ['Conheça os caminhos da área', 'Planeje seu próximo passo'], filters: ['Requisitos', 'Local de trabalho', 'Prazo'] },
+  forum: { items: ['Tópicos da comunidade', 'Comentários e respostas', 'Dúvidas e experiências'], benefits: ['Aprenda com outras experiências', 'Compartilhe o que descobriu'], filters: ['Assunto', 'Conversas existentes', 'Sua dúvida'] },
+};
+const demo = sectionDemos[step.id] ?? { items: ['Links por categoria', 'Detalhes das indicações', 'Conteúdo na fonte'], benefits: ['Encontre referências', 'Compare opções'], filters: ['Objetivo', 'Assunto', 'Detalhes'] };
+const phase = parameters.get('etapa');
+let scene = scenes[step.id];
+if (phase === 'what') {
+  scene = `<div class="scene-title"><span>${step.category}</span><small>O que você encontra aqui</small></div>${tabs(['Conheça a seção', step.category])}<div class="results">${demo.items.map((item, i) => row(item, 'Explore as indicações da comunidade', String(i + 1))).join('')}</div>${completion('O Guia ajuda você a encontrar um ponto de partida')}`;
+} else if (phase === 'why') {
+  scene = `<div class="scene-title"><span>Por que vale a pena</span><small>${step.category}</small></div><div class="benefit-path"><span class="target">Seu objetivo</span><span class="path-arrow">→</span><span>${step.category}</span></div><div class="results">${demo.benefits.map(item => row(item, 'Uma referência para seu próximo passo', '✓')).join('')}</div>${completion('Explore de acordo com o que faz sentido para você')}`;
+} else if (phase === 'choose') {
+  scene = `<div class="scene-title"><span>Como escolher</span><small>${step.category}</small></div>${tabs(demo.filters)}<div class="results">${row('Compare com seu momento', 'Comece pelo que você procura agora', '⌕')}${row('Confira os detalhes', 'Leia as informações antes de decidir', '↗')}</div><div class="choice-checks"><span>✓ Seu objetivo</span><span>✓ Informações na fonte</span></div>${completion('Escolha pelos detalhes, além da popularidade')}`;
+}
+
 // Only fixed, authored scenes reach innerHTML. Query parameters select an existing scene.
-root.innerHTML = `<div class="browser"><div class="browser-bar"><div class="window-dots"><i></i><i></i><i></i></div><span>Guia da TI</span><span class="demo-label">Demonstração</span></div><div class="browser-body">${scenes[step.id]}</div></div><div class="cursor" aria-hidden="true"><svg width="30" height="36" viewBox="0 0 30 36"><path d="M3 2v26l7-7 7 13 5-3-7-12h11Z" fill="var(--text)" stroke="var(--surface)" stroke-width="2" /></svg><span></span></div>`;
+root.innerHTML = `<div class="browser"><div class="browser-bar"><div class="window-dots"><i></i><i></i><i></i></div><span>Guia da TI</span><span class="demo-label">Demonstração</span></div><div class="browser-body">${scene}</div></div><div class="cursor" aria-hidden="true">${macCursorSvg}<span></span></div>`;
 
 const target = root.querySelector<HTMLElement>('.target')!;
 const bounds = target.getBoundingClientRect();
@@ -66,6 +88,8 @@ timeline.to('.target', { backgroundColor: colors.getPropertyValue('--accent').tr
 timeline.fromTo('.cursor span', { scale: 0.2, opacity: 0.65 }, { scale: 2.4, opacity: 0, duration: 0.55 }, 1.9);
 if (root.querySelector('.query')) timeline.from('.query', { width: 0, duration: 0.9, ease: 'none' }, 2.1);
 timeline.from('.results', { opacity: 0, y: 12, duration: 0.5, ease: 'power2.out' }, 3);
+if (root.querySelector('.path-arrow')) timeline.from('.path-arrow', { opacity: 0, x: -12, duration: 0.5 }, 2.3);
+if (root.querySelector('.choice-checks')) timeline.from('.choice-checks span', { opacity: 0, y: 7, stagger: 0.25, duration: 0.4 }, 3.5);
 if (root.querySelector('.result, .study-card, .reply')) timeline.from('.result, .study-card, .reply', { opacity: 0, y: 8, stagger: 0.15, duration: 0.4 }, 3.1);
 timeline.to('.cursor', { opacity: 0, duration: 0.3 }, 4.2);
 timeline.from('.completion', { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out' }, 4.6);

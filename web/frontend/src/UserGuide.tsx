@@ -5,12 +5,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight, BookOpen, Briefcase, CalendarDays, CircleHelp, Code, Compass, Github, Lightbulb, MessageSquare, Newspaper, Pause, Play, Users, Video, HeartHandshake, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { aboutGuideSteps, githubGuideSteps, guideSteps, type GuideStep, type GuideStepId } from './guide-steps';
+import { aboutGuideSteps, githubGuideSteps, guideSteps, sectionWalkthrough, type GuideStep, type GuideStepId } from './guide-steps';
 import runtimeUrl from '../node_modules/@hyperframes/core/dist/hyperframe.runtime.iife.js?url';
+import { GuideAttention } from './GuideAttention';
 
 const stepIcons = { explore: Compass, communities: Users, creators: Video, study: BookOpen, inform: Newspaper, networking: CalendarDays, practice: Code, career: Briefcase, forum: MessageSquare, contribute: HeartHandshake, about: Compass, transparency: Github, 'github-account': Github, 'github-login': Github, 'github-participate': MessageSquare };
 
-function GuideAnimation({ id, dark, reduced, scroller }: { id: GuideStepId; dark: boolean; reduced: boolean; scroller?: React.RefObject<HTMLDivElement | null> }) {
+function GuideAnimation({ id, phase, dark, reduced, scroller }: { id: GuideStepId; phase?: GuideStep['phase']; dark: boolean; reduced: boolean; scroller?: React.RefObject<HTMLDivElement | null> }) {
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<HyperframesPlayer | null>(null);
   const [ready, setReady] = useState(false);
@@ -37,7 +38,7 @@ function GuideAnimation({ id, dark, reduced, scroller }: { id: GuideStepId; dark
         element.setAttribute('height', '450');
         element.setAttribute('muted', '');
         element.setAttribute('loop', '');
-        element.setAttribute('src', `/guia-animacoes/index.html?secao=${id}&tema=${dark ? 'escuro' : 'claro'}`);
+        element.setAttribute('src', `/guia-animacoes/index.html?secao=${id}&tema=${dark ? 'escuro' : 'claro'}${phase ? `&etapa=${phase}` : ''}`);
         element.className = 'absolute inset-0 block h-full w-full';
         element.setAttribute('aria-hidden', 'true');
         element.addEventListener('ready', () => {
@@ -62,7 +63,7 @@ function GuideAnimation({ id, dark, reduced, scroller }: { id: GuideStepId; dark
     }, { root: scroller?.current ?? null, threshold: 0.15 });
     observer.observe(container);
     return () => { disposed = true; observer.disconnect(); element?.pause(); element?.remove(); player.current = null; };
-  }, [id, dark, reduced, scroller]);
+  }, [id, phase, dark, reduced, scroller]);
 
   useEffect(() => {
     function playback() {
@@ -88,7 +89,7 @@ function GuideAnimation({ id, dark, reduced, scroller }: { id: GuideStepId; dark
   </div>;
 }
 
-function GuideTimeline({ dark, steps = guideSteps, detailed = false, embedded = false }: { dark: boolean; steps?: readonly GuideStep[]; detailed?: boolean; embedded?: boolean }) {
+function GuideTimeline({ dark, steps = guideSteps, embedded = false }: { dark: boolean; steps?: readonly GuideStep[]; embedded?: boolean }) {
   const Heading = embedded ? 'h2' : 'h3';
   const scroller = useRef<HTMLDivElement>(null);
   const [reduced, setReduced] = useState(true);
@@ -116,16 +117,13 @@ function GuideTimeline({ dark, steps = guideSteps, detailed = false, embedded = 
       <ol className="space-y-9">
       {steps.map((step, index) => {
         const Icon = stepIcons[step.id];
-        return <li key={step.id} data-guide-step className="relative pl-14 sm:pl-17">
+        return <li key={`${step.id}-${step.phase ?? index}`} data-guide-step className="relative pl-14 sm:pl-17">
           <span aria-hidden="true" className="absolute top-1 left-0 flex size-10 items-center justify-center rounded-full border border-primary/30 bg-background text-primary sm:size-12"><Icon className="size-4 sm:size-5" /></span>
           <div className="mb-3 flex items-center gap-2 text-xs font-medium"><span className="font-mono text-primary">{String(index + 1).padStart(2, '0')}</span><span className="text-muted-foreground">{step.category}</span></div>
           <Heading className="mb-4 text-xl font-semibold tracking-tight sm:text-2xl">{step.label}</Heading>
           <div className="grid items-start gap-5 rounded-2xl border bg-card p-4 sm:p-5 md:grid-cols-[1fr_1fr]">
-            <GuideAnimation id={step.id} dark={dark} reduced={reduced} scroller={embedded ? undefined : scroller} />
+            <GuideAnimation id={step.id} phase={step.phase} dark={dark} reduced={reduced} scroller={embedded ? undefined : scroller} />
             <div className="space-y-4">
-              {detailed && step.reason && <div className="space-y-1.5"><h4 className="text-sm font-semibold">Por que vale a pena</h4><p className="text-sm leading-relaxed text-muted-foreground">{step.reason}</p></div>}
-              {detailed && step.selection && <div className="space-y-1.5"><h4 className="text-sm font-semibold">Como escolher</h4><p className="text-sm leading-relaxed text-muted-foreground">{step.selection}</p></div>}
-              {detailed && <h4 className="text-sm font-semibold">Como usar esta seção</h4>}
               <p className="text-sm leading-relaxed">{step.description}</p>
               <div className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground"><Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" /><p>{step.tip}</p></div>
               {embedded ? <GuideStepLink step={step} /> : <DialogClose asChild><GuideStepLink step={step} /></DialogClose>}
@@ -144,26 +142,28 @@ function GuideStepLink({ step, ...props }: { step: GuideStep } & React.Component
   return <Button {...props} asChild size="sm" variant="outline"><a href={step.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{step.action}<ArrowUpRight /></a></Button>;
 }
 
-function GuideDialogContent({ dark, steps, title, description, detailed = false }: { dark: boolean; steps: readonly GuideStep[]; title: string; description: string; detailed?: boolean }) {
+function GuideDialogContent({ dark, steps, title, description }: { dark: boolean; steps: readonly GuideStep[]; title: string; description: string }) {
   return <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
     <DialogHeader className="shrink-0 border-b px-5 py-6 pr-12 text-left sm:px-9">
       <div className="mb-2 flex items-center gap-2 text-xs font-medium text-primary"><Compass className="size-4" />PASSO A PASSO</div>
       <DialogTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</DialogTitle>
       <DialogDescription className="mt-2 text-sm">{description}</DialogDescription>
     </DialogHeader>
-    <GuideTimeline dark={dark} steps={steps} detailed={detailed} />
+    <GuideTimeline dark={dark} steps={steps} />
     <div className="flex shrink-0 items-center justify-between gap-3 border-t bg-background px-5 py-4 sm:px-9"><span className="text-xs text-muted-foreground">Explore no seu ritmo</span><DialogClose asChild><Button>Entendi</Button></DialogClose></div>
   </DialogContent>;
 }
 
 export function SectionGuide({ section, dark, label }: { section: GuideStepId | 'github'; dark?: boolean; label?: string }) {
+  const trigger = useRef<HTMLButtonElement>(null);
   const [localDark, setLocalDark] = useState(false);
-  const steps: readonly GuideStep[] = section === 'github' ? githubGuideSteps : section === 'about' ? aboutGuideSteps : [guideSteps.find(step => step.id === section) ?? guideSteps[0]];
-  const title = section === 'github' ? 'Primeira vez no GitHub?' : section === 'about' ? 'Conheça o Guia da TI' : steps[0].label;
+  const steps: readonly GuideStep[] = section === 'github' ? githubGuideSteps : section === 'about' ? aboutGuideSteps : sectionWalkthrough(section);
+  const title = section === 'github' ? 'Primeira vez no GitHub?' : section === 'about' ? 'Conheça o Guia da TI' : guideSteps.find(step => step.id === section)?.label ?? 'Explore o Guia';
   const description = section === 'github' ? 'Veja como criar sua conta e participar do Guia.' : section === 'about' ? 'Veja o que você encontra aqui e como a comunidade mantém o catálogo.' : 'Veja por que usar esta seção, como escolher e por onde começar.';
   return <Dialog onOpenChange={open => { if (open) setLocalDark(document.documentElement.classList.contains('dark')); }}>
-    <DialogTrigger asChild><Button variant={label ? 'outline' : 'ghost'} size={label ? 'default' : 'icon-sm'} aria-label={label ?? `Dicas: ${steps[0].category}`} title={title} className={label ? 'w-full justify-between' : 'shrink-0 text-muted-foreground hover:text-primary'}><CircleHelp />{label && <><span className="flex-1 text-left">{label}</span><ArrowUpRight /></>}</Button></DialogTrigger>
-    <GuideDialogContent dark={dark ?? localDark} steps={steps} title={title} description={description} detailed />
+    <DialogTrigger asChild><Button ref={trigger} variant={label ? 'outline' : 'ghost'} size={label ? 'default' : 'icon-sm'} aria-label={label ?? `Dicas: ${steps[0].category}`} title={title} className={label ? 'w-full justify-between' : 'shrink-0 text-muted-foreground hover:text-primary'}><CircleHelp />{label && <><span className="flex-1 text-left">{label}</span><ArrowUpRight /></>}</Button></DialogTrigger>
+    <GuideAttention target={trigger} enabled={!label} />
+    <GuideDialogContent dark={dark ?? localDark} steps={steps} title={title} description={description} />
   </Dialog>;
 }
 
