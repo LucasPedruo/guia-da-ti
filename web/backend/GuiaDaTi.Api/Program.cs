@@ -34,7 +34,8 @@ app.Use(async (context, next) => {
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     // Radix menus/selects use inline positioning and scroll-lock styles. Scripts remain self-only.
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+    var frameAncestors = context.Request.Path == "/guia-animacoes/index.html" ? "'self'" : "'none'";
+    context.Response.Headers["Content-Security-Policy"] = $"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors {frameAncestors}";
     await next();
 });
 app.UseDefaultFiles();

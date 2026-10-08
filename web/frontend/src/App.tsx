@@ -1,4 +1,6 @@
 import {ContributionDialog} from './ContributionDialog';
+import { AboutGuide, SectionGuide, UserGuide } from './UserGuide';
+import { guideSectionForGroup } from './guide-steps';
 import {openContribution} from './contribution-actions';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Discussions } from './Discussions';
@@ -315,6 +317,8 @@ export function App({ path }: { path: string }) {
         </div>
       </header>
 
+      <UserGuide dark={dark} />
+
       <main data-motion id="conteudo" className="site-frame mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
         {!page.valid ? (
           <Empty><EmptyHeader><EmptyTitle>Página não encontrada</EmptyTitle><EmptyDescription>Esse endereço não está no guia.</EmptyDescription></EmptyHeader><EmptyContent><Button asChild><a href="/">Voltar ao início</a></Button></EmptyContent></Empty>
@@ -322,20 +326,11 @@ export function App({ path }: { path: string }) {
           <div className="flex flex-1 flex-col gap-8"><Discussions className="w-full flex-1" /><div className="section-divider" aria-hidden="true" /><Community area="supporters" preview /></div>
         ) : path === '/sobre' ? (
           <article className="mx-auto w-full max-w-4xl space-y-6 [&>p]:max-w-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1><SuggestResource /></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1><SectionGuide section="about" dark={dark} /></div><SuggestResource /></div>
             <p className="text-lg leading-relaxed">Um guia de links para sites, conteúdos e oportunidades de tecnologia, mantido pela comunidade.</p>
             <CommunityMetrics />
-            <p className="leading-relaxed text-muted-foreground">Você encontra indicações organizadas por categoria e acessa o conteúdo no site de origem. Cursos, tutoriais, artigos e atividades ficam nesses sites externos.</p>
-            <p className="leading-relaxed text-muted-foreground">As indicações vão além da programação e incluem dados, segurança, infraestrutura, redes, hardware, design, produto e inteligência artificial.</p>
-            <h2 className="text-xl font-semibold">Converse no fórum</h2>
-            <p className="leading-relaxed text-muted-foreground">No fórum, você pode tirar dúvidas, compartilhar experiências e aprender com outras pessoas aqui no Guia. Entre com sua conta do GitHub para criar tópicos e responder.</p>
-            <Separator />
-            <h2 className="text-xl font-semibold">Como funciona a curadoria</h2>
-            <p className="leading-relaxed text-muted-foreground">Qualquer pessoa pode sugerir um recurso ou corrigir uma informação. As contribuições passam por revisão antes de entrar no catálogo. Você pode consultar a data de atualização de cada cadastro e propor correções.</p>
-            <h2 className="text-xl font-semibold">Aberto e colaborativo</h2>
-            <p className="leading-relaxed text-muted-foreground">O catálogo é público e seu histórico pode ser consultado no GitHub. Não é necessário criar uma conta para explorar o guia.</p>
-            <p className="text-sm text-muted-foreground">Estamos começando. Os cadastros marcados como “Exemplo fictício” demonstram a navegação e não são recomendações de recursos reais.</p>
-            <Button variant="outline" onClick={() => openContribution()}>Contribuir com o guia<ArrowUpRight /></Button>
+            <AboutGuide dark={dark} />
+            <SectionGuide section="github" dark={dark} label="Primeira vez no GitHub?" />
             <Separator />
             <Maintainers />
             <Separator />
@@ -364,7 +359,7 @@ export function App({ path }: { path: string }) {
           </article>
         ) : (
           <PlatformTabsRoot enabled={creatorsPage || communitiesPage} value={communitiesPage ? communitySelection.platform : creatorPlatform} onChange={communitiesPage ? value=>changeCommunityLocation({...communitySelection,platform:value}) : changeCreatorPlatform}><section aria-label="Recursos" className="scroll-mt-24 space-y-5">
-            <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><SuggestResource type={creatorsPage && creatorPlatform === 'youtube' ? 'youtube' : page.category?.id} /></div><div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">{communitiesPage ? 'Encontre pessoas e comunidades de tecnologia perto de você ou ao redor do mundo.' : 'Indicações organizadas para você explorar no próprio ritmo.'}</p></div></div>
+            <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1><SectionGuide section={guideSectionForGroup(creatorsPage || page.category?.id === 'youtube' ? 'creators' : groups.find(group => group.categories.some(category => category.id === page.category?.id))?.id)} dark={dark} /></div><SuggestResource type={creatorsPage && creatorPlatform === 'youtube' ? 'youtube' : page.category?.id} /></div><div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">{communitiesPage ? 'Encontre pessoas e comunidades de tecnologia perto de você ou ao redor do mundo.' : 'Indicações organizadas para você explorar no próprio ritmo.'}</p></div></div>
             {communitiesPage && <CommunityFiltersDialog value={communitySelection} onChange={next=>changeCommunityLocation({...communitySelection,...next})} />}
             {creatorsPage && <CreatorTabs />}
             {communitiesPage && <CommunityTabs />}

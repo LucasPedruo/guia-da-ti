@@ -22,6 +22,7 @@ export default defineConfig(({ isSsrBuild }) => ({
   build: isSsrBuild ? {} : { rollupOptions: { input: {
     main: fileURLToPath(new URL('./index.html', import.meta.url)),
     auth: fileURLToPath(new URL('./auth/complete.html', import.meta.url)),
+    guide: fileURLToPath(new URL('./guia-animacoes/index.html', import.meta.url)),
   } } },
   server: { proxy: { '/api': { target: 'http://localhost:5080', changeOrigin: false } } },
   preview: { proxy: { '/api': { target: 'http://localhost:5080', changeOrigin: false } } },

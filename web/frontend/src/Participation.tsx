@@ -1,4 +1,5 @@
 import {openContribution} from './contribution-actions';
+import { SectionGuide } from './UserGuide';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog } from 'radix-ui';
-import { Github, Moon, Sun, LogOut, HeartHandshake, ChevronDown } from 'lucide-react';
+import { Github, Moon, Sun, LogOut, HeartHandshake } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { categories, labels, taxonomy } from './catalog';
@@ -30,19 +31,41 @@ export function Participation({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(true);
   const popup = useRef<Window | null>(null);
+  const sessionRequest = useRef(0);
   useEffect(() => {
     const controller = new AbortController();
-    function refresh() { return fetch('/api/auth/session', { signal: controller.signal, cache: 'no-store' }).then(response => {
+    let retry: number | undefined;
+    const unavailable = 'Não foi possível verificar seu login. Tentaremos novamente.';
+    function refresh() {
+      if (document.hidden || (popup.current && !popup.current.closed)) return;
+      window.clearTimeout(retry);
+      const request = ++sessionRequest.current;
+      return fetch('/api/auth/session', { signal: controller.signal, cache: 'no-store' }).then(response => {
       if (!response.ok) throw Error();
       return response.json();
-    }).then(data => { if (!controller.signal.aborted) setSession(data); }).catch(() => { /* Reading discussions remains available. */ }).finally(() => { if (!controller.signal.aborted) setLoading(false); }); }
+    }).then(data => {
+      if (!controller.signal.aborted && request === sessionRequest.current) {
+        setSession(data); setLoading(false); setError(previous => previous === unavailable ? '' : previous);
+      }
+    }).catch(() => {
+      if (!controller.signal.aborted && request === sessionRequest.current) {
+        setError(unavailable);
+        retry = window.setTimeout(() => { void refresh(); }, 5000);
+      }
+    }); }
     void refresh();
     window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    const timer = window.setInterval(() => { void refresh(); }, 60000);
     if (new URLSearchParams(window.location.search).get('login') === 'failed') setError('Não foi possível entrar com o GitHub. Tente novamente.');
-    return () => { controller.abort(); window.removeEventListener('focus', refresh); };
+    return () => {
+      controller.abort(); window.clearTimeout(retry); window.clearInterval(timer);
+      window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh);
+    };
   }, []);
   function startLogin() {
     if (pending) { popup.current?.focus(); return; }
+    ++sessionRequest.current;
     setError('');
     const left = Math.max(0, window.screenX + (window.outerWidth - 520) / 2);
     const top = Math.max(0, window.screenY + (window.outerHeight - 720) / 2);
@@ -61,12 +84,13 @@ export function Participation({ children }: { children: ReactNode }) {
     async function checkSession() {
       if (checking || controller.signal.aborted) return;
       checking = true;
+      const request = ++sessionRequest.current;
       try {
         const response = await fetch('/api/auth/session', { signal: controller.signal, cache: 'no-store' });
         if (!response.ok) throw Error();
         const next: Session = await response.json();
-        if (controller.signal.aborted) return;
-        if (next.login) { setSession(next); setPending(false); popup.current?.close(); }
+        if (controller.signal.aborted || request !== sessionRequest.current) return;
+        if (next.login) { setSession(next); setLoading(false); setPending(false); popup.current?.close(); }
         else if (popup.current?.closed) setPending(false);
         else if (Date.now() - started > 300000) { setPending(false); setError('O login não foi concluído. Tente novamente.'); popup.current?.close(); }
       } catch { if (!controller.signal.aborted && popup.current?.closed) setPending(false); }
@@ -115,19 +139,7 @@ export function UserControls({ dark, toggleTheme }: { dark: boolean; toggleTheme
 
 const loginPanelClass = 'fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4 overflow-y-auto rounded-xl border bg-popover p-6 text-popover-foreground shadow-lg';
 
-function GitHubHelp() {
-  return <details aria-label="Ajuda para entrar com GitHub" className="group rounded-lg border bg-muted/30 text-sm">
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-medium marker:hidden [&::-webkit-details-marker]:hidden">
-      Primeira vez no GitHub?<ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
-    </summary>
-    <div className="space-y-3 border-t px-4 py-3">
-      <p className="leading-relaxed text-muted-foreground">Usamos sua conta para identificar você no fórum. Não precisa saber programar para participar.</p>
-      <p className="font-medium">Ainda não tem conta?</p>
-      <ol className="list-decimal space-y-1 pl-5 text-muted-foreground"><li>Crie uma conta gratuita no GitHub.</li><li>Confirme seu e-mail.</li><li>Volte aqui e clique em “Entrar com GitHub”.</li></ol>
-      <Button asChild variant="outline" size="sm"><a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">Criar conta no GitHub</a></Button>
-    </div>
-  </details>;
-}
+function GitHubHelp() { return <SectionGuide section="github" label="Primeira vez no GitHub?" />; }
 
 function LoginPrompt({ enabled }: { enabled: boolean }) {
   const auth = useContext(SessionContext);
@@ -203,7 +215,7 @@ export function Composer({ number, replyToId, categories, onPublished, label = '
         <Select value={categoryId} onValueChange={setCategoryId} disabled={busy}><SelectTrigger aria-label="Categoria do novo tópico"><SelectValue placeholder="Escolha a categoria" /></SelectTrigger><SelectContent>{categories?.map(category => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent></Select>
       </>}
       <div className="space-y-2"><label htmlFor={`${id}-body`} className="text-sm font-medium">{number ? 'Sua mensagem' : 'Conteúdo do tópico'}</label><textarea id={`${id}-body`} value={body} onChange={event => setBody(event.target.value)} required maxLength={10000} rows={5} disabled={busy} className="w-full rounded-md border bg-transparent px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50" /></div>
-      <p className="text-xs text-muted-foreground">Sua mensagem será pública no Guia e no GitHub, em nome de {session.login}.</p>
+      <p className="text-xs text-muted-foreground">Sua mensagem aparecerá no Guia e no GitHub com o nome de {session.login}.</p>
       <div className="flex gap-2"><Button type="submit" disabled={busy || !body.trim() || (!number && (!title.trim() || !categoryId))}>{busy ? 'Publicando…' : 'Publicar'}</Button><Button type="button" variant="ghost" disabled={busy} onClick={() => setOpen(false)}>Cancelar</Button></div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </form>}
@@ -296,7 +308,7 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível enviar a contribuição.'); }
     finally { setBusy(false); }
   }
-  if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. Criadores e comunidades vão para revisão do catálogo; as demais sugestões abrem uma conversa no fórum.</p><LoginButton /></div>;
+  if (!session?.login) return <div className="space-y-3 rounded-lg border p-5"><p>Entre com GitHub para sugerir um recurso. Criadores e comunidades vão para revisão do catálogo. As demais sugestões abrem uma conversa no fórum.</p><LoginButton /></div>;
   return <ContributionWizard preview={<ContributionPreview name={name} summary={summary} description={description} category={typeNames[type] || type} area={labels[area] || area} languages={languages} image={imagePreview || imageUrl} url={url} details={[
       ['Tecnologias', technologies.map(id => labels[id] || id).join(', ')],
       ['Tipo de instituição', type === 'universities' ? universityTypes.find(item => item.id === universityType)?.name || '' : ''],
@@ -356,7 +368,7 @@ export function ResourceContribution({initialCategory = ""}: {initialCategory?: 
     {type === 'communities' ? <SelectField label="Categoria da comunidade" name="area" required value={area} onChange={setArea} placeholder="Escolha uma categoria" options={[...communityCategoryOrder, ...taxonomy.areas.filter(id=>!communityCategoryOrder.includes(id))].map(id=>({id,name:labels[id]||id}))} /> : <SelectField label="Assunto principal" name="area" required value={area} onChange={setArea} placeholder="Escolha um assunto" options={taxonomy.areas.map(id => ({id, name:labels[id] || id}))} />}
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Tecnologias (opcional)</legend><div className="flex flex-wrap gap-4">{taxonomy.technologies.map((technology: string) => <Label key={technology} className="flex items-center gap-2 text-sm"><Checkbox checked={technologies.includes(technology)} onCheckedChange={checked => setTechnologies(current => checked === true ? [...current, technology] : current.filter(item => item !== technology))} />{labels[technology] || technology}</Label>)}</div></fieldset>
     <fieldset className="space-y-2"><legend className="text-sm font-medium">Idiomas disponíveis</legend><div className="flex flex-wrap gap-4">{taxonomy.languages.map((language: string) => <Label key={language} className="flex items-center gap-2 text-sm"><Checkbox checked={languages.includes(language)} onCheckedChange={checked => setLanguages(current => checked === true ? [...current, language] : current.filter(item => item !== language))} />{language}</Label>)}</div></fieldset>
-    <div data-step-title="Revisar e enviar" className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Categoria',typeNames[type] || type],['Nome',name],['Link',url],['Resumo',summary],['Descrição',description],['Assunto',labels[area] || area],['Idiomas',languages.join(', ')]].map(([label,value])=><div key={label} className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value || 'Não informado'}</dd></div>)}</dl><p className="text-xs text-muted-foreground">{catalogOnly ? 'A sugestão vai para revisão dos mantenedores e entra no catálogo após a aprovação. Ela não abre uma conversa no fórum. Para enviar, o GitHub pode preparar uma cópia do catálogo na sua conta.' : 'A publicação cria uma conversa em Ideias. A comunidade pode comentar ali; após a revisão, a aprovação prepara estes dados no catálogo.'}</p>
+    <div data-step-title="Revisar e enviar" className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Categoria',typeNames[type] || type],['Nome',name],['Link',url],['Resumo',summary],['Descrição',description],['Assunto',labels[area] || area],['Idiomas',languages.join(', ')]].map(([label,value])=><div key={label} className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{value || 'Não informado'}</dd></div>)}</dl><p className="text-xs text-muted-foreground">{catalogOnly ? 'Os mantenedores revisam sua sugestão antes de adicioná-la ao catálogo. Criadores e comunidades não abrem conversas no fórum. O GitHub pode criar uma cópia do catálogo na sua conta para enviar a proposta.' : 'Sua sugestão abre uma conversa em Ideias, onde a comunidade pode comentar. Após a revisão, um mantenedor prepara o cadastro para entrar no catálogo.'}</p>
     <Button type="submit" disabled={busy || !type || !area || !languages.length || type === 'universities' && !universityType || creatorCategory && !creatorCategoryIds.length || type === 'communities' && (!communityAudience || !communityScope || communityScope === 'regional' && !communityStates.length || !communityModality || !communityPlatformIds.length || communityPlatformIds.some(id=>!communityUrls[id]?.trim()))}>{busy ? 'Enviando…' : catalogOnly ? 'Enviar para revisão' : 'Enviar sugestão e abrir conversa'}</Button>
     </div>
   </ContributionWizard>;
@@ -384,5 +396,5 @@ export function ApproveContribution({ number }: { number: number }) {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível aprovar esta sugestão.'); }
     finally { setBusy(false); }
   }
-  return <div className="space-y-2">{url ? <p className="text-sm">Pull Request criado: <a className="text-primary underline" href={url} target="_blank" rel="noopener noreferrer">revisar e mesclar no GitHub</a></p> : <Button variant="outline" size="sm" disabled={busy} onClick={() => void approve()}>{busy ? 'Preparando cadastro…' : 'Aprovar e preparar cadastro'}</Button>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>;
+  return <div className="space-y-2">{url ? <p className="text-sm">Proposta de cadastro criada: <a className="text-primary underline" href={url} target="_blank" rel="noopener noreferrer">revisar e mesclar no GitHub</a></p> : <Button variant="outline" size="sm" disabled={busy} onClick={() => void approve()}>{busy ? 'Preparando cadastro…' : 'Aprovar e preparar cadastro'}</Button>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>;
 }
