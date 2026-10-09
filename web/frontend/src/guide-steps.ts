@@ -10,7 +10,7 @@ export const guideSteps = [
     id: 'explore', label: 'Encontre o que procura', category: 'Explore',
     description: 'Use os menus para estudar, se informar, fazer networking, praticar ou procurar oportunidades. Nas listagens, pesquise pelo nome ou assunto.',
     tip: 'Combine a pesquisa com os filtros para reduzir a lista.',
-    action: 'Explorar recursos', href: '/explorar',
+    action: 'Ver categorias', href: '/sobre#por-onde-comecar',
   },
   {
     id: 'communities', label: 'Encontre sua comunidade', category: 'Comunidades',
@@ -110,7 +110,7 @@ export const aboutGuideSteps: readonly GuideStep[] = [
     id: 'about', label: 'Um guia de links feito pela comunidade', category: 'O projeto',
     description: 'O Guia reúne indicações de sites, conteúdos e oportunidades de tecnologia. Você explora por categoria e acessa o conteúdo na página de origem.',
     tip: 'Cursos e atividades ficam nos sites indicados. Aqui, você encontra os links e pode trocar experiências no fórum.',
-    action: 'Explorar o catálogo', href: '/explorar',
+    action: 'Ver categorias', href: '/sobre#por-onde-comecar',
   },
   guideSteps.find(step => step.id === 'forum')!,
   {

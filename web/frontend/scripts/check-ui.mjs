@@ -129,9 +129,9 @@ try {
   await waitFor(`document.activeElement?.getAttribute('data-slot') === 'navigation-menu-link'`);
   await key('Escape');
   await waitFor(`!document.querySelector('[data-slot="navigation-menu-content"]') || document.querySelector('[data-slot="navigation-menu-content"]').getAttribute('data-state') === 'closed'`);
-  await navigate('/explorar/');
+  await navigate('/areas/design/');
   assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('main table th'), element => element.textContent)`), ['Item', 'Categoria', 'Atualização', 'Ações']);
-  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`), Math.min(pageSize, catalog.resources.length));
+  assert.equal(await evaluate(`document.querySelectorAll('main table tbody tr').length`), Math.min(pageSize, catalog.resources.filter(resource => resource.areas.includes('design')).length));
   assert.deepEqual(await evaluate(`(()=>{const style=getComputedStyle(document.querySelector('main table').parentElement); return {background:style.backgroundColor,shadow:style.boxShadow}})()`), { background: 'rgb(255, 255, 255)', shadow: 'none' });
   await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Pessoa Criadora');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await waitFor(`!!document.querySelector('main table a[aria-label="Ver perfil: Pessoa Criadora — exemplo"]')`);
@@ -139,11 +139,12 @@ try {
   assert.equal(await evaluate(`${profileAction}.target`), '_blank');
   assert.equal(await evaluate(`${profileAction}.getAttribute('href')`), 'https://example.org/criador-exemplo');
   await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-  await waitFor(`document.querySelectorAll('main table tbody tr').length === ${Math.min(pageSize, catalog.resources.length)}`);
+  await waitFor(`document.querySelectorAll('main table tbody tr').length === ${Math.min(pageSize, catalog.resources.filter(resource => resource.areas.includes('design')).length)}`);
   for (const width of [320, 390, 768, 1440]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= innerWidth`), true, `Catalog overflow at ${width}px`);
   }
+  await navigate('/areas/backend/');
   await evaluate(`(()=>{const input=document.querySelector('#resource-search');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Primeiros passos');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await waitFor(`!!document.querySelector('main table a[aria-label="Ver detalhes: Primeiros passos com C#"]')`);
   await click(`document.querySelector('main table a[aria-label="Ver detalhes: Primeiros passos com C#"]')`);
@@ -303,7 +304,7 @@ try {
   await sleep(200);
   await click(`document.querySelector('[data-slot="navigation-menu-trigger"]')`); await waitFor(`document.querySelector('[data-slot="navigation-menu-content"]')?.getAttribute('data-state') === 'open'`);
   assert.equal(await evaluate(`document.querySelector('[data-slot="navigation-menu-content"]').textContent.includes('Plataformas de cursos')`), true);
-  for (const category of groups.flatMap(group => group.categories)) {
+  for (const category of groups.flatMap(group => group.categories).filter(category => category.id !== 'courses')) {
     const response = await fetch(base + categoryHref(category));
     assert.equal(response.status, 200, category.route);
     assert.ok((await response.text()).includes(category.platform ? 'Todos os criadores' : category.name), category.route);

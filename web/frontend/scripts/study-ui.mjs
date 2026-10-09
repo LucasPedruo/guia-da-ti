@@ -49,13 +49,13 @@ export async function checkStudy({
     deviceScaleFactor: 1,
     mobile: false,
   });
-  await navigate("/cursos/");
+  await navigate("/plataformas/");
   await waitFor(
-    `!!document.querySelector('[aria-label="Cards: Cursos"]') && !document.querySelector('main [role="status"]')`,
+    `!!document.querySelector('[aria-label="Cards: Plataformas de cursos"]') && !document.querySelector('main [role="status"]')`,
   );
   assert.equal(
     await evaluate(
-      `getComputedStyle(document.querySelector('[aria-label="Cards: Cursos"]')).gridTemplateColumns.split(' ').length`,
+      `getComputedStyle(document.querySelector('[aria-label="Cards: Plataformas de cursos"]')).gridTemplateColumns.split(' ').length`,
     ),
     4,
   );
@@ -66,7 +66,7 @@ export async function checkStudy({
     "true",
   );
   await click(`document.querySelector('[aria-label="Exibir lista"]')`);
-  await waitFor(`!!document.querySelector('[aria-label="Lista: Cursos"]')`);
+  await waitFor(`!!document.querySelector('[aria-label="Lista: Plataformas de cursos"]')`);
   assert.equal(
     await evaluate(`new URLSearchParams(location.search).get('visualizacao')`),
     "lista",
@@ -76,7 +76,7 @@ export async function checkStudy({
     await evaluate(`new URLSearchParams(location.search).get('ordem')`),
     "comments",
   );
-  await click(`document.querySelector('[aria-label="Lista: Cursos"] a')`);
+  await navigate('/cursos/curso-exemplo/');
   await waitFor(
     `!!document.querySelector('[aria-label="Avaliações e discussão"]')`,
   );
@@ -110,7 +110,7 @@ export async function checkStudy({
     true,
   );
   await evaluate(`sessionStorage.setItem('studyTestMode','error')`);
-  await navigate("/cursos/");
+  await navigate("/plataformas/");
   await waitFor(
     `document.querySelector('main [role="alert"]')?.textContent.includes('A atividade dos itens não carregou. Tente novamente.')`,
   );

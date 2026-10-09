@@ -20,7 +20,7 @@ O workflow raiz valida pushes e PRs usando o commit fixado. Execuções agendada
 
 ## Rotas
 
-Primeira entrega: `/`, `/explorar`, `/contribuir`, categorias do MVP e páginas individuais; `/areas/:id` e `/tecnologias/:id`. API: `/api/resources` (busca e tipo), `/api/resources/{type}/{slug}` e `/health`. Páginas desconhecidas retornam 404. HTML gerado inclui title, description, canonical, Open Graph, sitemap e robots. Busca interativa filtra o snapshot consolidado, sem milhares de downloads.
+As páginas do site incluem `/`, `/sobre`, categorias do MVP e páginas individuais. Também incluem `/areas/:id` e `/tecnologias/:id`. `/contribuir` redireciona para o formulário de contribuição no início. API: `/api/resources` (busca e tipo), `/api/resources/{type}/{slug}` e `/health`. Páginas desconhecidas retornam 404. HTML gerado inclui title, description, canonical, Open Graph, sitemap e robots. Busca interativa filtra o snapshot consolidado, sem milhares de downloads.
 
 A navegação oferece 32 categorias em seis grupos: Aprender, Conteúdos, Artigos e estudos, Comunidade, Praticar e Carreira, com expansão individual. Todas usam o schema base. Campos específicos, mapa e filtros avançados continuam incrementais. `/sobre` concentra a apresentação do projeto. Favoritos e avaliações seguem fora do escopo atual.
 

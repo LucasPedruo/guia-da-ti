@@ -222,7 +222,7 @@ export async function checkDiscussions({ send, evaluate, click, waitFor, navigat
   await navigate('/?conversa=7');
   await waitFor(`document.querySelector('main').textContent.includes('Conversa encerrada')`);
   assert.equal(await evaluate(`!!${button('Participe da conversa…')} || !!${button('Responder')}`), false);
-  for (const [path, title] of [['/explorar', 'Explore tecnologia'], ['/sobre', 'Sobre o Guia da TI']]) {
+  for (const [path, title] of [['/comunidades', 'Comunidades'], ['/sobre', 'Sobre o Guia da TI']]) {
     await navigate(`${path}/`);
     assert.equal(await evaluate(`document.querySelector('main h1').textContent`), title);
     if (path === '/sobre') { await waitFor(`!!document.querySelector('#mantenedores a[href="https://github.com/ana"] img')`); assert.equal(await evaluate(`document.querySelector('#mantenedores h2').textContent`), 'Mantenedores'); }

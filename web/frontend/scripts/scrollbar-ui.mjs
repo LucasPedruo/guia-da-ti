@@ -4,7 +4,7 @@ export async function checkScrollbarLayout({send,evaluate,waitFor,navigate,click
   const geometry=`(()=>{const main=document.querySelector('main').getBoundingClientRect(),header=document.querySelector('.header-inner').getBoundingClientRect();return {left:main.left,width:main.width,headerLeft:header.left,headerWidth:header.width,scrolling:document.documentElement.scrollHeight>innerHeight}})()`;
   for(const width of [1440,390]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
-    await navigate('/explorar/');
+    await navigate('/criadores/');
     const long=await evaluate(geometry);
     assert.equal(long.scrolling,true,'Long route must need a scrollbar');
     await navigate('/eventos/');

@@ -1,5 +1,6 @@
 import {ContributionDialog} from './ContributionDialog';
-import { AboutGuide, SectionGuide, UserGuide } from './UserGuide';
+import { SectionGuide, UserGuide } from './UserGuide';
+import { GuideLanding } from './GuideLanding';
 import { guideSectionForGroup } from './guide-steps';
 import {openContribution} from './contribution-actions';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -25,7 +26,7 @@ import { ResourcePagination } from './ResourcePagination';
 import { paginate, readPage } from './pagination';
 import { ResourceSearch } from './ResourceSearch';
 import { matchesResourceSearch, readSearch } from './resource-search';
-import { ActiveUsers, CommunityMetrics, CommunityMetricsProvider } from './CommunityMetrics';
+import { ActiveUsers, CommunityMetricsProvider } from './CommunityMetrics';
 import { Maintainers, MaintainersProvider } from './Maintainers';
 import { ContributionToasts } from './ContributionToasts';
 import { NavigationCard } from './NavigationCard';
@@ -330,19 +331,10 @@ export function App({ path }: { path: string }) {
         ) : path === '/empresas' ? (
           <Companies />
         ) : path === '/sobre' ? (
-          <article className="mx-auto w-full max-w-4xl space-y-6 [&>p]:max-w-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><h1 className="text-3xl font-semibold tracking-tight">Sobre o Guia da TI</h1><SectionGuide section="about" dark={dark} /></div><SuggestResource /></div>
-            <p className="text-lg leading-relaxed">Um guia de links para sites, conteúdos e oportunidades de tecnologia, mantido pela comunidade.</p>
-            <CommunityMetrics />
-            <AboutGuide dark={dark} />
-            <div className="grid items-stretch gap-5 md:grid-cols-2">
-              <Maintainers />
-              <Community area="supporters" embedded />
-            </div>
-          </article>
+          <GuideLanding dark={dark} />
         ) : page.resource ? (
           <article className="mx-auto w-full max-w-4xl space-y-6">
-            <Button asChild variant="ghost" className="-ml-3"><a href={`/${page.category!.route}`}><ArrowLeft />{page.category!.name}</a></Button>
+            <Button asChild variant="ghost" className="-ml-3"><a href={page.category!.id === 'youtube' ? '/criadores?plataforma=youtube' : page.category!.id === 'courses' ? '/sobre#por-onde-comecar' : `/${page.category!.route}`}><ArrowLeft />{page.category!.id === 'youtube' ? 'Criadores no YouTube' : page.category!.id === 'courses' ? 'Ver categorias' : page.category!.name}</a></Button>
             <section aria-label="Apresentação do recurso" className="overflow-hidden rounded-lg border bg-card">
             <header className="flex flex-col gap-5 border-b p-4 sm:flex-row sm:items-center sm:p-6">
               <div className="min-w-0 flex-1 space-y-3">{page.resource.demo && <Badge variant="outline">Exemplo fictício</Badge>}<Badge variant="secondary">{page.category!.name}</Badge><h1 className="text-3xl font-semibold tracking-tight">{page.resource.name}</h1><p className="text-sm leading-relaxed text-muted-foreground">{page.resource.summary}</p></div>
